@@ -51,8 +51,20 @@ impl<'a> Body<'a> {
     }
 }
 
-fn header_value(value: &str) -> bool {
+pub(crate) fn header_value(value: &str) -> bool {
     !value.is_empty() && value.bytes().all(|b| (32..127).contains(&b))
+}
+
+/// Shared preflight for every transport; it must run before connecting.
+pub(crate) fn validate_request(call: &Call, body: Option<Body<'_>>) -> Result<(), Error> {
+    call.validate(body.map(Body::bytes))?;
+    if let Some(Body::Json(bytes)) = body {
+        Json::parse(bytes)?;
+    }
+    if body.is_some_and(|b| !header_value(b.content_type())) {
+        return Err(BuildError::InvalidHeader.into());
+    }
+    Ok(())
 }
 
 trait HeaderObserver {
@@ -262,13 +274,7 @@ impl<'a> Client<'a> {
         output: &'b mut [u8],
         mut observer: impl HeaderObserver,
     ) -> Result<Response<'b>, Error> {
-        call.validate(body.map(Body::bytes))?;
-        if let Some(Body::Json(bytes)) = body {
-            Json::parse(bytes)?;
-        }
-        if body.is_some_and(|b| !header_value(b.content_type())) {
-            return Err(BuildError::InvalidHeader.into());
-        }
+        validate_request(call, body)?;
         let mut path = String::<8192>::new();
         path.push_str(self.base).map_err(|_| BuildError::Capacity)?;
         path.push_str(call.path())

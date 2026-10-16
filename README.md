@@ -4,7 +4,85 @@ Allocation-free `#![no_std]` Rust bindings for UniFi **Network 10.6.106**, **Sit
 
 CLI parity with both `unifly` and `unified` is in progress. See the [captured command inventory and remaining work](docs/parity/README.md). The current implementation does **not** claim complete parity.
 
-The default library uses `reqwless`, `heapless`, and the embedded I/O traits. It has no allocator, runtime, DNS, TLS, or OS requirement. Optional serde integration also works without `std` or `alloc`. Development tools and the host verification example use the host standard library.
+The default library uses `reqwless`, `heapless`, and the embedded I/O traits. It has no allocator, runtime, DNS, TLS, or OS requirement. Optional serde integration also works without `std` or `alloc`. Optional host clients own their HTTP/TLS connections and response buffers; development tools and host examples also use the standard library.
+
+## Runtime clients
+
+| Cargo feature | Interface | Storage and transport |
+|---|---|---|
+| none (default) | `unifi::Client` | Allocation-free async over a caller-provided `embedded_io_async` stream; works with Embassy |
+| `std` | `unifi::blocking::Client` | Blocking HTTP/HTTPS, owned response bytes, verified TLS |
+| `std_async` | `unifi::std_async::Client` | Tokio async HTTP/HTTPS, owned response bytes, verified TLS |
+| `async_std` | `unifi::async_std::Client` | Native async-std sockets and verified Rustls TLS, owned response bytes |
+| `embassy` | `unifi::embassy::Client` | Allocation-free async, reusable caller-owned buffers and a reconnecting connector |
+
+All interfaces use the same operation constructors, body builders, borrowed model views, authentication rules and request preflight. Features are additive; each host backend works independently. `std_async` uses Tokio; the separate `async_std` feature uses async-std without a Tokio dependency or runtime. Enabling a host feature opts into allocation and host dependencies; leave all three off for firmware. The async clients use the application's executor.
+
+For a blocking application, enable `unifi = { version = "0.1", features = ["std"] }`:
+
+```rust,no_run
+# #[cfg(feature = "std")]
+# fn blocking_example() -> Result<(), unifi::host::Error> {
+let client = unifi::blocking::Client::new(
+    "https://controller.example", "/proxy/network/integration", "api-key",
+)?;
+let call = unifi::network::get_site_overview_page()?;
+let response = client.execute(&call, None)?.success().unwrap();
+let json = response.json().unwrap(); // views borrow response.body
+# let _ = json;
+# Ok(())
+# }
+```
+
+For Tokio, enable `features = ["std_async"]`, provide a Tokio runtime, and await the same calls:
+
+```rust,no_run
+# #[cfg(feature = "std_async")]
+# async fn tokio_example() -> Result<(), unifi::host::Error> {
+let client = unifi::std_async::Client::new(
+    "https://controller.example", "/proxy/network/integration", "api-key",
+)?;
+let response = client.execute(&unifi::network::get_site_overview_page()?, None)
+    .await?.success().unwrap();
+# let _ = response;
+# Ok(())
+# }
+```
+
+For async-std, enable `features = ["async_std"]` and use its executor:
+
+```rust,no_run
+# #[cfg(feature = "async_std")]
+# async fn async_std_example() -> Result<(), unifi::host::Error> {
+let client = unifi::async_std::Client::new(
+    "https://controller.example", "/proxy/network/integration", "api-key",
+)?;
+let response = client.execute(&unifi::network::get_site_overview_page()?, None)
+    .await?.success().unwrap();
+# let _ = response;
+# Ok(())
+# }
+```
+
+The blocking and Tokio clients use `reqwest`; the async-std client uses the core HTTP engine over async-std TCP and `futures-rustls`. All verify certificates and hostnames. `host::Options` configures a whole-request timeout (30 seconds by default), response-body limit (16 MiB), and additional trusted CA certificates through `host::Certificate`. Pass options and `Authentication` to `Client::with_options`. The async-std backend reserves the configured body limit plus one byte and a 16 KiB HTTP header buffer per request; it releases spare body capacity before returning. HTTP origins must contain only the scheme and authority; the surface base is a separate argument. Redirects, retries, decompression and environment proxies are disabled. A response over the limit returns an error without replaying the request. Paths that the host URL parser would normalize, including encoded dot-only segments, are rejected before I/O. Call the blocking client outside an async executor thread.
+
+`execute_body` accepts `Body::Json` or `Body::Bytes` for binary/multipart requests. `execute_with_session` uses the supplied origin-scoped `session::Session` for outgoing cookies/CSRF, then rotates it atomically when response headers arrive, even if the body later fails. An empty jar sends an unauthenticated request for explicit login; it never falls back to the client's API key. Both host interfaces return `host::Response`; `.success()` preserves the body and `Retry-After` in `host::HttpError` for non-2xx statuses.
+
+For Embassy, enable `features = ["embassy"]` and keep the network stack runner in its own application task. Supply a connector that returns a fresh authenticated TLS stream for each call. The connector owns connection setup, DNS and TLS configuration; it must target the same origin as the core client's host. `embassy::TcpConnector::new(stack, endpoint, rx, tx)` is also available for explicit unencrypted HTTP endpoints. The library never downgrades HTTPS to plain TCP. Use `embassy_time::with_timeout` around a complete call for a deadline; cancellation drops the stream and the next call reconnects.
+
+```rust,no_run
+# #[cfg(feature = "embassy")]
+async fn embassy_example<C: unifi::embassy::Connector>(connector: C, key: &str) {
+    let core = unifi::Client::new("controller.example", "/proxy/network/integration", key).unwrap();
+    let mut headers = [0; 4096];
+    let mut output = [0; 16384];
+    let mut client = unifi::embassy::Client::new(core, connector, &mut headers);
+    let call = unifi::network::get_site_overview_page().unwrap();
+    if let Ok(response) = client.execute(&call, None, &mut output).await {
+        let _ = response.json();
+    }
+}
+```
 
 ## Rust API
 

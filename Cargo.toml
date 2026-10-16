@@ -14,6 +14,10 @@ license = "MIT"
 [features]
 default = []
 serde = ["dep:serde", "dep:serde-json-core", "heapless/serde"]
+std = ["dep:reqwest", "dep:rustls", "dep:http", "dep:url", "reqwest/blocking"]
+std_async = ["dep:reqwest", "dep:rustls", "dep:http", "dep:url"]
+async_std = ["dep:http", "dep:url", "dep:rustls", "dep:async-std", "dep:futures-rustls", "dep:rustls-native-certs", "dep:embedded-io-adapters"]
+embassy = ["dep:embassy-net"]
 
 [dependencies]
 reqwless = { version = "0.14", default-features = false }
@@ -22,9 +26,21 @@ embedded-io = "0.7"
 embedded-io-async = "0.7"
 serde = { version = "1", default-features = false, features = ["derive"], optional = true }
 serde-json-core = { version = "0.6", default-features = false, optional = true }
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls"], optional = true }
+embassy-net = { version = "0.9", default-features = false, features = ["tcp", "proto-ipv4", "medium-ip"], optional = true }
+rustls = { version = "0.23", default-features = false, features = ["std", "aws_lc_rs"], optional = true }
+async-std = { version = "1.13", optional = true }
+futures-rustls = { version = "0.26", optional = true }
+rustls-native-certs = { version = "0.8", optional = true }
+embedded-io-adapters = { version = "0.7", features = ["futures-03"], optional = true }
+http = { version = "1", optional = true }
+url = { version = "2", optional = true }
 
 [dev-dependencies]
 serde_json = "1"
+tokio = { version = "1", features = ["rt", "macros", "time", "net", "io-util"] }
+rustls = { version = "0.23", default-features = false, features = ["std", "aws_lc_rs"] }
+rcgen = "0.14"
 
 [target.'cfg(unix)'.dev-dependencies]
 rustix = { version = "1.1", default-features = false, features = ["fs", "pipe", "event", "time", "process"] }
