@@ -2377,6 +2377,7 @@ name = "unifi"
 version = "0.1.0"
 dependencies = [
  "async-std",
+ "bytes",
  "embedded-io",
  "embedded-io-adapters",
  "embedded-io-async",

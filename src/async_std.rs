@@ -1,6 +1,6 @@
 //! Native async-std client (`async_std` feature). Uses async-std sockets and
 //! futures-rustls with the allocation-free HTTP engine; no Tokio runtime is used.
-use crate::host::{Endpoint, Error, Options, Response};
+use crate::host::{Endpoint, Error, Limits, Options, Response};
 use crate::{Authentication, Body, Call, session::Session};
 use embedded_io_adapters::futures_03::FromFutures;
 use embedded_io_async::{Read, Write};
@@ -36,10 +36,7 @@ impl Client {
         auth: Authentication<'_>,
         options: Options,
     ) -> Result<Self, Error> {
-        let endpoint = Endpoint::new(origin, base, auth)?;
-        if options.timeout.is_zero() || options.max_response_bytes == usize::MAX {
-            return Err(crate::BuildError::InvalidParameter.into());
-        }
+        let limits = options.limits().validate()?;
         let mut roots = rustls::RootCertStore::empty();
         roots.add_parsable_certificates(rustls_native_certs::load_native_certs().certs);
         for cert in options.root_certificates {
@@ -48,11 +45,23 @@ impl Client {
         let config = rustls::ClientConfig::builder()
             .with_root_certificates(roots)
             .with_no_client_auth();
+        Self::with_tls_config(origin, base, auth, Arc::new(config), limits)
+    }
+    /// Use an application's Rustls configuration, including its trust store,
+    /// client certificate, protocol versions and cryptographic provider.
+    pub fn with_tls_config(
+        origin: &str,
+        base: &str,
+        auth: Authentication<'_>,
+        tls: Arc<rustls::ClientConfig>,
+        limits: Limits,
+    ) -> Result<Self, Error> {
+        let limits = limits.validate()?;
         Ok(Self {
-            endpoint,
-            tls: Arc::new(config).into(),
-            limit: options.max_response_bytes,
-            timeout: options.timeout,
+            endpoint: Endpoint::new(origin, base, auth)?,
+            tls: tls.into(),
+            limit: limits.max_response_bytes,
+            timeout: limits.timeout,
         })
     }
     pub async fn execute(&self, call: &Call, body: Option<&[u8]>) -> Result<Response, Error> {

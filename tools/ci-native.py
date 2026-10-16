@@ -24,8 +24,8 @@ def main():
                 run(sys.executable, 'tools/' + generator, '--check')
         run('cargo', 'test', '--locked')
         run('cargo', 'test', '--locked', '--all-features')
-        for features in ['std', 'tokio', 'async_std']:
-            run('cargo', 'test', '--locked', '--no-default-features', '--features', features, '--test', 'runtime_clients')
+        for features in ['std', 'blocking', 'tokio', 'async_std']:
+            run('cargo', 'test', '--locked', '--no-default-features', '--features', features, '--test', 'runtime_clients', '--test', 'host_transport')
         if any((ROOT / 'examples').glob('*.rs')):
             run('cargo', 'test', '--locked', '--examples')
         run('cargo', 'clippy', '--locked', '-p', 'unifi', '--all-targets', '--all-features', '--', '-D', 'warnings')

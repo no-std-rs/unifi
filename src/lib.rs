@@ -7,7 +7,7 @@ extern crate std;
 
 #[cfg(feature = "async_std")]
 pub mod async_std;
-#[cfg(feature = "std")]
+#[cfg(feature = "blocking")]
 pub mod blocking;
 pub mod embedded_async;
 #[cfg(any(feature = "std", feature = "tokio", feature = "async_std"))]

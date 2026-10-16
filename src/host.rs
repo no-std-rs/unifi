@@ -2,6 +2,7 @@
 use crate::{Authentication, Body, BuildError, Call, Json, JsonError};
 use http::header::{HeaderMap, HeaderValue};
 use std::{
+    boxed::Box,
     format,
     string::{String, ToString},
     time::Duration,
@@ -9,7 +10,40 @@ use std::{
 };
 use url::Url;
 
-/// Host TLS roots and resource limits. Certificate verification is always enabled.
+mod transport;
+/// HTTP request/response types used by custom transports.
+pub use http;
+pub use transport::{
+    AsyncBody, AsyncClient, AsyncTransport, BlockingClient, BlockingTransport, Request,
+};
+
+/// Resource limits passed to an application-supplied transport.
+#[derive(Clone, Copy, Debug)]
+pub struct Limits {
+    /// Deadline for the complete request, including its body. The transport must enforce it.
+    pub timeout: Duration,
+    /// Maximum response bytes buffered by the SDK.
+    pub max_response_bytes: usize,
+}
+impl Default for Limits {
+    fn default() -> Self {
+        Self {
+            timeout: Duration::from_secs(30),
+            max_response_bytes: 16 * 1024 * 1024,
+        }
+    }
+}
+impl Limits {
+    pub(crate) fn validate(self) -> Result<Self, Error> {
+        if self.timeout.is_zero() || self.max_response_bytes == usize::MAX {
+            return Err(BuildError::InvalidParameter.into());
+        }
+        Ok(self)
+    }
+}
+
+/// TLS roots and resource limits for the supplied backends. They verify certificates by default.
+#[cfg(any(feature = "blocking", feature = "tokio", feature = "async_std"))]
 #[derive(Clone, Debug)]
 pub struct Options {
     /// Overall request timeout, including the response body (default 30 seconds).
@@ -19,6 +53,7 @@ pub struct Options {
     /// Additional trusted PEM/DER roots, such as a controller's private CA.
     pub root_certificates: Vec<Certificate>,
 }
+#[cfg(any(feature = "blocking", feature = "tokio", feature = "async_std"))]
 impl Default for Options {
     fn default() -> Self {
         Self {
@@ -28,9 +63,20 @@ impl Default for Options {
         }
     }
 }
+#[cfg(any(feature = "blocking", feature = "tokio", feature = "async_std"))]
+impl Options {
+    pub fn limits(&self) -> Limits {
+        Limits {
+            timeout: self.timeout,
+            max_response_bytes: self.max_response_bytes,
+        }
+    }
+}
 /// An additional DER or PEM trust anchor, shared by all host transports.
+#[cfg(any(feature = "blocking", feature = "tokio", feature = "async_std"))]
 #[derive(Clone, Debug)]
 pub struct Certificate(pub(crate) rustls::pki_types::CertificateDer<'static>);
+#[cfg(any(feature = "blocking", feature = "tokio", feature = "async_std"))]
 impl Certificate {
     pub fn from_der(bytes: &[u8]) -> Result<Self, Error> {
         let der = rustls::pki_types::CertificateDer::from(bytes.to_vec());
@@ -47,24 +93,24 @@ impl Certificate {
     }
 }
 
-#[cfg(any(feature = "std", feature = "tokio"))]
+#[cfg(any(feature = "blocking", feature = "tokio"))]
 pub(crate) fn reqwest_roots(roots: Vec<Certificate>) -> Result<Vec<reqwest::Certificate>, Error> {
     roots
         .into_iter()
-        .map(|cert| reqwest::Certificate::from_der(cert.0.as_ref()).map_err(Error::Transport))
+        .map(|cert| reqwest::Certificate::from_der(cert.0.as_ref()).map_err(Error::transport))
         .collect()
 }
 
 #[derive(Debug)]
 pub enum Error {
     Core(crate::Error),
-    #[cfg(any(feature = "std", feature = "tokio"))]
-    Transport(reqwest::Error),
+    Transport(Box<dyn std::error::Error + Send + Sync>),
     Io(std::io::Error),
     InvalidOrigin,
     ResponseTooLarge,
     UnsupportedEncoding,
     InvalidCertificate,
+    #[cfg(any(feature = "blocking", feature = "tokio", feature = "async_std"))]
     Tls(rustls::Error),
     Timeout,
 }
@@ -72,7 +118,6 @@ impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Core(e) => write!(f, "invalid UniFi request or session: {e:?}"),
-            #[cfg(any(feature = "std", feature = "tokio"))]
             Self::Transport(e) => write!(f, "HTTP transport: {e}"),
             Self::Io(e) => write!(f, "response I/O: {e}"),
             Self::InvalidOrigin => f.write_str(
@@ -81,12 +126,29 @@ impl core::fmt::Display for Error {
             Self::ResponseTooLarge => f.write_str("response exceeds configured body limit"),
             Self::UnsupportedEncoding => f.write_str("unsupported response encoding"),
             Self::InvalidCertificate => f.write_str("invalid trust anchor certificate"),
+            #[cfg(any(feature = "blocking", feature = "tokio", feature = "async_std"))]
             Self::Tls(e) => write!(f, "TLS configuration: {e}"),
             Self::Timeout => f.write_str("request timed out"),
         }
     }
 }
-impl std::error::Error for Error {}
+impl Error {
+    /// Preserve an HTTP/TLS backend error and its source chain.
+    pub fn transport(error: impl std::error::Error + Send + Sync + 'static) -> Self {
+        Self::Transport(Box::new(error))
+    }
+}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Transport(error) => Some(error.as_ref()),
+            Self::Io(error) => Some(error),
+            #[cfg(any(feature = "blocking", feature = "tokio", feature = "async_std"))]
+            Self::Tls(error) => Some(error),
+            _ => None,
+        }
+    }
+}
 impl From<crate::Error> for Error {
     fn from(e: crate::Error) -> Self {
         Self::Core(e)
@@ -97,10 +159,10 @@ impl From<BuildError> for Error {
         Self::Core(e.into())
     }
 }
-#[cfg(any(feature = "std", feature = "tokio"))]
+#[cfg(any(feature = "blocking", feature = "tokio"))]
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
-        Self::Transport(e)
+        Self::transport(e)
     }
 }
 impl From<std::io::Error> for Error {
@@ -263,7 +325,6 @@ fn authentication_headers(auth: Authentication<'_>) -> Result<HeaderMap, BuildEr
     }
     Ok(headers)
 }
-#[cfg(any(feature = "std", feature = "tokio"))]
 pub(crate) fn check_encoding(headers: &HeaderMap) -> Result<(), Error> {
     if headers
         .get_all("content-encoding")
@@ -274,7 +335,6 @@ pub(crate) fn check_encoding(headers: &HeaderMap) -> Result<(), Error> {
     }
     Ok(())
 }
-#[cfg(any(feature = "std", feature = "tokio"))]
 pub(crate) fn metadata(status: u16, headers: &HeaderMap) -> Response {
     Response {
         status,

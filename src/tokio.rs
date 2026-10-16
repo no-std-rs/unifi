@@ -1,19 +1,47 @@
-//! Tokio-backed async host client (`tokio` feature).
-use crate::host::{self, Endpoint, Error, Options, Response};
-use crate::{Authentication, Body, Call, session::Session};
+//! Supplied Reqwest async backend (`tokio` feature).
+use crate::Authentication;
+use crate::host::{self, AsyncBody, AsyncClient, AsyncTransport, Error, Limits, Options, Request};
+use std::{string::ToString, time::Duration};
 
-/// A host client with owned credentials, verified TLS, and bounded owned responses.
-/// Redirects, automatic retries, decompression, and environment proxies are disabled.
-pub struct Client {
-    endpoint: Endpoint,
-    http: reqwest::Client,
-    limit: usize,
+pub type Client = AsyncClient<Transport>;
+
+/// Adapter for a caller-configured Reqwest client and its reusable connection pool.
+/// The supplied client must satisfy [`AsyncTransport`]'s TLS and request policy.
+pub struct Transport(reqwest::Client);
+impl Transport {
+    pub fn new(http: reqwest::Client) -> Self {
+        Self(http)
+    }
+    pub fn http_client(&self) -> &reqwest::Client {
+        &self.0
+    }
 }
-impl core::fmt::Debug for Client {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("Client")
-            .field("authentication", &"[REDACTED]")
-            .finish_non_exhaustive()
+impl AsyncBody for reqwest::Response {
+    type Chunk = bytes::Bytes;
+    async fn next_chunk(&mut self) -> Result<Option<Self::Chunk>, Error> {
+        self.chunk().await.map_err(Error::from)
+    }
+}
+impl AsyncTransport for Transport {
+    type Body = reqwest::Response;
+    async fn send(
+        &self,
+        request: Request,
+        timeout: Duration,
+    ) -> Result<http::Response<Self::Body>, Error> {
+        let (parts, body) = request.into_parts();
+        let reply = self
+            .0
+            .request(parts.method, parts.uri.to_string())
+            .headers(parts.headers)
+            .body(body)
+            .timeout(timeout)
+            .send()
+            .await?;
+        let mut response = http::Response::new(reply);
+        *response.status_mut() = response.body().status();
+        *response.headers_mut() = response.body().headers().clone();
+        Ok(response)
     }
 }
 impl Client {
@@ -27,17 +55,15 @@ impl Client {
     ) -> Result<Self, Error> {
         Self::with_options(origin, base, auth, Options::default())
     }
+    /// Build a verified-TLS client without redirects, retries, decompression or environment proxies.
     pub fn with_options(
         origin: &str,
         base: &str,
         auth: Authentication<'_>,
         options: Options,
     ) -> Result<Self, Error> {
-        let endpoint = Endpoint::new(origin, base, auth)?;
-        if options.timeout.is_zero() || options.max_response_bytes == usize::MAX {
-            return Err(crate::BuildError::InvalidParameter.into());
-        }
-        let builder = reqwest::Client::builder()
+        let limits = options.limits().validate()?;
+        let http = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .retry(reqwest::retry::never())
             .no_proxy()
@@ -45,70 +71,20 @@ impl Client {
             .no_brotli()
             .no_zstd()
             .no_deflate()
-            .timeout(options.timeout)
-            .tls_certs_merge(host::reqwest_roots(options.root_certificates)?);
-        Ok(Self {
-            endpoint,
-            http: builder.build()?,
-            limit: options.max_response_bytes,
-        })
+            .tls_certs_merge(host::reqwest_roots(options.root_certificates)?)
+            .build()?;
+        Self::with_http_client(origin, base, auth, http, limits)
     }
-    /// Execute a generated call with an optional JSON body.
-    pub async fn execute(&self, call: &Call, body: Option<&[u8]>) -> Result<Response, Error> {
-        self.execute_body(call, body.map(Body::Json)).await
-    }
-    /// Execute JSON, binary or multipart data. No request is replayed.
-    pub async fn execute_body(
-        &self,
-        call: &Call,
-        body: Option<Body<'_>>,
-    ) -> Result<Response, Error> {
-        self.execute_inner::<4096, 512>(call, body, None).await
-    }
-    /// Use this origin's jar for outgoing cookies/CSRF (or unauthenticated login
-    /// when empty), and atomically rotate it as soon as response headers arrive.
-    /// Do not share a jar across origins. No password or login replay is stored.
-    pub async fn execute_with_session<const C: usize, const T: usize>(
-        &self,
-        call: &Call,
-        body: Option<Body<'_>>,
-        session: &mut Session<C, T>,
-    ) -> Result<Response, Error> {
-        self.execute_inner(call, body, Some(session)).await
-    }
-    async fn execute_inner<const C: usize, const T: usize>(
-        &self,
-        call: &Call,
-        body: Option<Body<'_>>,
-        session: Option<&mut Session<C, T>>,
-    ) -> Result<Response, Error> {
-        let auth = session
-            .as_ref()
-            .map(|jar| jar.authentication().unwrap_or(Authentication::None));
-        let (url, headers) = self.endpoint.request(call, body, auth)?;
-        let method = reqwest::Method::from_bytes(call.operation.method.as_str().as_bytes())
-            .map_err(|_| crate::BuildError::InvalidParameter)?;
-        let mut request = self.http.request(method, url).headers(headers);
-        if let Some(body) = body {
-            request = request.body(body.bytes().to_vec());
-        }
-        let mut reply = request.send().await?;
-        if let Some(session) = session {
-            session.observe_response(
-                reply
-                    .headers()
-                    .iter()
-                    .map(|(name, value)| (name.as_str(), value.as_bytes())),
-            )?;
-        }
-        host::check_encoding(reply.headers())?;
-        let mut response = host::metadata(reply.status().as_u16(), reply.headers());
-        while let Some(chunk) = reply.chunk().await? {
-            if chunk.len() > self.limit - response.body.len() {
-                return Err(Error::ResponseTooLarge);
-            }
-            response.body.extend_from_slice(&chunk);
-        }
-        Ok(response)
+    /// Reuse an application's HTTP client, including its TLS, DNS, proxy and pool
+    /// configuration. The caller configures [`AsyncTransport`]'s request policy;
+    /// an opaque, prebuilt client cannot be inspected or reconfigured by the SDK.
+    pub fn with_http_client(
+        origin: &str,
+        base: &str,
+        auth: Authentication<'_>,
+        http: reqwest::Client,
+        limits: Limits,
+    ) -> Result<Self, Error> {
+        Self::with_transport(origin, base, auth, Transport::new(http), limits)
     }
 }

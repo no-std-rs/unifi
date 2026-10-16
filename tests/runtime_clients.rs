@@ -1,5 +1,5 @@
 //! Real loopback HTTP/TLS contracts shared by both optional host interfaces.
-#[cfg(any(feature = "std", feature = "tokio", feature = "async_std"))]
+#[cfg(any(feature = "blocking", feature = "tokio", feature = "async_std"))]
 mod host {
     use std::{
         io::{Read, Write},
@@ -97,9 +97,9 @@ mod host {
             session: &mut Session,
         ) -> Result<Response, Error>;
     }
-    #[cfg(feature = "std")]
+    #[cfg(feature = "blocking")]
     struct Blocking(unifi::blocking::Client);
-    #[cfg(feature = "std")]
+    #[cfg(feature = "blocking")]
     impl Driver for Blocking {
         fn new(url: &str, auth: Authentication<'_>, options: Options) -> Result<Self, Error> {
             unifi::blocking::Client::with_options(url, "/proxy/network/integration", auth, options)
@@ -391,6 +391,155 @@ mod host {
         assert!(requests.try_recv().is_err());
         task.join().unwrap();
     }
+    fn configured_tls(send: impl FnOnce(&str, &[u8]) -> Response, agent: bool) {
+        let rcgen::CertifiedKey { cert, signing_key } =
+            rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
+        let key = rustls::pki_types::PrivatePkcs8KeyDer::from(signing_key.serialize_der());
+        let config = Arc::new(
+            rustls::ServerConfig::builder()
+                .with_no_client_auth()
+                .with_single_cert(vec![cert.der().clone()], key.into())
+                .unwrap(),
+        );
+        let (url, requests, task) = serve(
+            vec!["HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}"],
+            Some(config),
+        );
+        assert_eq!(send(&url, cert.der()).status, 200);
+        let request = requests
+            .recv_timeout(Duration::from_secs(5))
+            .unwrap()
+            .to_lowercase();
+        assert!(request.contains("x-api-key: fixture-only"));
+        if agent {
+            assert!(request.contains("user-agent: injected-client"));
+        }
+        task.join().unwrap();
+    }
+    fn body_deadline<D: Driver>() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let (release, wait) = mpsc::channel();
+        let task = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            read_request(&mut stream);
+            stream.write_all(b"HTTP/1.1 200 OK\r\nSet-Cookie: TOKEN=rotated; Path=/\r\nContent-Length: 2\r\nConnection: close\r\n\r\n").unwrap();
+            // Keep the body open beyond the request deadline. The client must
+            // return without waiting for the server to close the connection.
+            let _ = wait.recv_timeout(Duration::from_secs(2));
+        });
+        let client = D::new(
+            &url,
+            Authentication::None,
+            Options {
+                timeout: Duration::from_millis(50),
+                ..Options::default()
+            },
+        )
+        .unwrap();
+        let mut session = Session::default();
+        let started = std::time::Instant::now();
+        assert!(client.session(&call(), None, &mut session).is_err());
+        let elapsed = started.elapsed();
+        let _ = release.send(());
+        task.join().unwrap();
+        assert!(
+            elapsed < Duration::from_secs(1),
+            "body deadline was not enforced: {elapsed:?}"
+        );
+        assert!(matches!(
+            session.authentication(),
+            Some(Authentication::Session {
+                cookie: "TOKEN=rotated",
+                ..
+            })
+        ));
+    }
+    #[cfg(feature = "blocking")]
+    #[test]
+    fn blocking_uses_injected_http_and_tls_configuration() {
+        configured_tls(
+            |url, der| {
+                let http = reqwest::blocking::Client::builder()
+                    .redirect(reqwest::redirect::Policy::none())
+                    .retry(reqwest::retry::never())
+                    .no_proxy()
+                    .tls_certs_only([reqwest::Certificate::from_der(der).unwrap()])
+                    .user_agent("injected-client")
+                    .build()
+                    .unwrap();
+                unifi::blocking::Client::with_http_client(
+                    url,
+                    "",
+                    Authentication::ApiKey("fixture-only"),
+                    http,
+                    unifi::host::Limits::default(),
+                )
+                .unwrap()
+                .execute(&call(), None)
+                .unwrap()
+            },
+            true,
+        );
+    }
+    #[cfg(feature = "tokio")]
+    #[test]
+    fn tokio_uses_injected_http_and_tls_configuration() {
+        configured_tls(
+            |url, der| {
+                let http = reqwest::Client::builder()
+                    .redirect(reqwest::redirect::Policy::none())
+                    .retry(reqwest::retry::never())
+                    .no_proxy()
+                    .tls_certs_only([reqwest::Certificate::from_der(der).unwrap()])
+                    .user_agent("injected-client")
+                    .build()
+                    .unwrap();
+                let client = unifi::tokio::Client::with_http_client(
+                    url,
+                    "",
+                    Authentication::ApiKey("fixture-only"),
+                    http,
+                    unifi::host::Limits::default(),
+                )
+                .unwrap();
+                tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap()
+                    .block_on(client.execute(&call(), None))
+                    .unwrap()
+            },
+            true,
+        );
+    }
+    #[cfg(feature = "async_std")]
+    #[test]
+    fn async_std_uses_injected_tls_configuration() {
+        configured_tls(
+            |url, der| {
+                let mut roots = rustls::RootCertStore::empty();
+                roots
+                    .add(rustls::pki_types::CertificateDer::from(der.to_vec()))
+                    .unwrap();
+                let tls = Arc::new(
+                    rustls::ClientConfig::builder()
+                        .with_root_certificates(roots)
+                        .with_no_client_auth(),
+                );
+                let client = unifi::async_std::Client::with_tls_config(
+                    url,
+                    "",
+                    Authentication::ApiKey("fixture-only"),
+                    tls,
+                    unifi::host::Limits::default(),
+                )
+                .unwrap();
+                ::async_std::task::block_on(client.execute(&call(), None)).unwrap()
+            },
+            false,
+        );
+    }
     macro_rules! suite {
         ($name:ident,$driver:ty) => {
             mod $name {
@@ -415,10 +564,14 @@ mod host {
                 fn requires_trusted_tls() {
                     verified_tls::<$driver>()
                 }
+                #[test]
+                fn deadline_covers_body_and_retains_session_headers() {
+                    body_deadline::<$driver>()
+                }
             }
         };
     }
-    #[cfg(feature = "std")]
+    #[cfg(feature = "blocking")]
     suite!(blocking, Blocking);
     #[cfg(feature = "tokio")]
     suite!(tokio_async, Async);
