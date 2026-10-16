@@ -197,7 +197,7 @@ An alternative is [Prism](https://github.com/stoplightio/prism) against a pinned
 cargo test
 cargo test --all-features
 cargo check --lib --target riscv32imac-unknown-none-elf
-cargo check --lib --all-features --target riscv32imac-unknown-none-elf
+cargo check --lib --no-default-features --features serde,embassy --target riscv32imac-unknown-none-elf
 cargo build -p unifi-cli
 cargo clippy -p unifi --all-targets --all-features -- -D warnings
 cargo clippy -p unifi-cli --bin unifi -- -D warnings
@@ -207,7 +207,7 @@ python3 tools/generate-request-fixtures.py --check
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-Lint the library and CLI separately: a workspace-wide all-target/all-feature lint would unify the library’s host-only `std` development dependencies into the `no_std` executable.
+Lint the library and CLI separately: a workspace-wide all-target/all-feature lint would enable the library’s optional host features in the allocation-free `no_std` executable.
 
 Rust contract tests check every pinned operation against its source schema and exercise real `reqwless` encoding/decoding over fragmented in-memory I/O, including writes. An independently checked corpus covers all 50 official JSON-body operations with 174 valid and 4,428 invalid fixtures; documented upstream schema inconsistencies are interpreted explicitly. Python tests cover the CLI over loopback HTTP/TLS, request validation, captured command/option recognition and Git worktree safety. No tests automatically contact UniFi. The live example is an explicit GET-only command.
 
