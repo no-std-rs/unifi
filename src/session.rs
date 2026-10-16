@@ -59,6 +59,10 @@ impl<const C: usize, const T: usize> Session<C, T> {
     }
     /// Pass this method to `Client::execute_with`'s response header observer.
     /// Capacity errors are explicit; cookie replacement is transactional.
+    /// If the client authenticates with this jar, first clone it into a credential snapshot
+    /// and borrow the client's authentication from that snapshot. The response observer
+    /// can then mutate the original jar while the outgoing credentials remain stable.
+    /// This copies bounded, inline buffers and does not allocate.
     pub fn observe(&mut self, name: &str, bytes: &[u8]) -> Result<(), BuildError> {
         if name.eq_ignore_ascii_case("x-csrf-token") {
             let value = core::str::from_utf8(bytes).map_err(|_| BuildError::InvalidHeader)?;

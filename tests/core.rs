@@ -263,6 +263,77 @@ fn identical_numbers_outside_f64_range_are_duplicates() {
     assert!(unique(Json::parse(b"[1e400,1e401]").unwrap()).is_ok());
 }
 
+#[test]
+fn numeric_equality_preserves_decimal_precision_and_exponents() {
+    use unifi::validation::{equivalent, unique};
+    for (left, right, expected) in [
+        ("9223372036854775808", "9223372036854775809", false),
+        ("-9223372036854775809", "-9223372036854775810", false),
+        ("18446744073709551616", "18446744073709551617", false),
+        ("1.0000000000000000001", "1.0000000000000000002", false),
+        ("1", "1.0", true),
+        ("1e400", "10e399", true),
+        ("1e-400", "0", false),
+        ("1e1", "100e-1", true),
+        ("1.20e+0002", "120", true),
+        ("-0e99999999999999999999999999999999999999999", "0", true),
+        (
+            "1e1000000000000000000000000000000000000000000",
+            "10e999999999999999999999999999999999999999999",
+            true,
+        ),
+        (
+            "1e-1000000000000000000000000000000000000000000",
+            "0.1e-999999999999999999999999999999999999999999",
+            true,
+        ),
+        (
+            "1e1000000000000000000000000000000000000000000",
+            "1e999999999999999999999999999999999999999999",
+            false,
+        ),
+    ] {
+        let a = Json::parse(left.as_bytes()).unwrap();
+        let b = Json::parse(right.as_bytes()).unwrap();
+        assert_eq!(equivalent(a, b), expected, "{left} versus {right}");
+        assert_eq!(equivalent(b, a), expected, "{right} versus {left}");
+        let array = format!("[{left},{right}]");
+        assert_eq!(
+            unique(Json::parse(array.as_bytes()).unwrap()).is_err(),
+            expected
+        );
+    }
+}
+
+#[test]
+fn authenticated_response_rotates_the_same_session_using_a_snapshot() {
+    use unifi::{Authentication, session::Session};
+    let mut session = Session::<64, 32>::from_cookie("TOKEN=old", Some("csrf-old")).unwrap();
+    let credentials = session.clone();
+    let client =
+        Client::with_authentication("h", "", credentials.authentication().unwrap()).unwrap();
+    let mut mock = Mock::new(b"HTTP/1.1 200 OK\r\nSet-Cookie: TOKEN=new; Path=/\r\nX-CSRF-Token: csrf-new\r\nContent-Length: 0\r\n\r\n");
+    run(client.execute_with(
+        &mut mock,
+        &unifi::Call::raw(unifi::Method::GET, "/session").unwrap(),
+        None,
+        &mut [0; 512],
+        &mut [0; 128],
+        |name, value| session.observe(name, value),
+    ))
+    .unwrap();
+    let request = core::str::from_utf8(&mock.output).unwrap();
+    assert!(request.contains("Cookie: TOKEN=old\r\n"));
+    assert!(request.contains("X-CSRF-Token: csrf-old\r\n"));
+    assert!(matches!(
+        session.authentication(),
+        Some(Authentication::Session {
+            cookie: "TOKEN=new",
+            csrf: Some("csrf-new")
+        })
+    ));
+}
+
 fn websocket_mock(frames: &[u8]) -> Mock {
     let mut wire = b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n".to_vec();
     wire.extend_from_slice(frames);
