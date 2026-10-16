@@ -179,10 +179,23 @@ class CliRegressionTests(unittest.TestCase):
     def test_cloud_switch_saves_console_and_site_together(self):
         path = Path(self.env['UNIFI_CONFIG'])
         path.write_text(json.dumps({'activeProfile': 'cloud', 'profiles': {'cloud': {
-            'authMode': 'cloud', 'console': 'console-a', 'site': 'old-site', 'unrelated': 'keep'}}}))
+            'authMode': 'cloud', 'controller': f'http://127.0.0.1:{self.server.server_port}',
+            'console': 'console-a', 'site': 'old-site', 'unrelated': 'keep'}}}))
         reply = self.run_cli('cloud', 'switch', 'Branch Office', '--console', 'console-b')
         self.assertEqual(reply.returncode, 0, reply.stderr)
         saved = json.loads(path.read_text())['profiles']['cloud']
         self.assertEqual(saved['console'], 'console-b')
         self.assertEqual(saved['site'], 'branch42')
         self.assertEqual(saved['unrelated'], 'keep')
+
+    def test_explicit_controller_override_leaves_cloud_routing(self):
+        path = Path(self.env['UNIFI_CONFIG'])
+        path.write_text(json.dumps({'activeProfile': 'cloud', 'profiles': {'cloud': {
+            'authMode': 'cloud', 'controller': 'https://api.ui.com', 'console': 'console-a'}}}))
+        reply = self.run_cli('networks', 'list', '--output', 'json')
+        self.assertEqual(reply.returncode, 0, reply.stderr)
+        self.assertTrue(self.requests[-1][1].startswith('/proxy/network/integration/v1/sites/'))
+        self.env['UNIFI_COOKIE'] = 'TOKEN=fixture'
+        reply = self.run_cli('system', 'health', site='default')
+        self.assertEqual(reply.returncode, 0, reply.stderr)
+        self.assertTrue(self.requests[-1][1].endswith('/api/s/default/stat/health'))

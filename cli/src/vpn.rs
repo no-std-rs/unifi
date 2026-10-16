@@ -139,10 +139,7 @@ pub fn prepare<'a>(
         // Read by command selectors; the requested identity is inserted below.
         let peer = *args.get(4).ok_or("WireGuard peer ID missing")?;
         let records = remote.execute(
-            &session_api::list_wireguard_peers(site, server)
-                .unwrap()
-                .query("networkId", server)
-                .unwrap(),
+            &session_api::list_wireguard_peers(site, server).unwrap(),
             None,
         )?;
         flows::copy(payload::select(records, "id", peer)?, &mut current)?

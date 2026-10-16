@@ -5,3 +5,4 @@ src/protect.rs linguist-generated=true
 src/session_api.rs linguist-generated=true
 cli/src/routes.rs linguist-generated=true
 docs/parity/reference-cli.json linguist-generated=true
+tests/request_fixtures.rs linguist-generated=true
