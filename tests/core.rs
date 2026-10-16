@@ -334,6 +334,55 @@ fn authenticated_response_rotates_the_same_session_using_a_snapshot() {
     ));
 }
 
+#[test]
+fn removing_the_last_cookie_clears_csrf_before_a_new_session() {
+    use unifi::{Authentication, session::Session};
+    for deletion in [
+        "TOKEN=; Max-Age=0",
+        "TOKEN=deleted; Max-Age=0",
+        "TOKEN=deleted; Max-Age=-1",
+        "TOKEN=",
+    ] {
+        let mut session = Session::<64, 32>::from_cookie("TOKEN=old", Some("csrf-old")).unwrap();
+        session.observe("Set-Cookie", deletion.as_bytes()).unwrap();
+        assert!(session.authentication().is_none());
+        session.observe("Set-Cookie", b"TOKEN=new").unwrap();
+        assert!(matches!(
+            session.authentication(),
+            Some(Authentication::Session {
+                cookie: "TOKEN=new",
+                csrf: None
+            })
+        ));
+    }
+}
+
+#[test]
+fn updated_csrf_headers_rotate_tokens_and_validate_values() {
+    use unifi::{Authentication, session::Session};
+    let mut session = Session::<64, 16>::from_cookie("TOKEN=one", Some("csrf-old")).unwrap();
+    session
+        .observe("X-UpDaTeD-CsRf-ToKeN", b"csrf-new")
+        .unwrap();
+    assert!(matches!(
+        session.authentication(),
+        Some(Authentication::Session {
+            csrf: Some("csrf-new"),
+            ..
+        })
+    ));
+    for invalid in [b"".as_slice(), b"bad\r\nheader", b"too-long-for-the-buffer"] {
+        assert!(session.observe("X-Updated-CSRF-Token", invalid).is_err());
+        assert!(matches!(
+            session.authentication(),
+            Some(Authentication::Session {
+                csrf: Some("csrf-new"),
+                ..
+            })
+        ));
+    }
+}
+
 fn websocket_mock(frames: &[u8]) -> Mock {
     let mut wire = b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n".to_vec();
     wire.extend_from_slice(frames);

@@ -64,7 +64,9 @@ impl<const C: usize, const T: usize> Session<C, T> {
     /// can then mutate the original jar while the outgoing credentials remain stable.
     /// This copies bounded, inline buffers and does not allocate.
     pub fn observe(&mut self, name: &str, bytes: &[u8]) -> Result<(), BuildError> {
-        if name.eq_ignore_ascii_case("x-csrf-token") {
+        if name.eq_ignore_ascii_case("x-csrf-token")
+            || name.eq_ignore_ascii_case("x-updated-csrf-token")
+        {
             let value = core::str::from_utf8(bytes).map_err(|_| BuildError::InvalidHeader)?;
             if value.is_empty() || !value.bytes().all(|b| (33..127).contains(&b)) {
                 return Err(BuildError::InvalidHeader);
@@ -109,6 +111,9 @@ impl<const C: usize, const T: usize> Session<C, T> {
                 cookie.push_str(pair).map_err(|_| BuildError::Capacity)?;
             }
             self.cookie = cookie;
+            if self.cookie.is_empty() {
+                self.csrf.clear();
+            }
         }
         Ok(())
     }
