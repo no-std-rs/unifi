@@ -11,3 +11,5 @@ Network integer enums documented as quoted decimals use numeric wire values. Nam
 Network also states some null allowances only in descriptions (for example, “When null” or “If this field is omitted or null”). Generation restores those explicit allowances in memory, including inherited properties, references, and enums. Other values retain their type, range, and enum constraints; the pinned document remains unchanged.
 
 Protect operation names are derived from method/path because upstream omits operationId. Flattened inherited liveview fields remain permitted. Enum and const constraints apply independently of nullable type unions.
+
+`session-api.json` is an experimental community route inventory, not an official schema; firmware response shapes vary. Source: https://github.com/hyperb1iss/unifly/tree/v0.10.0/crates/unifly-api/src/session.
