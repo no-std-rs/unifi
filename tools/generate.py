@@ -392,7 +392,17 @@ def generate(surface, request_models=None, model_names=None):
             out.append(doc(op.get('summary',id)+'. '+method.upper()+' '+path))
             if request:out.append(doc('Request schema: models::'+names[request.rsplit('/',1)[1]]+'.'))
             if response:out.append(doc('Response schema: models::'+names[response.rsplit('/',1)[1]]+'.'))
-            out.append(f'pub fn {method_name}({args}) -> Result<Call, BuildError> {{ {constant}.bind(&[{bindings}]) }}\n')
+            call=f'{constant}.bind(&[{bindings}])'
+            for parameter in query:
+                source=parameter.get('x-value-from-path')
+                fixed=parameter.get('schema',{}).get('const',parameter.get('x-constructor-default'))
+                if source is not None:
+                    if source not in path_params:raise ValueError('unknown query path source: '+source)
+                    value=ident(source)
+                elif isinstance(fixed,str):value=quoted(fixed)
+                else:continue
+                call+='?.query('+quoted(parameter['name'])+', '+value+')'
+            out.append(f'pub fn {method_name}({args}) -> Result<Call, BuildError> {{ {call} }}\n')
             ops.append(constant)
     out.append('pub static OPERATIONS: &[&Operation] = &[\n'+',\n'.join('&'+x for x in ops)+'\n];\n')
     result=subprocess.run(['rustfmt','--edition','2024'],input=''.join(out),text=True,capture_output=True)

@@ -2,3 +2,4 @@ schemas/*.json linguist-generated=true
 src/site_manager.rs linguist-generated=true
 src/network.rs linguist-generated=true
 src/protect.rs linguist-generated=true
+src/session_api.rs linguist-generated=true

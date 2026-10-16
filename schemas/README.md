@@ -11,3 +11,9 @@ Network integer enums documented as quoted decimals use numeric wire values. Nam
 Network also states some null allowances only in descriptions (for example, “When null” or “If this field is omitted or null”). Generation restores those explicit allowances in memory, including inherited properties, references, and enums. Other values retain their type, range, and enum constraints; the pinned document remains unchanged.
 
 Protect operation names are derived from method/path because upstream omits operationId. Flattened inherited liveview fields remain permitted. Enum and const constraints apply independently of nullable type unions.
+
+`session-api.json` is an experimental community route inventory, not an official schema; firmware response shapes vary. Source: https://github.com/hyperb1iss/unifly/tree/v0.10.0/crates/unifly-api/src/session.
+
+Session v2 responses are bare JSON rather than the legacy `meta`/`data` envelope. The `x-value-from-path` parameter extension repeats path identifiers in required queries; fixed string `const` query values are also bound by constructors. Network event WebSockets require `Authentication::Session` with a controller cookie; API keys only cover the HTTP surface.
+
+The `x-constructor-default` extension supplies the pinned client's required traffic-flow queries (`period=DAY`, `top=30`); callers can replace them with `set_query`. These are client choices, not claims about controller defaults. UniFi OS login returns a bare administrator object. Both logout requests are bodyless, and their response bodies are left unspecified.
