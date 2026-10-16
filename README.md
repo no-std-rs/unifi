@@ -119,7 +119,9 @@ transport contract. The SDK cannot inspect or reconfigure an opaque prebuilt
 client. Backend errors remain available through `host::Error`'s source chain.
 The socket-based async-std client accepts an `Arc<rustls::ClientConfig>` through
 `async_std::Client::with_tls_config` for private trust stores, mTLS, protocol
-versions and provider selection. To use another HTTP implementation on async-std,
+versions and provider selection. Its core HTTP engine uses HTTP/1.1, so this
+constructor rejects ALPN protocols other than `http/1.1` (an empty list is valid).
+To use another HTTP implementation on async-std,
 supply it to the runtime-independent `host::AsyncClient` instead.
 
 `execute_body` accepts `Body::Json` or `Body::Bytes` for binary/multipart requests. `execute_with_session` uses the supplied origin-scoped `session::Session` for outgoing cookies/CSRF, then rotates it atomically when response headers arrive, even if the body later fails. An empty jar sends an unauthenticated request for explicit login; it never falls back to the client's API key. All host interfaces return `host::Response`; `.success()` preserves the body and `Retry-After` in `host::HttpError` for non-2xx statuses.

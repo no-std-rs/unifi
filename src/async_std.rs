@@ -49,6 +49,7 @@ impl Client {
     }
     /// Use an application's Rustls configuration, including its trust store,
     /// client certificate, protocol versions and cryptographic provider.
+    /// ALPN must be empty or advertise only `http/1.1`, matching the core parser.
     pub fn with_tls_config(
         origin: &str,
         base: &str,
@@ -57,6 +58,13 @@ impl Client {
         limits: Limits,
     ) -> Result<Self, Error> {
         let limits = limits.validate()?;
+        if tls
+            .alpn_protocols
+            .iter()
+            .any(|protocol| protocol != b"http/1.1")
+        {
+            return Err(crate::BuildError::InvalidParameter.into());
+        }
         Ok(Self {
             endpoint: Endpoint::new(origin, base, auth)?,
             tls: tls.into(),

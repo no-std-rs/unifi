@@ -515,6 +515,30 @@ mod host {
     }
     #[cfg(feature = "async_std")]
     #[test]
+    fn async_std_tls_alpn_matches_its_http_engine() {
+        for protocols in [
+            vec![],
+            vec![b"http/1.1".to_vec()],
+            vec![b"h2".to_vec()],
+            vec![b"h2".to_vec(), b"http/1.1".to_vec()],
+        ] {
+            let supported = protocols.iter().all(|protocol| protocol == b"http/1.1");
+            let mut tls = rustls::ClientConfig::builder()
+                .with_root_certificates(rustls::RootCertStore::empty())
+                .with_no_client_auth();
+            tls.alpn_protocols = protocols;
+            let result = unifi::async_std::Client::with_tls_config(
+                "https://controller.test",
+                "",
+                Authentication::None,
+                Arc::new(tls),
+                unifi::host::Limits::default(),
+            );
+            assert_eq!(result.is_ok(), supported);
+        }
+    }
+    #[cfg(feature = "async_std")]
+    #[test]
     fn async_std_uses_injected_tls_configuration() {
         configured_tls(
             |url, der| {
