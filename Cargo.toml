@@ -1,0 +1,32 @@
+[workspace]
+members = []
+default-members = ["."]
+resolver = "2"
+
+[package]
+name = "unifi"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.91"
+description = "Allocation-free UniFi API client for embedded Rust"
+license = "MIT"
+
+[features]
+default = []
+serde = ["dep:serde", "dep:serde-json-core", "heapless/serde"]
+
+[dependencies]
+reqwless = { version = "0.14", default-features = false }
+heapless = "0.9"
+embedded-io = "0.7"
+embedded-io-async = "0.7"
+serde = { version = "1", default-features = false, features = ["derive"], optional = true }
+serde-json-core = { version = "0.6", default-features = false, optional = true }
+
+[profile.release]
+panic = "abort"
+lto = true
+codegen-units = 1
+
+[profile.dev]
+panic = "abort"
