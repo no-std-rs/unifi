@@ -195,14 +195,15 @@ impl Call {
         if name.is_empty() || (!self.raw && !self.operation.query.iter().any(|p| p.name == name)) {
             return Err(BuildError::InvalidParameter);
         }
-        let mut encoded = String::<128>::new();
-        encode(&mut encoded, name, true)?;
         let previous = core::mem::take(&mut self.path);
         let (path, query) = previous.split_once('?').unwrap_or((&previous, ""));
         self.path.push_str(path).map_err(|_| BuildError::Capacity)?;
         let mut first = true;
         for part in query.split('&').filter(|p| !p.is_empty()) {
-            if part.split_once('=').map(|(key, _)| key).unwrap_or(part) == encoded {
+            if query_name_equals(
+                part.split_once('=').map(|(key, _)| key).unwrap_or(part),
+                name,
+            ) {
                 continue;
             }
             self.path
@@ -245,6 +246,36 @@ impl Call {
         }
         Ok(())
     }
+}
+
+fn query_name_equals(encoded: &str, name: &str) -> bool {
+    let mut remaining = encoded.as_bytes();
+    for expected in name.bytes() {
+        let Some((&byte, rest)) = remaining.split_first() else {
+            return false;
+        };
+        let decoded = if byte == b'%' {
+            let Some((&high, rest)) = rest.split_first() else {
+                return false;
+            };
+            let Some((&low, rest)) = rest.split_first() else {
+                return false;
+            };
+            let (Some(high), Some(low)) = ((high as char).to_digit(16), (low as char).to_digit(16))
+            else {
+                return false;
+            };
+            remaining = rest;
+            ((high << 4) | low) as u8
+        } else {
+            remaining = rest;
+            byte
+        };
+        if decoded != expected {
+            return false;
+        }
+    }
+    remaining.is_empty()
 }
 
 pub(crate) fn encode<const N: usize>(

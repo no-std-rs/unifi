@@ -187,8 +187,30 @@ impl<'a> Client<'a> {
         .await
     }
 
+    /// Execute and atomically apply cookie/CSRF response headers to a session jar.
+    /// Borrow outgoing authentication from a separate credential snapshot of the jar.
+    pub async fn execute_with_session<'b, IO: Read + Write, const C: usize, const T: usize>(
+        &self,
+        io: &mut IO,
+        call: &Call,
+        body: Option<Body<'_>>,
+        headers: &mut [u8],
+        output: &'b mut [u8],
+        session: &mut crate::session::Session<C, T>,
+    ) -> Result<Response<'b>, Error> {
+        let mut pending = session.response_update();
+        let response = self
+            .execute_with(io, call, body, headers, output, |name, value| {
+                pending.observe(name, value)
+            })
+            .await?;
+        *session = pending.finish();
+        Ok(response)
+    }
+
     /// Execute a JSON, binary or multipart request. Observe response headers before reading its body.
     /// The observer can update a host-scoped session cookie jar. No credentials are retried or replayed.
+    /// Use `execute_with_session` to commit related cookie/CSRF headers atomically.
     pub async fn execute_with<'b, IO: Read + Write>(
         &self,
         io: &mut IO,

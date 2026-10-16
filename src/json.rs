@@ -1,6 +1,9 @@
 //! Borrowed JSON views with bounded nesting, complete validation, and no allocation.
 use heapless::String;
 
+#[cfg(feature = "serde")]
+mod serde_adapter;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum JsonError {
     Syntax,
@@ -95,9 +98,7 @@ impl<'a> Json<'a> {
     /// Deserialize into caller-defined serde types, with caller-owned string escape scratch.
     #[cfg(feature = "serde")]
     pub fn decode<T: serde::de::Deserialize<'a>>(self, scratch: &mut [u8]) -> Result<T, JsonError> {
-        serde_json_core::from_slice_escaped(self.0.as_bytes(), scratch)
-            .map(|(v, _)| v)
-            .map_err(|_| JsonError::Decode)
+        serde_adapter::decode(self.0.as_bytes(), scratch)
     }
 }
 

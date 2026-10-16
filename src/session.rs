@@ -57,13 +57,45 @@ impl<const C: usize, const T: usize> Session<C, T> {
             csrf: (!self.csrf.is_empty()).then_some(self.csrf.as_str()),
         })
     }
-    /// Pass this method to `Client::execute_with`'s response header observer.
+    /// Apply an isolated header. For a complete response use `observe_response` or
+    /// `Client::execute_with_session`, which apply related headers atomically.
     /// Capacity errors are explicit; cookie replacement is transactional.
     /// If the client authenticates with this jar, first clone it into a credential snapshot
     /// and borrow the client's authentication from that snapshot. The response observer
     /// can then mutate the original jar while the outgoing credentials remain stable.
     /// This copies bounded, inline buffers and does not allocate.
     pub fn observe(&mut self, name: &str, bytes: &[u8]) -> Result<(), BuildError> {
+        self.apply_header(name, bytes, true)
+    }
+
+    /// Apply one response's headers together, independently of cookie/CSRF header order.
+    /// Invalid or oversized values leave the original jar unchanged.
+    pub fn observe_response<'h>(
+        &mut self,
+        headers: impl IntoIterator<Item = (&'h str, &'h [u8])>,
+    ) -> Result<(), BuildError> {
+        let mut pending = self.response_update();
+        for (name, value) in headers {
+            pending.observe(name, value)?;
+        }
+        *self = pending.finish();
+        Ok(())
+    }
+
+    pub(crate) fn response_update(&self) -> ResponseUpdate<C, T> {
+        ResponseUpdate {
+            pending: self.clone(),
+            ended: false,
+            csrf_updated: false,
+        }
+    }
+
+    fn apply_header(
+        &mut self,
+        name: &str,
+        bytes: &[u8],
+        clear_empty: bool,
+    ) -> Result<(), BuildError> {
         if name.eq_ignore_ascii_case("x-csrf-token")
             || name.eq_ignore_ascii_case("x-updated-csrf-token")
         {
@@ -111,11 +143,35 @@ impl<const C: usize, const T: usize> Session<C, T> {
                 cookie.push_str(pair).map_err(|_| BuildError::Capacity)?;
             }
             self.cookie = cookie;
-            if self.cookie.is_empty() {
+            if clear_empty && self.cookie.is_empty() {
                 self.csrf.clear();
             }
         }
         Ok(())
+    }
+}
+
+pub(crate) struct ResponseUpdate<const C: usize, const T: usize> {
+    pending: Session<C, T>,
+    ended: bool,
+    csrf_updated: bool,
+}
+
+impl<const C: usize, const T: usize> ResponseUpdate<C, T> {
+    pub(crate) fn observe(&mut self, name: &str, value: &[u8]) -> Result<(), BuildError> {
+        let had_cookie = !self.pending.cookie.is_empty();
+        self.pending.apply_header(name, value, false)?;
+        self.ended |= had_cookie && self.pending.cookie.is_empty();
+        self.csrf_updated |= name.eq_ignore_ascii_case("x-csrf-token")
+            || name.eq_ignore_ascii_case("x-updated-csrf-token");
+        Ok(())
+    }
+
+    pub(crate) fn finish(mut self) -> Session<C, T> {
+        if self.pending.cookie.is_empty() || (self.ended && !self.csrf_updated) {
+            self.pending.csrf.clear();
+        }
+        self.pending
     }
 }
 

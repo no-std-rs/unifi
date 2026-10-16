@@ -313,13 +313,13 @@ fn authenticated_response_rotates_the_same_session_using_a_snapshot() {
     let client =
         Client::with_authentication("h", "", credentials.authentication().unwrap()).unwrap();
     let mut mock = Mock::new(b"HTTP/1.1 200 OK\r\nSet-Cookie: TOKEN=new; Path=/\r\nX-CSRF-Token: csrf-new\r\nContent-Length: 0\r\n\r\n");
-    run(client.execute_with(
+    run(client.execute_with_session(
         &mut mock,
         &unifi::Call::raw(unifi::Method::GET, "/session").unwrap(),
         None,
         &mut [0; 512],
         &mut [0; 128],
-        |name, value| session.observe(name, value),
+        &mut session,
     ))
     .unwrap();
     let request = core::str::from_utf8(&mock.output).unwrap();
