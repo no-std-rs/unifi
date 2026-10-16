@@ -186,6 +186,11 @@ impl<IO: Read + Write> WebSocket<IO> {
             return Err(Error::Protocol);
         }
         self.failed = true;
+        self.write_frame(opcode, bytes, mask).await?;
+        self.failed = false;
+        Ok(())
+    }
+    async fn write_frame(&mut self, opcode: u8, bytes: &[u8], mask: [u8; 4]) -> Result<(), Error> {
         let mut header = heapless::Vec::<u8, 14>::new();
         header.push(0x80 | opcode).unwrap();
         if bytes.len() < 126 {
@@ -216,11 +221,10 @@ impl<IO: Read + Write> WebSocket<IO> {
             offset += bytes.len();
         }
         self.io.flush().await.map_err(transport)?;
-        self.failed = false;
         Ok(())
     }
     /// Reassemble fragmented messages, answer pings and validate UTF-8 and close frames.
-    /// A capacity/protocol/I/O error poisons the stream; reconnect rather than attempting to resume.
+    /// An error or cancellation poisons the stream; reconnect rather than attempting to resume.
     pub async fn receive<'a>(
         &mut self,
         output: &'a mut [u8],
@@ -229,10 +233,9 @@ impl<IO: Read + Write> WebSocket<IO> {
         if self.closed || self.failed {
             return Err(Error::Closed);
         }
+        self.failed = true;
         let result = self.receive_inner(output, masks).await;
-        if result.is_err() {
-            self.failed = true;
-        }
+        self.failed = result.is_err();
         result
     }
     async fn receive_inner<'a>(
@@ -281,7 +284,7 @@ impl<IO: Read + Write> WebSocket<IO> {
                 let length = length as usize;
                 exact(&mut self.io, &mut payload[..length]).await?;
                 if opcode == 9 {
-                    self.send(10, &payload[..length], masks()?).await?;
+                    self.write_frame(10, &payload[..length], masks()?).await?;
                 }
                 if opcode == 8 {
                     if length == 1 {
@@ -296,7 +299,7 @@ impl<IO: Read + Write> WebSocket<IO> {
                             .map_err(|_| Error::Protocol)?;
                     let reason = String::try_from(text).map_err(|_| Error::Capacity)?;
                     if !self.close_sent {
-                        self.send(8, &payload[..length], masks()?).await?;
+                        self.write_frame(8, &payload[..length], masks()?).await?;
                         self.close_sent = true;
                     }
                     self.closed = true;

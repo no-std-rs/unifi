@@ -55,6 +55,32 @@ fn header_value(value: &str) -> bool {
     !value.is_empty() && value.bytes().all(|b| (32..127).contains(&b))
 }
 
+trait HeaderObserver {
+    fn header(&mut self, name: &str, value: &[u8]) -> Result<(), BuildError>;
+    fn complete(self);
+}
+
+struct HeaderCallback<F>(F);
+impl<F: FnMut(&str, &[u8]) -> Result<(), BuildError>> HeaderObserver for HeaderCallback<F> {
+    fn header(&mut self, name: &str, value: &[u8]) -> Result<(), BuildError> {
+        (self.0)(name, value)
+    }
+    fn complete(self) {}
+}
+
+struct SessionHeaders<'a, const C: usize, const T: usize> {
+    session: &'a mut crate::session::Session<C, T>,
+    update: crate::session::ResponseUpdate<C, T>,
+}
+impl<const C: usize, const T: usize> HeaderObserver for SessionHeaders<'_, C, T> {
+    fn header(&mut self, name: &str, value: &[u8]) -> Result<(), BuildError> {
+        self.update.observe(name, value)
+    }
+    fn complete(self) {
+        *self.session = self.update.finish();
+    }
+}
+
 #[derive(Debug)]
 pub enum Error {
     Build(BuildError),
@@ -189,6 +215,7 @@ impl<'a> Client<'a> {
 
     /// Execute and atomically apply cookie/CSRF response headers to a session jar.
     /// Borrow outgoing authentication from a separate credential snapshot of the jar.
+    /// Validated headers are committed even if reading the response body fails.
     pub async fn execute_with_session<'b, IO: Read + Write, const C: usize, const T: usize>(
         &self,
         io: &mut IO,
@@ -198,14 +225,16 @@ impl<'a> Client<'a> {
         output: &'b mut [u8],
         session: &mut crate::session::Session<C, T>,
     ) -> Result<Response<'b>, Error> {
-        let mut pending = session.response_update();
-        let response = self
-            .execute_with(io, call, body, headers, output, |name, value| {
-                pending.observe(name, value)
-            })
-            .await?;
-        *session = pending.finish();
-        Ok(response)
+        let update = session.response_update();
+        self.execute_observed(
+            io,
+            call,
+            body,
+            headers,
+            output,
+            SessionHeaders { session, update },
+        )
+        .await
     }
 
     /// Execute a JSON, binary or multipart request. Observe response headers before reading its body.
@@ -218,7 +247,20 @@ impl<'a> Client<'a> {
         body: Option<Body<'_>>,
         headers: &mut [u8],
         output: &'b mut [u8],
-        mut on_header: impl FnMut(&str, &[u8]) -> Result<(), BuildError>,
+        on_header: impl FnMut(&str, &[u8]) -> Result<(), BuildError>,
+    ) -> Result<Response<'b>, Error> {
+        self.execute_observed(io, call, body, headers, output, HeaderCallback(on_header))
+            .await
+    }
+
+    async fn execute_observed<'b, IO: Read + Write>(
+        &self,
+        io: &mut IO,
+        call: &Call,
+        body: Option<Body<'_>>,
+        headers: &mut [u8],
+        output: &'b mut [u8],
+        mut observer: impl HeaderObserver,
     ) -> Result<Response<'b>, Error> {
         call.validate(body.map(Body::bytes))?;
         if let Some(Body::Json(bytes)) = body {
@@ -267,11 +309,14 @@ impl<'a> Client<'a> {
             .map_err(|e| reqwless::Error::Network(embedded_io::Error::kind(&e)))?;
         let response = response::Response::read(io, call.operation.method, headers).await?;
         let status = response.status.0;
+        for (name, value) in response.headers() {
+            observer.header(name, value)?;
+        }
+        observer.complete();
         let mut retry_after = None;
         let mut seen_length = None;
         let mut seen_transfer = false;
         for (name, value) in response.headers() {
-            on_header(name, value)?;
             if name.eq_ignore_ascii_case("content-length") {
                 let length = core::str::from_utf8(value)
                     .ok()

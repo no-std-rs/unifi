@@ -165,3 +165,52 @@ fn invalid_response_headers_leave_the_original_session_intact() {
         })
     ));
 }
+
+#[test]
+fn deleting_a_stored_cookie_invalidates_csrf_even_with_auxiliary_cookies() {
+    let mut session =
+        Session::<128, 32>::from_cookie("TOKEN=old; other=x", Some("csrf-old")).unwrap();
+    session
+        .observe_response([("Set-Cookie", b"TOKEN=; Max-Age=0".as_slice())])
+        .unwrap();
+    session.observe("Set-Cookie", b"TOKEN=new").unwrap();
+    assert!(matches!(
+        session.authentication(),
+        Some(Authentication::Session { csrf: None, .. })
+    ));
+    let mut session =
+        Session::<128, 32>::from_cookie("TOKEN=old; other=x", Some("csrf-old")).unwrap();
+    session
+        .observe_response([
+            ("X-Updated-CSRF-Token", b"csrf-new".as_slice()),
+            ("Set-Cookie", b"TOKEN=; Max-Age=0".as_slice()),
+        ])
+        .unwrap();
+    assert!(matches!(
+        session.authentication(),
+        Some(Authentication::Session {
+            cookie: "other=x",
+            csrf: Some("csrf-new")
+        })
+    ));
+}
+
+#[test]
+fn cookie_names_accept_http_tokens_and_reject_separators() {
+    for character in "!#$%&'*+-.^_`|~".chars() {
+        let cookie = format!("auth{character}token=value");
+        let session = Session::<64, 32>::from_cookie(&cookie, None).unwrap();
+        assert!(
+            matches!(session.authentication(), Some(Authentication::Session { cookie: value, .. }) if value == cookie)
+        );
+    }
+    for character in "()<>@,:\\\"/[]?{} \t\r\n".chars() {
+        let cookie = format!("auth{character}token=value");
+        assert!(
+            Session::<64, 32>::default()
+                .observe("Set-Cookie", cookie.as_bytes())
+                .is_err(),
+            "invalid name character {character:?}"
+        );
+    }
+}

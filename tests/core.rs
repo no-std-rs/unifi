@@ -383,6 +383,100 @@ fn updated_csrf_headers_rotate_tokens_and_validate_values() {
     }
 }
 
+#[test]
+fn complete_session_headers_survive_body_read_failures() {
+    use unifi::{Authentication, session::Session};
+    for body in [b"abcdefgh".as_slice(), b"ab"] {
+        let mut wire = b"HTTP/1.1 200 OK\r\nSet-Cookie: TOKEN=new\r\nX-Updated-CSRF-Token: csrf-new\r\nContent-Length: 8\r\n\r\n".to_vec();
+        wire.extend_from_slice(body);
+        let mut mock = Mock::new(&wire);
+        let mut session = Session::<64, 32>::default();
+        let client = Client::with_authentication("h", "", Authentication::None).unwrap();
+        assert!(
+            run(client.execute_with_session(
+                &mut mock,
+                &unifi::Call::raw(unifi::Method::GET, "/login").unwrap(),
+                None,
+                &mut [0; 512],
+                &mut [0; 4],
+                &mut session,
+            ))
+            .is_err()
+        );
+        assert!(matches!(
+            session.authentication(),
+            Some(Authentication::Session {
+                cookie: "TOKEN=new",
+                csrf: Some("csrf-new")
+            })
+        ));
+    }
+}
+
+struct PauseAfter {
+    inner: Mock,
+    limit: usize,
+}
+impl embedded_io::ErrorType for PauseAfter {
+    type Error = embedded_io::ErrorKind;
+}
+impl embedded_io_async::Read for PauseAfter {
+    async fn read(&mut self, bytes: &mut [u8]) -> Result<usize, Self::Error> {
+        if self.inner.cursor == self.limit {
+            core::future::pending::<()>().await;
+        }
+        let count = bytes.len().min(self.limit - self.inner.cursor);
+        embedded_io_async::Read::read(&mut self.inner, &mut bytes[..count]).await
+    }
+}
+impl embedded_io_async::Write for PauseAfter {
+    async fn write(&mut self, bytes: &[u8]) -> Result<usize, Self::Error> {
+        embedded_io_async::Write::write(&mut self.inner, bytes).await
+    }
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        embedded_io_async::Write::flush(&mut self.inner).await
+    }
+}
+
+#[test]
+fn cancelled_websocket_receive_poisons_the_partial_frame() {
+    use unifi::websocket::{self, Error};
+    let inner = websocket_mock(&[0x81, 3, b'a', b'b', b'c']);
+    let limit = inner
+        .input
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .unwrap()
+        + 7;
+    let mut mock = PauseAfter { inner, limit };
+    let client = Client::new("h", "", "k").unwrap();
+    let call = unifi::Call::raw(unifi::Method::GET, "/events").unwrap();
+    let mut headers = [0; 512];
+    let mut socket = run(websocket::connect(
+        &client,
+        &mut mock,
+        &call,
+        *b"the sample nonce",
+        &mut headers,
+    ))
+    .unwrap();
+    let mut output = [0; 32];
+    let mut masks = || Ok([0; 4]);
+    {
+        let mut future = core::pin::pin!(socket.receive(&mut output, &mut masks));
+        let mut context = Context::from_waker(Waker::noop());
+        assert!(matches!(future.as_mut().poll(&mut context), Poll::Pending));
+    }
+    assert!(matches!(
+        run(socket.receive(&mut output, &mut masks)),
+        Err(Error::Closed)
+    ));
+    assert!(matches!(
+        run(socket.text("late", [0; 4])),
+        Err(Error::Closed)
+    ));
+}
+
 fn websocket_mock(frames: &[u8]) -> Mock {
     let mut wire = b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n".to_vec();
     wire.extend_from_slice(frames);

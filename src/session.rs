@@ -4,6 +4,7 @@ use crate::{Authentication, BuildError, Json, JsonError};
 use heapless::String;
 
 /// Captures cookies and CSRF tokens without storing passwords or replaying requests.
+/// This clock-free jar handles explicit deletion; wall-clock expiry is caller-managed.
 #[derive(Clone)]
 pub struct Session<const COOKIE: usize = 4096, const CSRF: usize = 512> {
     cookie: String<COOKIE>,
@@ -65,11 +66,12 @@ impl<const C: usize, const T: usize> Session<C, T> {
     /// can then mutate the original jar while the outgoing credentials remain stable.
     /// This copies bounded, inline buffers and does not allocate.
     pub fn observe(&mut self, name: &str, bytes: &[u8]) -> Result<(), BuildError> {
-        self.apply_header(name, bytes, true)
+        self.apply_header(name, bytes, true).map(|_| ())
     }
 
     /// Apply one response's headers together, independently of cookie/CSRF header order.
     /// Invalid or oversized values leave the original jar unchanged.
+    /// Removing a stored cookie invalidates CSRF unless the response supplies a fresh token.
     pub fn observe_response<'h>(
         &mut self,
         headers: impl IntoIterator<Item = (&'h str, &'h [u8])>,
@@ -85,7 +87,7 @@ impl<const C: usize, const T: usize> Session<C, T> {
     pub(crate) fn response_update(&self) -> ResponseUpdate<C, T> {
         ResponseUpdate {
             pending: self.clone(),
-            ended: false,
+            csrf_invalidated: false,
             csrf_updated: false,
         }
     }
@@ -95,7 +97,8 @@ impl<const C: usize, const T: usize> Session<C, T> {
         name: &str,
         bytes: &[u8],
         clear_empty: bool,
-    ) -> Result<(), BuildError> {
+    ) -> Result<bool, BuildError> {
+        let mut removed = false;
         if name.eq_ignore_ascii_case("x-csrf-token")
             || name.eq_ignore_ascii_case("x-updated-csrf-token")
         {
@@ -112,7 +115,7 @@ impl<const C: usize, const T: usize> Session<C, T> {
             if key.is_empty()
                 || !key
                     .bytes()
-                    .all(|b| b.is_ascii_alphanumeric() || b"_-".contains(&b))
+                    .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
                 || !val
                     .bytes()
                     .all(|b| (33..127).contains(&b) && !b";\"\\,".contains(&b))
@@ -129,6 +132,7 @@ impl<const C: usize, const T: usize> Session<C, T> {
             let mut cookie = String::<C>::new();
             for old in self.cookie.split("; ").filter(|s| !s.is_empty()) {
                 if old.split_once('=').is_some_and(|(k, _)| k == key) {
+                    removed |= remove;
                     continue;
                 }
                 if !cookie.is_empty() {
@@ -143,32 +147,30 @@ impl<const C: usize, const T: usize> Session<C, T> {
                 cookie.push_str(pair).map_err(|_| BuildError::Capacity)?;
             }
             self.cookie = cookie;
-            if clear_empty && self.cookie.is_empty() {
+            if clear_empty && (removed || self.cookie.is_empty()) {
                 self.csrf.clear();
             }
         }
-        Ok(())
+        Ok(removed)
     }
 }
 
 pub(crate) struct ResponseUpdate<const C: usize, const T: usize> {
     pending: Session<C, T>,
-    ended: bool,
+    csrf_invalidated: bool,
     csrf_updated: bool,
 }
 
 impl<const C: usize, const T: usize> ResponseUpdate<C, T> {
     pub(crate) fn observe(&mut self, name: &str, value: &[u8]) -> Result<(), BuildError> {
-        let had_cookie = !self.pending.cookie.is_empty();
-        self.pending.apply_header(name, value, false)?;
-        self.ended |= had_cookie && self.pending.cookie.is_empty();
+        self.csrf_invalidated |= self.pending.apply_header(name, value, false)?;
         self.csrf_updated |= name.eq_ignore_ascii_case("x-csrf-token")
             || name.eq_ignore_ascii_case("x-updated-csrf-token");
         Ok(())
     }
 
     pub(crate) fn finish(mut self) -> Session<C, T> {
-        if self.pending.cookie.is_empty() || (self.ended && !self.csrf_updated) {
+        if self.pending.cookie.is_empty() || (self.csrf_invalidated && !self.csrf_updated) {
             self.pending.csrf.clear();
         }
         self.pending
