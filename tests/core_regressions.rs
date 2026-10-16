@@ -214,3 +214,35 @@ fn cookie_names_accept_http_tokens_and_reject_separators() {
         );
     }
 }
+
+#[test]
+fn quoted_cookie_values_are_retained_and_validated() {
+    for cookie in [r#"TOKEN="abc""#, r#"TOKEN="abc=123""#] {
+        let session = Session::<64, 32>::from_cookie(cookie, None).unwrap();
+        assert!(
+            matches!(session.authentication(), Some(Authentication::Session { cookie: actual, .. }) if actual == cookie)
+        );
+    }
+    for cookie in [
+        r#"TOKEN="abc"#,
+        r#"TOKEN=abc""#,
+        r#"TOKEN="a b""#,
+        r#"TOKEN="a\b""#,
+    ] {
+        assert!(
+            Session::<64, 32>::default()
+                .observe("Set-Cookie", cookie.as_bytes())
+                .is_err()
+        );
+    }
+    let mut session = Session::<64, 32>::from_cookie("TOKEN=old", Some("csrf-old")).unwrap();
+    session
+        .observe_response([("Set-Cookie", br#"TOKEN="""#.as_slice())])
+        .unwrap();
+    assert!(session.authentication().is_none());
+    session.observe("Set-Cookie", b"TOKEN=new").unwrap();
+    assert!(matches!(
+        session.authentication(),
+        Some(Authentication::Session { csrf: None, .. })
+    ));
+}

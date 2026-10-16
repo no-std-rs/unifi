@@ -112,17 +112,21 @@ impl<const C: usize, const T: usize> Session<C, T> {
             let mut attributes = value.split(';');
             let pair = attributes.next().ok_or(BuildError::InvalidHeader)?.trim();
             let (key, val) = pair.split_once('=').ok_or(BuildError::InvalidHeader)?;
+            let unquoted = val
+                .strip_prefix('"')
+                .and_then(|v| v.strip_suffix('"'))
+                .unwrap_or(val);
             if key.is_empty()
                 || !key
                     .bytes()
                     .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
-                || !val
+                || !unquoted
                     .bytes()
                     .all(|b| (33..127).contains(&b) && !b";\"\\,".contains(&b))
             {
                 return Err(BuildError::InvalidHeader);
             }
-            let remove = val.is_empty()
+            let remove = unquoted.is_empty()
                 || attributes.any(|v| {
                     v.trim().split_once('=').is_some_and(|(k, v)| {
                         k.eq_ignore_ascii_case("max-age")
