@@ -1364,9 +1364,9 @@ fn app(
             &options,
             response,
         )?;
-        profile_file.select_site(selected_profile, &selected)?;
+        profile_file.select_site(selected_profile, &selected, &console)?;
         if !options.quiet {
-            output!("Site selector saved to profile {selected_profile}.\n");
+            output!("Console and site saved to profile {selected_profile}.\n");
         }
         return Ok(0);
     }
@@ -1951,9 +1951,19 @@ fn app(
                 &options,
                 response_buffer,
             )?
+        } else if let Some(selector) = options.site.filter(|site| *site != "default") {
+            lookup::resolve(
+                &url,
+                &base,
+                key,
+                unifi::session_api::list_sites().unwrap(),
+                selector,
+                "name",
+                &options,
+                response_buffer,
+            )?
         } else {
-            heapless::String::<512>::try_from(options.site.unwrap_or("default"))
-                .map_err(|_| "site selector too long")?
+            heapless::String::<512>::try_from("default").unwrap()
         };
         options.site = Some(&session_site);
         params
@@ -2554,14 +2564,16 @@ fn app(
         }
         return Ok(0);
     }
+    let binary_response = (surface == Surface::Protect && op.path.ends_with("/snapshot"))
+        || op.id == "downloadBackup"
+        || op.id == "downloadOpenvpnConfiguration";
     if let Some(file) = options.save {
-        if options.demo
-            || (positionals.first() == Some(&"settings") || positionals.first() == Some(&"vpn"))
-                && op.id != "downloadOpenvpnConfiguration"
-        {
-            let json = response
-                .json()
-                .map_err(|_| "cannot sanitize non-JSON response")?;
+        if binary_response {
+            if options.demo {
+                return Err("demo mode cannot sanitize binary responses");
+            }
+            save_file(file, response.body)?;
+        } else if let Ok(json) = response.json() {
             let json = payload::sanitize(
                 json,
                 options.demo,
@@ -2569,15 +2581,14 @@ fn app(
                 &mut storage.sanitized,
             )?;
             save_file(file, json.raw().as_bytes())?;
+        } else if options.demo || matches!(positionals.first(), Some(&"settings" | &"vpn")) {
+            return Err("cannot sanitize non-JSON response");
         } else {
             save_file(file, response.body)?;
         }
         return Ok(0);
     }
-    if (surface == Surface::Protect && op.path.ends_with("/snapshot"))
-        || op.id == "downloadBackup"
-        || op.id == "downloadOpenvpnConfiguration"
-    {
+    if binary_response {
         if options.demo {
             return Err("demo mode cannot sanitize binary responses");
         }

@@ -34,7 +34,19 @@ class CliRegressionTests(unittest.TestCase):
 
             def do_GET(self):
                 requests.append(('GET', self.path, None))
-                if '/firewall/zones' in self.path:
+                path = self.path.split('?')[0]
+                if path.endswith('/snapshot'):
+                    self.reply_bytes(b'\xff\xd8fixture\x00\xff\xd9', 'image/jpeg')
+                    return
+                if path.endswith('/api/self/sites'):
+                    value = {'meta': {'rc': 'ok'}, 'data': [
+                        {'_id': SITE, 'name': 'branch42', 'desc': 'Branch Office'}]}
+                elif path.endswith('/stat/health'):
+                    value = {'meta': {'rc': 'ok'}, 'data': [{'subsystem': 'www', 'status': 'ok'}]}
+                elif path.endswith('/v1/sites'):
+                    value = {'data': [{'id': SITE, 'name': 'Branch Office',
+                                       'internalReference': 'branch42'}], 'count': 1, 'totalCount': 1}
+                elif '/firewall/zones' in self.path:
                     value = {'data': [{'id': ZONE, 'name': 'Trusted'}], 'count': 1, 'totalCount': 1}
                 elif self.path.split('?')[0].endswith('/networks'):
                     value = {'data': [{'id': NETWORK, 'name': 'Lab'}], 'count': 1, 'totalCount': 1}
@@ -53,9 +65,11 @@ class CliRegressionTests(unittest.TestCase):
             do_PUT = do_POST
 
             def reply(self, value):
-                data = json.dumps(value).encode()
+                self.reply_bytes(json.dumps(value).encode(), 'application/json')
+
+            def reply_bytes(self, data, content_type):
                 self.send_response(200)
-                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Type', content_type)
                 self.send_header('Content-Length', str(len(data)))
                 self.end_headers()
                 self.wfile.write(data)
@@ -70,9 +84,9 @@ class CliRegressionTests(unittest.TestCase):
         self.thread.join()
         self.directory.cleanup()
 
-    def run_cli(self, *args):
+    def run_cli(self, *args, site=SITE):
         binary = Path(os.environ.get('CARGO_TARGET_DIR', ROOT / 'target')) / 'debug/unifi'
-        return subprocess.run([str(binary), *args, '--site', SITE, '--controller',
+        return subprocess.run([str(binary), *args, '--site', site, '--controller',
                                f'http://127.0.0.1:{self.server.server_port}'],
                               cwd=self.directory.name, env=self.env,
                               capture_output=True, text=True, timeout=10)
@@ -126,3 +140,49 @@ class CliRegressionTests(unittest.TestCase):
         self.assertEqual(reply.returncode, 2, reply.stderr)
         self.assertIn('capacity', reply.stderr)
         self.assertEqual(self.requests, [])
+
+    def test_json_saves_redact_secrets_unless_requested(self):
+        for with_secrets in [False, True]:
+            with self.subTest(with_secrets=with_secrets):
+                destination = Path(self.directory.name) / 'wifi.json'
+                flags = ['--with-secrets'] if with_secrets else []
+                reply = self.run_cli('wifi', 'get', RESOURCE, '--save', str(destination), *flags)
+                self.assertEqual(reply.returncode, 0, reply.stderr)
+                saved = destination.read_text()
+                self.assertEqual('fixture-wifi-secret' in saved, with_secrets)
+                self.assertEqual('fixture-private-secret' in saved, with_secrets)
+
+    def test_binary_saves_preserve_bytes_and_reject_demo(self):
+        destination = Path(self.directory.name) / 'snapshot.jpg'
+        reply = self.run_cli('protect', 'cameras', 'snapshot', RESOURCE, '--save', str(destination))
+        self.assertEqual(reply.returncode, 0, reply.stderr)
+        self.assertEqual(destination.read_bytes(), b'\xff\xd8fixture\x00\xff\xd9')
+        destination.unlink()
+        reply = self.run_cli('protect', 'cameras', 'snapshot', RESOURCE, '--save', str(destination), '--demo')
+        self.assertEqual(reply.returncode, 2, reply.stderr)
+        self.assertFalse(destination.exists())
+
+    def test_direct_session_site_selectors_use_internal_names(self):
+        for standalone in [False, True]:
+            for selector in ['Branch Office', SITE, 'branch42']:
+                with self.subTest(standalone=standalone, selector=selector):
+                    self.requests.clear()
+                    flags = ['--standalone'] if standalone else []
+                    reply = self.run_cli('system', 'health', *flags, site=selector)
+                    self.assertEqual(reply.returncode, 0, reply.stderr)
+                    self.assertTrue(self.requests[-1][1].endswith('/api/s/branch42/stat/health'))
+        self.requests.clear()
+        reply = self.run_cli('system', 'health', site='default')
+        self.assertEqual(reply.returncode, 0, reply.stderr)
+        self.assertEqual(len(self.requests), 1)
+
+    def test_cloud_switch_saves_console_and_site_together(self):
+        path = Path(self.env['UNIFI_CONFIG'])
+        path.write_text(json.dumps({'activeProfile': 'cloud', 'profiles': {'cloud': {
+            'authMode': 'cloud', 'console': 'console-a', 'site': 'old-site', 'unrelated': 'keep'}}}))
+        reply = self.run_cli('cloud', 'switch', 'Branch Office', '--console', 'console-b')
+        self.assertEqual(reply.returncode, 0, reply.stderr)
+        saved = json.loads(path.read_text())['profiles']['cloud']
+        self.assertEqual(saved['console'], 'console-b')
+        self.assertEqual(saved['site'], 'branch42')
+        self.assertEqual(saved['unrelated'], 'keep')

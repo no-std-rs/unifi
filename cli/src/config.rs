@@ -230,14 +230,30 @@ impl File {
             .map_err(|_| "session path too long")?;
         Ok(path)
     }
-    pub fn select_site(&self, profile: &str, site: &str) -> Result<(), &'static str> {
-        let mut buffer = [0; 4096];
-        let n = unifi::json::encode_to_slice(site, &mut buffer)
+    pub fn select_site(
+        &self,
+        profile: &str,
+        site: &str,
+        console: &str,
+    ) -> Result<(), &'static str> {
+        let mut patch = [0; 8192];
+        let mut writer = unifi::json::ObjectWriter::new(&mut patch).unwrap();
+        writer
+            .field("site", &site)
             .map_err(|_| "site selector too long")?;
-        self.update(
-            &["profiles", profile, "site"],
-            Json::parse(&buffer[..n]).unwrap(),
+        writer
+            .field("console", &console)
+            .map_err(|_| "console selector too long")?;
+        let patch = Json::parse(
+            writer
+                .finish()
+                .map_err(|_| "profile patch exceeds capacity")?,
         )
+        .unwrap();
+        let current = self.profile(profile)?.ok_or("profile does not exist")?;
+        let mut output = [0; 65536];
+        let updated = crate::payload::merge_objects(current, Some(patch), &[], &mut output)?;
+        self.update(&["profiles", profile], updated)
     }
     pub fn secret_reference(
         &self,

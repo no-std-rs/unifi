@@ -40,6 +40,7 @@ fn matches(value: Json<'_>, wanted: &str) -> bool {
         "id",
         "_id",
         "name",
+        "desc",
         "hostname",
         "mac",
         "macAddress",
