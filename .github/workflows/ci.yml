@@ -36,25 +36,8 @@ jobs:
         with:
           shared-key: native
           cache-on-failure: true
-      - name: Bootstrap or verify workspace
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ ! -f Cargo.toml ]]; then
-            echo "Bootstrap main: implementation arrives in a pull request."
-            exit 0
-          fi
-          cargo fmt --all --check
-          python3 tools/generate.py --check
-          cargo test --locked
-          cargo test --locked --all-features
-          cargo clippy --locked -p unifi --all-targets --all-features -- -D warnings
-          cargo clippy --locked -p unifi-cli --bin unifi -- -D warnings
-          cargo build --locked -p unifi-cli --timings
-          python3 -m venv /tmp/unifi-test-env
-          /tmp/unifi-test-env/bin/pip install --disable-pip-version-check -r tools/requirements-test.txt
-          /tmp/unifi-test-env/bin/python -m unittest discover -s tests -p 'test_*.py' -v
-          python3 tools/check-no-allocator.py target/debug/unifi
+      - name: Verify the contents of this stack entry
+        run: python3 tools/ci-native.py
 
   embedded:
     name: Bare metal (Rust ${{ matrix.rust }})
