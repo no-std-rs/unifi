@@ -318,7 +318,9 @@ def generate(surface, request_models=None, model_names=None):
                 nullable = allows_null(value) or '$ref' in value and allows_null(schemas[value['$ref'].rsplit('/',1)[1]])
                 result_type = f'Option<{ty}>' if nullable else ty
                 expression = convert(ty,conv,'value')
-                if nullable: expression = f'if value.is_null() {{ Ok(None) }} else {{ {expression}.map(Some) }}'
+                if nullable:
+                    present = expression + '.map(Some)' if conv else 'Ok(Some(value))'
+                    expression = f'if value.is_null() {{ Ok(None) }} else {{ {present} }}'
                 out.append(f'pub fn {method}(self) -> Result<{result_type}, JsonError> {{\nlet value = self.0.required({quoted(field)})?;\n{expression}\n}}\n')
             else:
                 if not conv:

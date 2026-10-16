@@ -17,6 +17,7 @@ Available generated surfaces:
 
 - `site_manager`: 14 operations; [pinned source and provenance](schemas/README.md).
 - `network`: 73 operations; [pinned source and provenance](schemas/README.md).
+- `protect`: 74 operations; [pinned source and provenance](schemas/README.md).
 
 `python3 tools/generate.py --check` verifies the checked-in generated modules. Use `--surface NAME` to generate a new surface explicitly.
 
