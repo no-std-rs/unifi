@@ -23,6 +23,12 @@ embedded-io-async = "0.7"
 serde = { version = "1", default-features = false, features = ["derive"], optional = true }
 serde-json-core = { version = "0.6", default-features = false, optional = true }
 
+[dev-dependencies]
+serde_json = "1"
+
+[target.'cfg(unix)'.dev-dependencies]
+rustix = { version = "1.1", default-features = false, features = ["fs", "pipe", "event", "time", "process"] }
+
 [profile.release]
 panic = "abort"
 lto = true
