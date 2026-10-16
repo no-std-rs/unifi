@@ -47,7 +47,7 @@ impl Certificate {
     }
 }
 
-#[cfg(any(feature = "std", feature = "std_async"))]
+#[cfg(any(feature = "std", feature = "tokio"))]
 pub(crate) fn reqwest_roots(roots: Vec<Certificate>) -> Result<Vec<reqwest::Certificate>, Error> {
     roots
         .into_iter()
@@ -58,7 +58,7 @@ pub(crate) fn reqwest_roots(roots: Vec<Certificate>) -> Result<Vec<reqwest::Cert
 #[derive(Debug)]
 pub enum Error {
     Core(crate::Error),
-    #[cfg(any(feature = "std", feature = "std_async"))]
+    #[cfg(any(feature = "std", feature = "tokio"))]
     Transport(reqwest::Error),
     Io(std::io::Error),
     InvalidOrigin,
@@ -72,7 +72,7 @@ impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Core(e) => write!(f, "invalid UniFi request or session: {e:?}"),
-            #[cfg(any(feature = "std", feature = "std_async"))]
+            #[cfg(any(feature = "std", feature = "tokio"))]
             Self::Transport(e) => write!(f, "HTTP transport: {e}"),
             Self::Io(e) => write!(f, "response I/O: {e}"),
             Self::InvalidOrigin => f.write_str(
@@ -97,7 +97,7 @@ impl From<BuildError> for Error {
         Self::Core(e.into())
     }
 }
-#[cfg(any(feature = "std", feature = "std_async"))]
+#[cfg(any(feature = "std", feature = "tokio"))]
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
         Self::Transport(e)
@@ -263,7 +263,7 @@ fn authentication_headers(auth: Authentication<'_>) -> Result<HeaderMap, BuildEr
     }
     Ok(headers)
 }
-#[cfg(any(feature = "std", feature = "std_async"))]
+#[cfg(any(feature = "std", feature = "tokio"))]
 pub(crate) fn check_encoding(headers: &HeaderMap) -> Result<(), Error> {
     if headers
         .get_all("content-encoding")
@@ -274,7 +274,7 @@ pub(crate) fn check_encoding(headers: &HeaderMap) -> Result<(), Error> {
     }
     Ok(())
 }
-#[cfg(any(feature = "std", feature = "std_async"))]
+#[cfg(any(feature = "std", feature = "tokio"))]
 pub(crate) fn metadata(status: u16, headers: &HeaderMap) -> Response {
     Response {
         status,

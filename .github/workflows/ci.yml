@@ -70,4 +70,4 @@ jobs:
             exit 0
           fi
           cargo +${{ matrix.rust }} check --locked --lib --target riscv32imac-unknown-none-elf
-          cargo +${{ matrix.rust }} check --locked --lib --no-default-features --features serde,embassy --target riscv32imac-unknown-none-elf
+          cargo +${{ matrix.rust }} check --locked --lib --no-default-features --features serde --target riscv32imac-unknown-none-elf

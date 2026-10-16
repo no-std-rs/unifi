@@ -1,5 +1,5 @@
 //! Real loopback HTTP/TLS contracts shared by both optional host interfaces.
-#[cfg(any(feature = "std", feature = "std_async", feature = "async_std"))]
+#[cfg(any(feature = "std", feature = "tokio", feature = "async_std"))]
 mod host {
     use std::{
         io::{Read, Write},
@@ -117,16 +117,16 @@ mod host {
             self.0.execute_with_session(call, body, session)
         }
     }
-    #[cfg(feature = "std_async")]
+    #[cfg(feature = "tokio")]
     struct Async {
-        client: unifi::std_async::Client,
+        client: unifi::tokio::Client,
         runtime: tokio::runtime::Runtime,
     }
-    #[cfg(feature = "std_async")]
+    #[cfg(feature = "tokio")]
     impl Driver for Async {
         fn new(url: &str, auth: Authentication<'_>, options: Options) -> Result<Self, Error> {
             Ok(Self {
-                client: unifi::std_async::Client::with_options(
+                client: unifi::tokio::Client::with_options(
                     url,
                     "/proxy/network/integration",
                     auth,
@@ -420,19 +420,18 @@ mod host {
     }
     #[cfg(feature = "std")]
     suite!(blocking, Blocking);
-    #[cfg(feature = "std_async")]
+    #[cfg(feature = "tokio")]
     suite!(tokio_async, Async);
     #[cfg(feature = "async_std")]
     suite!(async_std_runtime, AsyncStd);
 }
 
-#[cfg(feature = "embassy")]
-mod embassy {
+mod embedded_async {
     use std::{
         cell::{Cell, RefCell},
         rc::Rc,
     };
-    use unifi::embassy::{Client as EmbassyClient, Connector};
+    use unifi::embedded_async::{Client as EmbeddedClient, Connector};
     use unifi::{Authentication, Body, Client, session::Session, site_manager};
     #[derive(Default)]
     struct State {
@@ -499,7 +498,7 @@ mod embassy {
         let mut headers = [0; 1024];
         let mut output = [0; 1024];
         let core = Client::with_authentication("fixture.local", "", Authentication::None).unwrap();
-        let mut client = EmbassyClient::new(core, Factory(state.clone()), &mut headers);
+        let mut client = EmbeddedClient::new(core, Factory(state.clone()), &mut headers);
         let call = site_manager::list_hosts().unwrap();
         assert!(
             client
@@ -536,7 +535,7 @@ mod embassy {
         state.hang.set(true);
         let mut headers = [0; 1024];
         let mut output = [0; 1024];
-        let mut client = EmbassyClient::new(
+        let mut client = EmbeddedClient::new(
             Client::new("fixture.local", "", "fixture-key").unwrap(),
             Factory(state.clone()),
             &mut headers,

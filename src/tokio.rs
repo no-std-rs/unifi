@@ -1,4 +1,4 @@
-//! Tokio-backed async host client (`std_async` feature).
+//! Tokio-backed async host client (`tokio` feature).
 use crate::host::{self, Endpoint, Error, Options, Response};
 use crate::{Authentication, Body, Call, session::Session};
 

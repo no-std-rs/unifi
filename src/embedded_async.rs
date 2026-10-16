@@ -1,11 +1,8 @@
-//! Allocation-free async client for Embassy. The stack runner remains an
-//! application task; use `embassy_time::with_timeout` for a whole-call deadline.
-//!
-//! [`TcpConnector`] provides plain TCP for explicit HTTP endpoints. HTTPS uses
-//! an application [`Connector`] returning a verified TLS stream implementing
-//! `embedded_io_async::Read + Write`; HTTP is never used as a TLS fallback.
+//! Runtime-independent, allocation-free async client over `embedded_io_async`.
+//! Supply a connector that targets one origin and returns a fresh authenticated
+//! transport for each call. DNS, TLS, networking and deadlines belong to the
+//! application, so no executor or network stack is selected by the library.
 use crate::{Authentication, Body, Call, Response, session::Session};
-use embassy_net::{IpEndpoint, Stack, tcp::TcpSocket};
 use embedded_io_async::{Read, Write};
 
 /// Connect to one configured origin. A fresh stream is obtained for each call.
@@ -17,37 +14,6 @@ pub trait Connector {
     where
         Self: 'a;
     async fn connect(&mut self) -> Result<Self::Connection<'_>, Self::Error>;
-}
-
-/// Embassy TCP connector with caller-owned RX/TX storage and a resolved endpoint.
-/// This transport is unencrypted; use a TLS connector for HTTPS controllers.
-pub struct TcpConnector<'a> {
-    stack: Stack<'a>,
-    endpoint: IpEndpoint,
-    rx: &'a mut [u8],
-    tx: &'a mut [u8],
-}
-impl<'a> TcpConnector<'a> {
-    pub fn new(stack: Stack<'a>, endpoint: IpEndpoint, rx: &'a mut [u8], tx: &'a mut [u8]) -> Self {
-        Self {
-            stack,
-            endpoint,
-            rx,
-            tx,
-        }
-    }
-}
-impl Connector for TcpConnector<'_> {
-    type Error = embassy_net::tcp::ConnectError;
-    type Connection<'a>
-        = TcpSocket<'a>
-    where
-        Self: 'a;
-    async fn connect(&mut self) -> Result<Self::Connection<'_>, Self::Error> {
-        let mut socket = TcpSocket::new(self.stack, self.rx, self.tx);
-        socket.connect(self.endpoint).await?;
-        Ok(socket)
-    }
 }
 
 #[derive(Debug)]
