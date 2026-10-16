@@ -1245,7 +1245,7 @@ fn app(
         if positionals.get(1) == Some(&"cloud-setup")
             || positionals.get(1) == Some(&"init")
                 && (options.credential_storage.is_some()
-                    || options.url.is_none() && options.profile.is_none() && terminal::available())
+                    || options.url.is_none() && terminal::available())
         {
             if positionals.len() != 2 {
                 return Err("setup takes no positional arguments");
@@ -1285,7 +1285,10 @@ fn app(
     options.cloud = profile_file
         .value::<64>(selected_profile, "authMode")?
         .as_deref()
-        == Some("cloud");
+        == Some("cloud")
+        && options
+            .url
+            .is_none_or(|url| Some(url) == profile_url.as_deref());
     if !options.insecure_explicit {
         options.insecure = profile_file
             .field(selected_profile, "insecure")?

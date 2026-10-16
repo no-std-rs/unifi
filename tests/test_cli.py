@@ -19,6 +19,7 @@ import threading
 import unittest
 import yaml
 ROOT=Path(__file__).resolve().parents[1]
+BINARY=Path(os.environ.get('CARGO_TARGET_DIR',ROOT/'target')).resolve()/'debug/unifi'
 loader=importlib.util.spec_from_file_location('mock_server',ROOT/'tools/mock_server.py')
 mock=importlib.util.module_from_spec(loader);loader.loader.exec_module(mock)
 class CliTests(unittest.TestCase):
@@ -34,7 +35,7 @@ class CliTests(unittest.TestCase):
     def cli(self,*args,environment=None,binary=False,cwd=None):
         env={key:value for key,value in os.environ.items() if not key.startswith('UNIFI_')}
         env.update({'UNIFI_API_KEY':'mock-only-test-key','UNIFI_CONFIG':str(Path(self.environment_dir.name)/'config.json'),**(environment or {})})
-        return subprocess.run([str(ROOT/'target/debug/unifi'),*args],cwd=cwd or ROOT,text=not binary,capture_output=True,timeout=30,env={key:value for key,value in env.items() if value is not None})
+        return subprocess.run([str(BINARY),*args],cwd=cwd or ROOT,text=not binary,capture_output=True,timeout=30,env={key:value for key,value in env.items() if value is not None})
     def test_session_errors_binary_stdout_quiet_and_atomic_credentials(self):
         mode={'error':False,'headers':[]}
         class Handler(BaseHTTPRequestHandler):
@@ -315,7 +316,7 @@ else:sys.exit(1)
             env={key:value for key,value in os.environ.items() if not key.startswith('UNIFI_')};env.update({'FIXTURE_TUI_KEY':'mock-only-test-key','UNIFI_CONFIG':str(config)})
             before=len(self.server.requests)
             launch='import fcntl,os,sys,termios;fcntl.ioctl(0,termios.TIOCSCTTY,0);os.execv(sys.argv[1],sys.argv[1:])'
-            child=subprocess.Popen([sys.executable,'-c',launch,str(ROOT/'target/debug/unifi'),'tui','--site','00000000-0000-4000-8000-000000000001','--url',self.url,'--count','2','--color','never'],stdin=slave,stdout=slave,stderr=slave,start_new_session=True,cwd=ROOT,env=env)
+            child=subprocess.Popen([sys.executable,'-c',launch,str(BINARY),'tui','--site','00000000-0000-4000-8000-000000000001','--url',self.url,'--count','2','--color','never'],stdin=slave,stdout=slave,stderr=slave,start_new_session=True,cwd=ROOT,env=env)
             pid=child.pid
             os.close(slave);output=b'';sent=False;done=0;deadline=time.monotonic()+15
             try:
@@ -345,11 +346,12 @@ else:sys.exit(1)
 
     def test_guided_local_setup_credentials_and_terminal_restoration(self):
         launch='import fcntl,os,sys,termios;fcntl.ioctl(0,termios.TIOCSCTTY,0);os.execv(sys.argv[1],sys.argv[1:])'
-        for mode in ['env','session','cancel','interrupt']:
+        for mode in ['env','session','cancel','interrupt','named']:
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as tmp:
                 directory=Path(tmp);config=directory/'profiles.json'
                 initial={'activeProfile':'old','profiles':{'old':{'controller':self.url}}};config.write_text(json.dumps(initial))
                 steps=[(b'Profile name [',b'guided\r'),(b'Controller URL [',self.url.encode()+b'\r')]
+                if mode=='named':steps=steps[1:]
                 if mode=='session':
                     steps += [(b'Authentication (',b'session\r'),(b'Username [',b'fixture-user\r'),(b'Password: ',b'fixture-hidden-password\r'),(b'Password storage (',b'file\r')]
                 else:steps += [(b'Authentication (',b'\r'),(b'API key storage (',b'\r')]
@@ -357,7 +359,8 @@ else:sys.exit(1)
                 if mode=='interrupt':steps=[(b'Profile name [',b'\x03')]
                 master,slave=pty.openpty();original=termios.tcgetattr(slave)
                 env={key:value for key,value in os.environ.items() if not key.startswith('UNIFI_')};env.update({'UNIFI_API_KEY':'mock-only-test-key','UNIFI_CONFIG':str(config)})
-                child=subprocess.Popen([sys.executable,'-c',launch,str(ROOT/'target/debug/unifi'),'config','init'],stdin=slave,stdout=slave,stderr=slave,start_new_session=True,cwd=directory,env=env)
+                args=['config','init']+(['--profile','guided'] if mode=='named' else [])
+                child=subprocess.Popen([sys.executable,'-c',launch,str(BINARY),*args],stdin=slave,stdout=slave,stderr=slave,start_new_session=True,cwd=directory,env=env)
                 os.close(slave);output=b'';cursor=0;next_step=0;deadline=time.monotonic()+15
                 try:
                     while time.monotonic()<deadline:
@@ -626,7 +629,11 @@ else:sys.exit(1)
                 state['seen'].append((self.command,self.path,self.headers.get('Cookie'),self.headers.get('X-CSRF-Token')))
                 state['generation']+=1;generation=state['generation'];data=b'{"meta":{"rc":"ok"},"data":[{"key":"test","enabled":true}]}'
                 self.send_response(200);self.send_header('Content-Length',str(len(data)));self.send_header('Set-Cookie','TOKEN=; Max-Age=0' if clear else f'TOKEN=rotated-{generation}; Path=/');self.send_header('X-CSRF-Token',f'csrf-{generation}');self.end_headers();self.wfile.write(data)
-            def do_GET(self):self.reply()
+            def do_GET(self):
+                if self.path.endswith('/api/self/sites'):
+                    data=b'{"meta":{"rc":"ok"},"data":[{"_id":"fixture-id","name":"fixture","desc":"Fixture"}]}'
+                    self.send_response(200);self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
+                else:self.reply()
             def do_PUT(self):self.rfile.read(int(self.headers['Content-Length']));self.reply(True)
         server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
         try:
@@ -653,6 +660,8 @@ else:sys.exit(1)
             def reply(self,value):
                 data=json.dumps(value).encode();self.send_response(200);self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
             def do_GET(self):
+                if self.path.endswith('/api/self/sites'):
+                    self.reply({'meta':{'rc':'ok'},'data':[{'_id':'fixture-id','name':'fixture','desc':'Fixture'}]});return
                 state['requests'].append((self.command,self.path))
                 if self.path.endswith('/rest/networkconf'):self.reply({'meta':{'rc':'ok'},'data':vpns})
                 elif self.path.endswith('/rest/setting'):self.reply({'meta':{'rc':'ok'},'data':[{'key':'peer_to_peer','enabled':True,'x_secret':'fixture-setting-secret'}]})
@@ -704,6 +713,7 @@ else:sys.exit(1)
             before=len(state['writes']);result=self.cli(*common,'vpn','peers','update','server','peer','--data','{"preshared_key":""}','--allow-write',environment=auth)
             self.assertEqual(result.returncode,2,result.stderr);self.assertEqual(len(state['writes']),before)
             self.assertIn(('GET','/proxy/network/v2/api/site/fixture/wireguard/server/users?networkId=server'),state['requests'])
+            self.assertTrue(all(path.endswith('?networkId=server') for method,path in state['requests'] if '/wireguard/server/users?' in path))
             result=self.cli(*common,'vpn','settings','get','peer-to-peer','--output','json',environment=auth)
             self.assertEqual(result.returncode,0,result.stderr);self.assertEqual(json.loads(result.stdout)['key'],'peer_to_peer')
             result=self.cli(*common,'vpn','settings','patch','peer-to-peer','--data','{"fields":{"enabled":false}}','--allow-write',environment=auth)
@@ -717,6 +727,8 @@ else:sys.exit(1)
             def reply(self,value):
                 data=json.dumps(value).encode();self.send_response(200);self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
             def do_GET(self):
+                if self.path.endswith('/api/self/sites'):
+                    self.reply({'meta':{'rc':'ok'},'data':[{'_id':'fixture-id','name':'fixture','desc':'Fixture'}]});return
                 state['requests'].append((self.command,self.path,None))
                 if '/traffic-flow-latest-statistics?' in self.path:self.reply({'top_all_traffic_by_application':[{'app':1}]} if state['mode']=='modern' else {})
                 else:self.reply({'meta':{'rc':'ok'},'data':[{'app':3,'fallback':True}]})
@@ -728,7 +740,7 @@ else:sys.exit(1)
             common=['stats','dpi','--url',f'http://127.0.0.1:{server.server_port}','--site','fixture','--output','json'];auth={'UNIFI_COOKIE':'TOKEN=mock','UNIFI_CSRF':'mock-csrf'}
             result=self.cli(*common,environment=auth);self.assertEqual(result.returncode,2);self.assertEqual(state['requests'],[])
             result=self.cli(*common,'--allow-write',environment=auth);self.assertEqual(result.returncode,0,result.stderr)
-            self.assertEqual(json.loads(result.stdout),[{'top_all_traffic_by_application':[{'app':1}]}]);self.assertEqual(len(state['requests']),1);self.assertIn('period=DAY&top=30',state['requests'][0][1])
+            self.assertEqual(json.loads(result.stdout),[{'top_all_traffic_by_application':[{'app':1}]}]);self.assertEqual(len(state['requests']),1);self.assertTrue(state['requests'][0][1].endswith('?period=DAY&top=30'))
             state['requests'].clear();result=self.cli(*common,'--group-by','category','--allow-write',environment=auth)
             self.assertEqual(result.returncode,0,result.stderr);self.assertEqual(len(state['requests']),1);self.assertTrue(state['requests'][-1][1].endswith('/stat/sitedpi'));self.assertEqual(state['requests'][-1][2],{'type':'by_cat'})
             state['mode']='fallback';state['requests'].clear();result=self.cli(*common,'--allow-write',environment=auth)

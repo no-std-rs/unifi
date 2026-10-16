@@ -37,12 +37,7 @@ pub fn dpi<'a>(
             out,
         );
     }
-    let current = session_api::get_traffic_flow_statistics(site)
-        .unwrap()
-        .query("period", "DAY")
-        .unwrap()
-        .query("top", "30")
-        .unwrap();
+    let current = session_api::get_traffic_flow_statistics(site).unwrap();
     if group == "by_app"
         && let Ok(reply) = request(
             remote.url,

@@ -15,6 +15,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def normalized(spec):
     """Explicit compatibility interpretations also used by generated bindings."""
     spec = copy.deepcopy(spec)
+    network = spec.get('info', {}).get('title') == 'UniFi Network API'
 
     def visit(value):
         if isinstance(value, list):
@@ -42,6 +43,16 @@ def normalized(spec):
                 value.setdefault('properties', {}).update({name: copy.deepcopy(field) for name, field in properties.items() if name not in value.get('properties', {})})
             for child in list(value.values()):
                 visit(child)
+            # Network describes several null allowances in prose only. Keep
+            # the non-null schema intact and express the allowance through
+            # JSON Schema's union, independently of the Rust generator.
+            description = value.get('description', '')
+            if network and isinstance(description, str) and re.search(
+                r'\b(?:if|when) (?:this field is (?:omitted or )?)?null\b', description, re.I
+            ) and any(key in value for key in ('$ref', 'type', 'properties', 'discriminator')):
+                original = dict(value)
+                value.clear()
+                value['anyOf'] = [original, {'type': 'null'}]
 
     visit(spec)
     return spec
@@ -143,9 +154,10 @@ class Handler(BaseHTTPRequestHandler):
     def request(self):
         url=urlsplit(self.path);path=url.path
         self.server.raw_requests.append((self.command,self.path))
-        path=re.sub(r'^/v1/connector/consoles/[^/]+','',path)
-        for prefix in ('/proxy/network/integration','/proxy/protect/integration','/integration'):
-            if path.startswith(prefix+'/'):path=path[len(prefix):];break
+        if not any(pattern.fullmatch(path) for pattern,_ in self.server.routes):
+            path=re.sub(r'^/v1/connector/consoles/[^/]+','',path)
+            for prefix in ('/proxy/network/integration','/proxy/protect/integration','/integration'):
+                if path.startswith(prefix+'/'):path=path[len(prefix):];break
         self.server.requests.append((self.command,path))
         fixture=self.server.fixtures.get((self.command,path+('?' + url.query if url.query else '')),self.server.fixtures.get((self.command,path)))
         if fixture is not None:self.respond(200,fixture);return

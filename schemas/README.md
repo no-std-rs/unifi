@@ -9,6 +9,8 @@ Network publishes some integer enums as quoted decimal strings (Wi-Fi basic data
 
 Network also states some null allowances only in descriptions (for example, “When null” or “If this field is omitted or null”). Generation restores those explicit allowances in memory, including inherited properties, references, and enums. Other values retain their type, range, and enum constraints; the pinned document remains unchanged.
 
+The independent contract mock represents those same documented allowances with JSON Schema unions. Its generated corpus includes explicit valid-null cases and keeps the non-null type, enum, range, and container checks.
+
 `tools/generate-request-fixtures.py` checks synthetic valid and invalid bodies with Python's independent JSON Schema validator and emits a Rust corpus for every official JSON-body operation. CI checks both reproducibility and SDK agreement with that corpus. It exercises required-only and optional-field payloads and each top-level discriminator variant; it is not exhaustive proof of every nested combination or controller behavior.
 
 There is no generator-time or build-time access to a controller or API key. Nested inline Site Manager objects are promoted to named views. Network `allOf` inheritance is flattened into the model getters and builders. Discriminator variants retain their own concrete model views; unknown properties remain accessible as borrowed JSON.

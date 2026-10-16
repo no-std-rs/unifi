@@ -131,9 +131,9 @@ fn site_snapshot(client: &Client<'_>, site: models::SiteOverview<'_>) -> Value {
     json!({"site":text(site.name().unwrap()),"clients":client_counts,"accessPoints":access_points,"wifi":broadcasts})
 }
 
-fn main() {
-    let key = support::api_key();
-    let cloud = Client::new("api.ui.com", "", &key).unwrap();
+fn discover_consoles(
+    mut fetch: impl FnMut(Call) -> Result<Vec<u8>, &'static str>,
+) -> Result<Vec<String>, &'static str> {
     let mut token = None;
     let mut consoles = Vec::new();
     loop {
@@ -141,36 +141,77 @@ fn main() {
         if let Some(token) = token.as_deref() {
             call = call.query("nextToken", token).unwrap();
         }
-        let bytes = support::get(&cloud, call).expect("cloud host discovery failed");
+        let bytes = fetch(call)?;
         let hosts = Json::parse(&bytes).unwrap();
         for host in hosts.required("data").unwrap().items().unwrap() {
-            if host
-                .required("type")
-                .unwrap()
-                .string()
-                .unwrap()
-                .equals("console")
-                && host
-                    .required("reportedState")
-                    .unwrap()
-                    .required("state")
-                    .unwrap()
-                    .string()
-                    .unwrap()
-                    .equals("connected")
-            {
+            let console = host
+                .get("type")
+                .ok()
+                .flatten()
+                .and_then(|v| v.string().ok())
+                .is_some_and(|v| v.equals("console"));
+            let connected = host
+                .get("reportedState")
+                .ok()
+                .flatten()
+                .and_then(|v| v.get("state").ok().flatten())
+                .and_then(|v| v.string().ok())
+                .is_some_and(|v| v.equals("connected"));
+            if console && connected {
                 consoles.push(text(host.required("id").unwrap().string().unwrap()));
             }
         }
-        token = hosts
+        let next = hosts
             .optional("nextToken")
             .unwrap()
             .map(|t| text(t.string().unwrap()))
             .filter(|t| !t.is_empty());
-        if token.is_none() {
+        if next.is_none() {
             break;
         }
+        if next == token {
+            return Err("host pagination did not advance");
+        }
+        token = next;
     }
+    Ok(consoles)
+}
+
+#[test]
+fn skips_incomplete_hosts_and_reads_later_pages() {
+    let mut calls = 0;
+    let consoles = discover_consoles(|call| {
+        calls += 1;
+        if calls == 1 {
+            assert_eq!(call.path(), "/v1/hosts");
+            Ok(br#"{"data":[{}, {"type":false}, {"type":"console"}, {"type":"console","reportedState":null}],"nextToken":"later"}"#.to_vec())
+        } else {
+            assert_eq!(call.path(), "/v1/hosts?nextToken=later");
+            Ok(br#"{"data":[{"id":"fixture-console","type":"console","reportedState":{"state":"connected"}}]}"#.to_vec())
+        }
+    }).unwrap();
+    assert_eq!(consoles, ["fixture-console"]);
+    assert_eq!(calls, 2);
+}
+
+#[test]
+fn rejects_repeated_host_page_token() {
+    let mut calls = 0;
+    let result = discover_consoles(|_| {
+        calls += 1;
+        assert!(calls <= 2, "repeated page must not be fetched again");
+        Ok(br#"{"data":[],"nextToken":"same"}"#.to_vec())
+    });
+    assert_eq!(result.unwrap_err(), "host pagination did not advance");
+    assert_eq!(calls, 2);
+}
+
+fn main() {
+    let key = support::api_key();
+    let cloud = Client::new("api.ui.com", "", &key).unwrap();
+    let consoles =
+        discover_consoles(|call| support::get(&cloud, call).ok_or("host discovery failed"))
+            .expect("cloud host discovery failed");
     assert!(!consoles.is_empty(), "no connected cloud consoles");
     let mut sites = Vec::new();
     for console in consoles {
