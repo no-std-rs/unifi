@@ -1,3 +1,4 @@
+// Trusted-main review policy; enrollment and permission requirements: docs/runnerless.md.
 import { configuration, event, reviews, checks } from "runnerless/v1";
 
 export function configure(): void {
@@ -9,7 +10,10 @@ export function configure(): void {
 
 export function run(): void {
   const details = event.details();
-  if (details.get("pullNumber").isNull() || details.get("state").string() != "open") return;
+  // Ignore non-PR and terminal-PR events before evaluating review state.
+  if (details.get("pullNumber").isNull() || details.get("state").string() != "open") {
+    return;
+  }
   const review = reviews.evaluate();
   checks.report("Codex review", review.state == "success", review.summary);
 }
