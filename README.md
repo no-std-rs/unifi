@@ -4,7 +4,142 @@ Allocation-free `#![no_std]` Rust bindings for UniFi **Network 10.6.106**, **Sit
 
 CLI parity with both `unifly` and `unified` is in progress. See the [captured command inventory and remaining work](docs/parity/README.md). The current implementation does **not** claim complete parity.
 
-The default library uses `reqwless`, `heapless`, and the embedded I/O traits. It has no allocator, runtime, DNS, TLS, or OS requirement. Optional serde integration also works without `std` or `alloc`. Development tools and the host verification example use the host standard library.
+The default library uses `reqwless`, `heapless`, and the embedded I/O traits. It has no allocator, runtime, DNS, TLS, or OS requirement. Optional serde integration also works without `std` or `alloc`. Optional host clients own their response buffers and accept application-selected HTTP/TLS transports; development tools and host examples also use the standard library.
+
+## Runtime clients
+
+| Cargo feature | Interface | Storage and transport |
+|---|---|---|
+| none (default) | `unifi::embedded_async::Client` | Allocation-free async, caller-owned buffers and a runtime-independent connector |
+| `std` | `host::BlockingClient<T>`, `host::AsyncClient<T>` | Generic owned clients; application selects HTTP, TLS and runtime |
+| `blocking` | `unifi::blocking::Client` | Supplied blocking Reqwest backend and verified TLS |
+| `tokio` | `unifi::tokio::Client` | Tokio async HTTP/HTTPS, owned response bytes, verified TLS |
+| `async_std` | `unifi::async_std::Client` | Native async-std sockets and verified Rustls TLS, owned response bytes |
+
+All interfaces use the same operation constructors, body builders, borrowed model views, authentication rules and request preflight. Features are additive; each host backend works independently. `tokio` uses Tokio; the separate `async_std` feature uses async-std without a Tokio dependency or runtime. Enabling a host feature opts into allocation and host dependencies; leave host features off for firmware. `std` alone brings in no HTTP client, TLS backend or async runtime; the supplied backends each enable it. The async clients use the application's executor.
+
+For the supplied blocking client, enable `unifi = { version = "0.1", features = ["blocking"] }`:
+
+```rust,no_run
+# #[cfg(feature = "blocking")]
+# fn blocking_example() -> Result<(), unifi::host::Error> {
+let client = unifi::blocking::Client::new(
+    "https://controller.example", "/proxy/network/integration", "api-key",
+)?;
+let call = unifi::network::get_site_overview_page()?;
+let response = client.execute(&call, None)?.success().unwrap();
+let json = response.json().unwrap(); // views borrow response.body
+# let _ = json;
+# Ok(())
+# }
+```
+
+For Tokio, enable `features = ["tokio"]`, provide a Tokio runtime, and await the same calls:
+
+```rust,no_run
+# #[cfg(feature = "tokio")]
+# async fn tokio_example() -> Result<(), unifi::host::Error> {
+let client = unifi::tokio::Client::new(
+    "https://controller.example", "/proxy/network/integration", "api-key",
+)?;
+let response = client.execute(&unifi::network::get_site_overview_page()?, None)
+    .await?.success().unwrap();
+# let _ = response;
+# Ok(())
+# }
+```
+
+For async-std, enable `features = ["async_std"]` and use its executor:
+
+```rust,no_run
+# #[cfg(feature = "async_std")]
+# async fn async_std_example() -> Result<(), unifi::host::Error> {
+let client = unifi::async_std::Client::new(
+    "https://controller.example", "/proxy/network/integration", "api-key",
+)?;
+let response = client.execute(&unifi::network::get_site_overview_page()?, None)
+    .await?.success().unwrap();
+# let _ = response;
+# Ok(())
+# }
+```
+
+The blocking and Tokio clients use `reqwest`; the async-std client uses the core HTTP engine over async-std TCP and `futures-rustls`. Their default constructors verify certificates and hostnames. `host::Options` configures a whole-request timeout (30 seconds by default), response-body limit (16 MiB), and additional trusted CA certificates through `host::Certificate`. Pass options and `Authentication` to `Client::with_options`. The async-std backend reserves the configured body limit plus one byte and a 16 KiB HTTP header buffer per request; it releases spare body capacity before returning. HTTP origins must contain only the scheme and authority; the surface base is a separate argument. The supplied constructors disable redirects, retries, decompression and environment proxies. A response over the limit returns an error without replaying the request. Paths that the host URL parser would normalize, including encoded dot-only segments, are rejected before I/O. Call the blocking client outside an async executor thread.
+
+For application-selected HTTP clients, enable only `std` and implement
+`host::BlockingTransport` or `host::AsyncTransport`. They exchange standard
+`http::Request<Vec<u8>>` and `http::Response<Body>` values through the re-export
+`unifi::host::http`. Blocking bodies implement `std::io::Read`; async bodies
+implement `host::AsyncBody` to yield chunks. `host::Limits` controls the SDK's
+buffer limit and passes the whole-request deadline to the transport. The transport
+owns DNS, TLS, proxies, connection pooling and deadline enforcement. Its contract
+requires verified HTTPS and one request without redirects, retries, decompression,
+or an independent credential jar. The SDK validates calls before transport I/O,
+observes session headers before reading bodies, and bounds its response buffer.
+
+```rust
+# #[cfg(feature = "std")]
+fn custom_client<T: unifi::host::BlockingTransport>(
+    http: T,
+) -> Result<unifi::host::BlockingClient<T>, unifi::host::Error> {
+    unifi::host::BlockingClient::with_transport(
+        "https://unifi.example.com", "/proxy/network/integration",
+        unifi::Authentication::ApiKey("application-api-key"),
+        http, unifi::host::Limits::default(),
+    )
+}
+```
+
+The supplied Reqwest backends also accept existing clients via
+`blocking::Client::with_http_client` and `tokio::Client::with_http_client`.
+For example, an application can supply its own TLS configuration, resolver,
+proxy, user agent and connection pool:
+
+```rust
+# #[cfg(feature = "tokio")]
+# fn configured_http() -> Result<(), unifi::host::Error> {
+let http = reqwest::Client::builder()
+    .redirect(reqwest::redirect::Policy::none())
+    .retry(reqwest::retry::never())
+    .no_proxy().no_gzip().no_brotli().no_zstd().no_deflate()
+    .user_agent("my-unifi-app")
+    // Configure trust roots, client certificates or a TLS backend here.
+    .build()?;
+let client = unifi::tokio::Client::with_http_client(
+    "https://unifi.example.com", "/proxy/network/integration",
+    unifi::Authentication::ApiKey("application-api-key"),
+    http, unifi::host::Limits::default(),
+)?;
+# Ok(())
+# }
+```
+
+Injected clients retain their HTTP/TLS policies; configure them to satisfy the
+transport contract. The SDK cannot inspect or reconfigure an opaque prebuilt
+client. Backend errors remain available through `host::Error`'s source chain.
+The socket-based async-std client accepts an `Arc<rustls::ClientConfig>` through
+`async_std::Client::with_tls_config` for private trust stores, mTLS, protocol
+versions and provider selection. Its core HTTP engine uses HTTP/1.1, so this
+constructor rejects ALPN protocols other than `http/1.1` (an empty list is valid).
+To use another HTTP implementation on async-std,
+supply it to the runtime-independent `host::AsyncClient` instead.
+
+`execute_body` accepts `Body::Json` or `Body::Bytes` for binary/multipart requests. `execute_with_session` uses the supplied origin-scoped `session::Session` for outgoing cookies/CSRF, then rotates it atomically when response headers arrive, even if the body later fails. An empty jar sends an unauthenticated request for explicit login; it never falls back to the client's API key. All host interfaces return `host::Response`; `.success()` preserves the body and `Retry-After` in `host::HttpError` for non-2xx statuses.
+
+The default embedded async interface works with any transport implementing `embedded_io_async::{Read, Write}`. Implement `embedded_async::Connector` to return a fresh verified TLS stream for each HTTPS call, using your chosen network stack and executor. The connector owns connection setup, DNS and TLS configuration; it must target the same origin as the core client's host. Use the executor's timeout facility around the complete call for a deadline; cancellation drops the stream and the next call reconnects. Embassy transports can implement this interface, but the library has no Embassy dependency. The original `unifi::Client` also remains available for executing directly on an already connected stream.
+
+```rust,no_run
+async fn embedded_example<C: unifi::embedded_async::Connector>(connector: C, key: &str) {
+    let core = unifi::Client::new("controller.example", "/proxy/network/integration", key).unwrap();
+    let mut headers = [0; 4096];
+    let mut output = [0; 16384];
+    let mut client = unifi::embedded_async::Client::new(core, connector, &mut headers);
+    let call = unifi::network::get_site_overview_page().unwrap();
+    if let Ok(response) = client.execute(&call, None, &mut output).await {
+        let _ = response.json();
+    }
+}
+```
 
 ## Rust API
 
@@ -119,7 +254,7 @@ An alternative is [Prism](https://github.com/stoplightio/prism) against a pinned
 cargo test
 cargo test --all-features
 cargo check --lib --target riscv32imac-unknown-none-elf
-cargo check --lib --all-features --target riscv32imac-unknown-none-elf
+cargo check --lib --no-default-features --features serde --target riscv32imac-unknown-none-elf
 cargo build -p unifi-cli
 cargo clippy -p unifi --all-targets --all-features -- -D warnings
 cargo clippy -p unifi-cli --bin unifi -- -D warnings
@@ -129,7 +264,7 @@ python3 tools/generate-request-fixtures.py --check
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-Lint the library and CLI separately: a workspace-wide all-target/all-feature lint would unify the library’s host-only `std` development dependencies into the `no_std` executable.
+Lint the library and CLI separately: a workspace-wide all-target/all-feature lint would enable the library’s optional host features in the allocation-free `no_std` executable.
 
 Rust contract tests check every pinned operation against its source schema and exercise real `reqwless` encoding/decoding over fragmented in-memory I/O, including writes. An independently checked corpus covers all 50 official JSON-body operations with 174 valid and 4,428 invalid fixtures; documented upstream schema inconsistencies are interpreted explicitly. Python tests cover the CLI over loopback HTTP/TLS, request validation, captured command/option recognition and Git worktree safety. No tests automatically contact UniFi. The live example is an explicit GET-only command.
 

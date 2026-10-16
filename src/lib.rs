@@ -2,6 +2,19 @@
 #![forbid(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
+#[cfg(any(feature = "std", feature = "tokio", feature = "async_std"))]
+extern crate std;
+
+#[cfg(feature = "async_std")]
+pub mod async_std;
+#[cfg(feature = "blocking")]
+pub mod blocking;
+pub mod embedded_async;
+#[cfg(any(feature = "std", feature = "tokio", feature = "async_std"))]
+pub mod host;
+#[cfg(feature = "tokio")]
+pub mod tokio;
+
 pub mod client;
 pub mod json;
 pub mod multipart;
