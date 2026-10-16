@@ -1,1 +1,2 @@
 schemas/*.json linguist-generated=true
+src/site_manager.rs linguist-generated=true
