@@ -1922,15 +1922,25 @@
             "in": "query",
             "name": "period",
             "schema": {
-              "type": "string"
-            }
+              "type": "string",
+              "enum": [
+                "DAY",
+                "MONTH"
+              ]
+            },
+            "required": true,
+            "x-constructor-default": "DAY",
+            "description": "Required by the endpoint; constructor uses the pinned client value unless replaced with set_query."
           },
           {
             "in": "query",
             "name": "top",
             "schema": {
               "type": "string"
-            }
+            },
+            "required": true,
+            "x-constructor-default": "30",
+            "description": "Required by the endpoint; constructor uses the pinned client value unless replaced with set_query."
           }
         ],
         "responses": {
@@ -2221,11 +2231,11 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "UniFi OS administrator object (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -2281,25 +2291,10 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
+            "description": "Successful logout; body is firmware-dependent and may be empty."
+          },
+          "204": {
+            "description": "Successful logout without a response body."
           }
         }
       }
@@ -2311,25 +2306,10 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
+            "description": "Successful logout; body is firmware-dependent and may be empty."
+          },
+          "204": {
+            "description": "Successful logout without a response body."
           }
         }
       }
@@ -2365,7 +2345,7 @@
         ]
       },
       "BareResponse": {
-        "description": "Firmware-specific v2 JSON returned without the legacy meta/data envelope. Inspect the borrowed json() value."
+        "description": "Firmware-specific JSON returned without the legacy meta/data envelope. Inspect the borrowed json() value."
       }
     }
   }

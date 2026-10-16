@@ -58,3 +58,51 @@ fn v2_responses_do_not_claim_the_legacy_envelope() {
         assert!(session_api::models::Envelope::validate(value).is_err());
     }
 }
+
+#[test]
+fn traffic_flow_binds_the_pinned_client_defaults() {
+    let call = session_api::get_traffic_flow_statistics("default").unwrap();
+    assert_eq!(
+        call.path(),
+        "/v2/api/site/default/traffic-flow-latest-statistics?period=DAY&top=30"
+    );
+    call.validate(None).unwrap();
+    let custom = call
+        .set_query("period", "MONTH")
+        .unwrap()
+        .set_query("top", "50")
+        .unwrap();
+    assert!(custom.path().ends_with("?period=MONTH&top=50"));
+    custom.validate(None).unwrap();
+    assert!(
+        session_api::GET_TRAFFIC_FLOW_STATISTICS
+            .bind(&[("site", "default")])
+            .unwrap()
+            .validate(None)
+            .is_err()
+    );
+}
+
+#[test]
+fn unifi_os_login_uses_a_bare_admin_response() {
+    assert_eq!(
+        session_api::LOGIN_UNIFI_OS.response_schema,
+        Some("BareResponse")
+    );
+    let admin =
+        Json::parse(br#"{"unique_id":"admin","permissions":{},"deviceToken":"token"}"#).unwrap();
+    session_api::models::BareResponse::validate(admin).unwrap();
+    assert!(session_api::models::Envelope::validate(admin).is_err());
+}
+
+#[test]
+fn both_logout_calls_accept_no_request_body() {
+    session_api::logout_unifi_os()
+        .unwrap()
+        .validate(None)
+        .unwrap();
+    session_api::logout_standalone()
+        .unwrap()
+        .validate(None)
+        .unwrap();
+}

@@ -395,7 +395,7 @@ def generate(surface, request_models=None, model_names=None):
             call=f'{constant}.bind(&[{bindings}])'
             for parameter in query:
                 source=parameter.get('x-value-from-path')
-                fixed=parameter.get('schema',{}).get('const')
+                fixed=parameter.get('schema',{}).get('const',parameter.get('x-constructor-default'))
                 if source is not None:
                     if source not in path_params:raise ValueError('unknown query path source: '+source)
                     value=ident(source)

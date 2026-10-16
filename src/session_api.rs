@@ -58,7 +58,7 @@ pub mod models {
             builders::Envelope::new(buffer)
         }
     }
-    /// BareResponse. Firmware-specific v2 JSON returned without the legacy meta/data envelope. Inspect the borrowed json() value.
+    /// BareResponse. Firmware-specific JSON returned without the legacy meta/data envelope. Inspect the borrowed json() value.
     #[derive(Clone, Copy, Debug)]
     pub struct BareResponse<'a>(Json<'a>);
     impl<'a> View<'a> for BareResponse<'a> {
@@ -846,58 +846,6 @@ pub mod models {
         }
     }
     impl<'a> LoginStandaloneRequest<'a> {
-        pub fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            <Self as View>::from_json(value)
-        }
-        pub fn json(self) -> Json<'a> {
-            self.0
-        }
-        /// Validate wire types, nested fields, variants, enum/range and container constraints. Format annotations are not validated.
-        pub fn validate(value: Json<'_>) -> Result<(), JsonError> {
-            let _ = value;
-            {
-                let _ = value;
-                value.object()?;
-            }
-            Ok(())
-        }
-    }
-    /// logoutUnifiOs request.
-    #[derive(Clone, Copy, Debug)]
-    pub struct LogoutUnifiOsRequest<'a>(Json<'a>);
-    impl<'a> View<'a> for LogoutUnifiOsRequest<'a> {
-        fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
-            Ok(Self(value))
-        }
-    }
-    impl<'a> LogoutUnifiOsRequest<'a> {
-        pub fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            <Self as View>::from_json(value)
-        }
-        pub fn json(self) -> Json<'a> {
-            self.0
-        }
-        /// Validate wire types, nested fields, variants, enum/range and container constraints. Format annotations are not validated.
-        pub fn validate(value: Json<'_>) -> Result<(), JsonError> {
-            let _ = value;
-            {
-                let _ = value;
-                value.object()?;
-            }
-            Ok(())
-        }
-    }
-    /// logoutStandalone request.
-    #[derive(Clone, Copy, Debug)]
-    pub struct LogoutStandaloneRequest<'a>(Json<'a>);
-    impl<'a> View<'a> for LogoutStandaloneRequest<'a> {
-        fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
-            Ok(Self(value))
-        }
-    }
-    impl<'a> LogoutStandaloneRequest<'a> {
         pub fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
             <Self as View>::from_json(value)
         }
@@ -1947,11 +1895,11 @@ pub static GET_TRAFFIC_FLOW_STATISTICS: Operation = Operation {
     query: &[
         QueryParameter {
             name: "period",
-            required: false,
+            required: true,
         },
         QueryParameter {
             name: "top",
-            required: false,
+            required: true,
         },
     ],
     request_schema: None,
@@ -1960,7 +1908,10 @@ pub static GET_TRAFFIC_FLOW_STATISTICS: Operation = Operation {
 /// getTrafficFlowStatistics. GET /v2/api/site/{site}/traffic-flow-latest-statistics
 /// Response schema: models::BareResponse.
 pub fn get_traffic_flow_statistics(site: &str) -> Result<Call, BuildError> {
-    GET_TRAFFIC_FLOW_STATISTICS.bind(&[("site", site)])
+    GET_TRAFFIC_FLOW_STATISTICS
+        .bind(&[("site", site)])?
+        .query("period", "DAY")?
+        .query("top", "30")
 }
 pub static UPDATE_NAT_RULE: Operation = Operation {
     id: "updateNatRule",
@@ -2065,11 +2016,11 @@ pub static LOGIN_UNIFI_OS: Operation = Operation {
     body_required: true,
     query: &[],
     request_schema: Some("loginUnifiOs request"),
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// loginUnifiOs. POST /api/auth/login
 /// Request schema: models::LoginUnifiOsRequest.
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn login_unifi_os() -> Result<Call, BuildError> {
     LOGIN_UNIFI_OS.bind(&[])
 }
@@ -2094,14 +2045,12 @@ pub static LOGOUT_UNIFI_OS: Operation = Operation {
     method: Method::POST,
     path: "/api/auth/logout",
     summary: "logoutUnifiOs",
-    body_required: true,
+    body_required: false,
     query: &[],
-    request_schema: Some("logoutUnifiOs request"),
-    response_schema: Some("Envelope"),
+    request_schema: None,
+    response_schema: None,
 };
 /// logoutUnifiOs. POST /api/auth/logout
-/// Request schema: models::LogoutUnifiOsRequest.
-/// Response schema: models::Envelope.
 pub fn logout_unifi_os() -> Result<Call, BuildError> {
     LOGOUT_UNIFI_OS.bind(&[])
 }
@@ -2110,14 +2059,12 @@ pub static LOGOUT_STANDALONE: Operation = Operation {
     method: Method::POST,
     path: "/api/logout",
     summary: "logoutStandalone",
-    body_required: true,
+    body_required: false,
     query: &[],
-    request_schema: Some("logoutStandalone request"),
-    response_schema: Some("Envelope"),
+    request_schema: None,
+    response_schema: None,
 };
 /// logoutStandalone. POST /api/logout
-/// Request schema: models::LogoutStandaloneRequest.
-/// Response schema: models::Envelope.
 pub fn logout_standalone() -> Result<Call, BuildError> {
     LOGOUT_STANDALONE.bind(&[])
 }
