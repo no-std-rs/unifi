@@ -19485,9 +19485,13 @@ pub mod models {
             value.string()
         }
         /// timeFilter
-        pub fn time_filter(self) -> Result<FirewallScheduleTime<'a>, JsonError> {
+        pub fn time_filter(self) -> Result<Option<FirewallScheduleTime<'a>>, JsonError> {
             let value = self.0.required("timeFilter")?;
-            FirewallScheduleTime::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                FirewallScheduleTime::from_json(value).map(Some)
+            }
         }
         pub fn builder(
             buffer: &'a mut [u8],
@@ -19676,9 +19680,13 @@ pub mod models {
             value.string()
         }
         /// timeFilter
-        pub fn time_filter(self) -> Result<FirewallScheduleTime<'a>, JsonError> {
+        pub fn time_filter(self) -> Result<Option<FirewallScheduleTime<'a>>, JsonError> {
             let value = self.0.required("timeFilter")?;
-            FirewallScheduleTime::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                FirewallScheduleTime::from_json(value).map(Some)
+            }
         }
         pub fn builder(
             buffer: &'a mut [u8],
@@ -20882,10 +20890,7 @@ pub mod models {
                 }
                 if let Some(field) = value.get("destinationFilter")? {
                     let _ = field;
-                    {
-                        let value = field;
-                        let _ = value;
-                    }
+                    crate::network::models::IpAclRuleEndpoint::validate(field)?;
                 }
                 {
                     let field = value.required("enabled")?;
@@ -20945,10 +20950,7 @@ pub mod models {
                 }
                 if let Some(field) = value.get("sourceFilter")? {
                     let _ = field;
-                    {
-                        let value = field;
-                        let _ = value;
-                    }
+                    crate::network::models::IpAclRuleEndpoint::validate(field)?;
                 }
                 {
                     let field = value.required("type")?;
@@ -21023,8 +21025,11 @@ pub mod models {
                 .transpose()
         }
         /// Traffic destination filter
-        pub fn destination_filter(self) -> Result<Option<Json<'a>>, JsonError> {
-            self.0.optional("destinationFilter")
+        pub fn destination_filter(self) -> Result<Option<IpAclRuleEndpoint<'a>>, JsonError> {
+            self.0
+                .optional("destinationFilter")?
+                .map(IpAclRuleEndpoint::from_json)
+                .transpose()
         }
         /// enabled
         pub fn enabled(self) -> Result<bool, JsonError> {
@@ -21059,8 +21064,11 @@ pub mod models {
             value.string()
         }
         /// Traffic source filter
-        pub fn source_filter(self) -> Result<Option<Json<'a>>, JsonError> {
-            self.0.optional("sourceFilter")
+        pub fn source_filter(self) -> Result<Option<IpAclRuleEndpoint<'a>>, JsonError> {
+            self.0
+                .optional("sourceFilter")?
+                .map(IpAclRuleEndpoint::from_json)
+                .transpose()
         }
         /// type
         pub fn r#type(self) -> Result<JsonString<'a>, JsonError> {
@@ -22582,10 +22590,7 @@ pub mod models {
                 }
                 if let Some(field) = value.get("destinationFilter")? {
                     let _ = field;
-                    {
-                        let value = field;
-                        let _ = value;
-                    }
+                    crate::network::models::MacAclRuleEndpoint::validate(field)?;
                 }
                 {
                     let field = value.required("enabled")?;
@@ -22645,10 +22650,7 @@ pub mod models {
                 }
                 if let Some(field) = value.get("sourceFilter")? {
                     let _ = field;
-                    {
-                        let value = field;
-                        let _ = value;
-                    }
+                    crate::network::models::MacAclRuleEndpoint::validate(field)?;
                 }
                 {
                     let field = value.required("type")?;
@@ -22698,8 +22700,11 @@ pub mod models {
                 .transpose()
         }
         /// Traffic destination filter
-        pub fn destination_filter(self) -> Result<Option<Json<'a>>, JsonError> {
-            self.0.optional("destinationFilter")
+        pub fn destination_filter(self) -> Result<Option<MacAclRuleEndpoint<'a>>, JsonError> {
+            self.0
+                .optional("destinationFilter")?
+                .map(MacAclRuleEndpoint::from_json)
+                .transpose()
         }
         /// enabled
         pub fn enabled(self) -> Result<bool, JsonError> {
@@ -22734,8 +22739,11 @@ pub mod models {
             value.string()
         }
         /// Traffic source filter
-        pub fn source_filter(self) -> Result<Option<Json<'a>>, JsonError> {
-            self.0.optional("sourceFilter")
+        pub fn source_filter(self) -> Result<Option<MacAclRuleEndpoint<'a>>, JsonError> {
+            self.0
+                .optional("sourceFilter")?
+                .map(MacAclRuleEndpoint::from_json)
+                .transpose()
         }
         /// type
         pub fn r#type(self) -> Result<JsonString<'a>, JsonError> {
@@ -29558,9 +29566,13 @@ pub mod models {
                 .transpose()
         }
         /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL, None.
-        pub fn pmf_mode(self) -> Result<JsonString<'a>, JsonError> {
+        pub fn pmf_mode(self) -> Result<Option<JsonString<'a>>, JsonError> {
             let value = self.0.required("pmfMode")?;
-            value.string()
+            if value.is_null() {
+                Ok(None)
+            } else {
+                value.string().map(Some)
+            }
         }
         /// WPA3 fast roaming can be enabled only if the default fast roaming is enabled
         pub fn wpa3_fast_roaming_enabled(self) -> Result<bool, JsonError> {
@@ -29784,9 +29796,13 @@ pub mod models {
             value.string()
         }
         /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL, None.
-        pub fn pmf_mode(self) -> Result<JsonString<'a>, JsonError> {
+        pub fn pmf_mode(self) -> Result<Option<JsonString<'a>>, JsonError> {
             let value = self.0.required("pmfMode")?;
-            value.string()
+            if value.is_null() {
+                Ok(None)
+            } else {
+                value.string().map(Some)
+            }
         }
         /// Configuration for SAE (Simultaneous Authentication of Equals).
         pub fn sae_configuration(
@@ -53969,9 +53985,7 @@ pub mod models {
             }
             /// Traffic destination filter
             pub fn destination_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                {
-                    let _ = value;
-                }
+                crate::network::models::IpAclRuleEndpoint::validate(value)?;
                 self.writer.raw_field("destinationFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -54027,9 +54041,7 @@ pub mod models {
             }
             /// Traffic source filter
             pub fn source_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                {
-                    let _ = value;
-                }
+                crate::network::models::IpAclRuleEndpoint::validate(value)?;
                 self.writer.raw_field("sourceFilter", value)?;
                 self.present |= 1u128 << 9;
                 Ok(self)
@@ -55262,9 +55274,7 @@ pub mod models {
             }
             /// Traffic destination filter
             pub fn destination_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                {
-                    let _ = value;
-                }
+                crate::network::models::MacAclRuleEndpoint::validate(value)?;
                 self.writer.raw_field("destinationFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -55320,9 +55330,7 @@ pub mod models {
             }
             /// Traffic source filter
             pub fn source_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                {
-                    let _ = value;
-                }
+                crate::network::models::MacAclRuleEndpoint::validate(value)?;
                 self.writer.raw_field("sourceFilter", value)?;
                 self.present |= 1u128 << 9;
                 Ok(self)

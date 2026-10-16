@@ -94,9 +94,15 @@ def generate(surface, request_models=None, model_names=None):
     def flatten(schema):
         out = {}; required = set()
         if '$ref' in schema: return flatten(schemas[schema['$ref'].rsplit('/',1)[1]])
+        def add(properties):
+            for field, child in properties.items():
+                # allOf intersects constraints: a repeated annotation-only
+                # property must not erase an earlier typed definition.
+                if field not in out or child.keys() - {'description', 'title', 'example', 'examples'}:
+                    out[field] = child
         for parent in schema.get('allOf',[]):
-            props, req = flatten(parent); out.update(props); required.update(req)
-        out.update(schema.get('properties',{})); required.update(schema.get('required',[]))
+            props, req = flatten(parent); add(props); required.update(req)
+        add(schema.get('properties',{})); required.update(schema.get('required',[]))
         return out, required
 
     # Promote nested inline objects to keep all declared fields typed.
@@ -309,7 +315,11 @@ def generate(surface, request_models=None, model_names=None):
             if 'enum' in value: description+=' Values: '+', '.join(str(x) for x in value['enum'])+'.'
             out.append(doc(description))
             if field in required:
-                out.append(f'pub fn {method}(self) -> Result<{ty}, JsonError> {{\nlet value = self.0.required({quoted(field)})?;\n{convert(ty,conv,"value")}\n}}\n')
+                nullable = allows_null(value) or '$ref' in value and allows_null(schemas[value['$ref'].rsplit('/',1)[1]])
+                result_type = f'Option<{ty}>' if nullable else ty
+                expression = convert(ty,conv,'value')
+                if nullable: expression = f'if value.is_null() {{ Ok(None) }} else {{ {expression}.map(Some) }}'
+                out.append(f'pub fn {method}(self) -> Result<{result_type}, JsonError> {{\nlet value = self.0.required({quoted(field)})?;\n{expression}\n}}\n')
             else:
                 if not conv:
                     expression=f'self.0.optional({quoted(field)})'
