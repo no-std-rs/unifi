@@ -68,7 +68,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("enforcingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("id")?;
@@ -368,7 +370,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("enforcingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    }
                 }
                 if let Some(field) = value.get("index")? {
                     let _ = field;
@@ -537,7 +541,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("enforcingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("id")?;
@@ -2764,7 +2770,9 @@ pub mod models {
                 value.object()?;
                 if let Some(field) = value.get("dhcpGuarding")? {
                     let _ = field;
-                    crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -2891,36 +2899,37 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let items = value.items()?;
-                        let _ = &items;
-                        if items.clone().count() < 1 {
-                            return Err(JsonError::Type);
-                        }
-                        if items.clone().count() > 2147483647 {
-                            return Err(JsonError::Type);
-                        }
-                        crate::validation::unique(value)?;
-                        for item in items {
-                            {
-                                let value = item;
-                                let _ = value;
-                                let text = value.string()?;
-                                let _ = text;
-                                if !(crate::validation::equivalent(value, Json::parse(b"\"NEW\"")?)
-                                    || crate::validation::equivalent(
+                        if !value.is_null() {
+                            let items = value.items()?;
+                            let _ = &items;
+                            if items.clone().count() < 1 {
+                                return Err(JsonError::Type);
+                            }
+                            if items.clone().count() > 2147483647 {
+                                return Err(JsonError::Type);
+                            }
+                            crate::validation::unique(value)?;
+                            for item in items {
+                                {
+                                    let value = item;
+                                    let _ = value;
+                                    let text = value.string()?;
+                                    let _ = text;
+                                    if !(crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"NEW\"")?,
+                                    ) || crate::validation::equivalent(
                                         value,
                                         Json::parse(b"\"INVALID\"")?,
-                                    )
-                                    || crate::validation::equivalent(
+                                    ) || crate::validation::equivalent(
                                         value,
                                         Json::parse(b"\"ESTABLISHED\"")?,
-                                    )
-                                    || crate::validation::equivalent(
+                                    ) || crate::validation::equivalent(
                                         value,
                                         Json::parse(b"\"RELATED\"")?,
-                                    ))
-                                {
-                                    return Err(JsonError::Type);
+                                    )) {
+                                        return Err(JsonError::Type);
+                                    }
                                 }
                             }
                         }
@@ -2959,15 +2968,18 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                         if !(crate::validation::equivalent(
                             value,
                             Json::parse(b"\"MATCH_ENCRYPTED\"")?,
                         ) || crate::validation::equivalent(
                             value,
                             Json::parse(b"\"MATCH_NOT_ENCRYPTED\"")?,
-                        )) {
+                        ) || crate::validation::equivalent(value, Json::parse(b"null")?))
+                        {
                             return Err(JsonError::Type);
                         }
                     }
@@ -3040,7 +3052,7 @@ pub mod models {
             let value = self.0.required("ipProtocolScope")?;
             FirewallPolicyIpProtocolScope::from_json(value)
         }
-        /// Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic. Values: MATCH_ENCRYPTED, MATCH_NOT_ENCRYPTED.
+        /// Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic. Values: MATCH_ENCRYPTED, MATCH_NOT_ENCRYPTED, None.
         pub fn ipsec_filter(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0
                 .optional("ipsecFilter")?
@@ -5551,36 +5563,37 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let items = value.items()?;
-                        let _ = &items;
-                        if items.clone().count() < 1 {
-                            return Err(JsonError::Type);
-                        }
-                        if items.clone().count() > 2147483647 {
-                            return Err(JsonError::Type);
-                        }
-                        crate::validation::unique(value)?;
-                        for item in items {
-                            {
-                                let value = item;
-                                let _ = value;
-                                let text = value.string()?;
-                                let _ = text;
-                                if !(crate::validation::equivalent(value, Json::parse(b"\"NEW\"")?)
-                                    || crate::validation::equivalent(
+                        if !value.is_null() {
+                            let items = value.items()?;
+                            let _ = &items;
+                            if items.clone().count() < 1 {
+                                return Err(JsonError::Type);
+                            }
+                            if items.clone().count() > 2147483647 {
+                                return Err(JsonError::Type);
+                            }
+                            crate::validation::unique(value)?;
+                            for item in items {
+                                {
+                                    let value = item;
+                                    let _ = value;
+                                    let text = value.string()?;
+                                    let _ = text;
+                                    if !(crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"NEW\"")?,
+                                    ) || crate::validation::equivalent(
                                         value,
                                         Json::parse(b"\"INVALID\"")?,
-                                    )
-                                    || crate::validation::equivalent(
+                                    ) || crate::validation::equivalent(
                                         value,
                                         Json::parse(b"\"ESTABLISHED\"")?,
-                                    )
-                                    || crate::validation::equivalent(
+                                    ) || crate::validation::equivalent(
                                         value,
                                         Json::parse(b"\"RELATED\"")?,
-                                    ))
-                                {
-                                    return Err(JsonError::Type);
+                                    )) {
+                                        return Err(JsonError::Type);
+                                    }
                                 }
                             }
                         }
@@ -5639,15 +5652,18 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                         if !(crate::validation::equivalent(
                             value,
                             Json::parse(b"\"MATCH_ENCRYPTED\"")?,
                         ) || crate::validation::equivalent(
                             value,
                             Json::parse(b"\"MATCH_NOT_ENCRYPTED\"")?,
-                        )) {
+                        ) || crate::validation::equivalent(value, Json::parse(b"null")?))
+                        {
                             return Err(JsonError::Type);
                         }
                     }
@@ -5734,7 +5750,7 @@ pub mod models {
             let value = self.0.required("ipProtocolScope")?;
             FirewallPolicyIpProtocolScope::from_json(value)
         }
-        /// Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic. Values: MATCH_ENCRYPTED, MATCH_NOT_ENCRYPTED.
+        /// Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic. Values: MATCH_ENCRYPTED, MATCH_NOT_ENCRYPTED, None.
         pub fn ipsec_filter(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0
                 .optional("ipsecFilter")?
@@ -6075,11 +6091,14 @@ pub mod models {
         }
     }
     /// Firewall policy IPv4 and IPv6 protocol. Defines protocol matching. If null, matches all protocols.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct FirewallPolicyIPv4AndIPv6Protocol<'a>(Json<'a>);
     impl<'a> View<'a> for FirewallPolicyIPv4AndIPv6Protocol<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -6095,28 +6114,30 @@ pub mod models {
             let _ = value;
             {
                 let _ = value;
-                value.object()?;
-                {
-                    let field = value.required("type")?;
-                    let _ = field;
+                if !value.is_null() {
+                    value.object()?;
                     {
-                        let value = field;
-                        let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        let field = value.required("type")?;
+                        let _ = field;
+                        {
+                            let value = field;
+                            let _ = value;
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
-                }
-                let tag = value.required("type")?.string()?;
-                if tag.equals("NAMED_PROTOCOL") {
-                    crate::network::models::IntegrationFirewallPolicyIpv4AndIpv6NamedProtocolFilterDto::validate(value)?;
-                } else if tag.equals("PRESET") {
-                    crate::network::models::IntegrationFirewallPolicyIpv4AndIpv6ProtocolPresetFilterDto::validate(value)?;
-                } else if tag.equals("PROTOCOL_NUMBER") {
-                    crate::network::models::FirewallPolicyIPv4AndIPv6ProtocolNumber::validate(
-                        value,
-                    )?;
-                } else {
-                    return Err(JsonError::Type);
+                    let tag = value.required("type")?.string()?;
+                    if tag.equals("NAMED_PROTOCOL") {
+                        crate::network::models::IntegrationFirewallPolicyIpv4AndIpv6NamedProtocolFilterDto::validate(value)?;
+                    } else if tag.equals("PRESET") {
+                        crate::network::models::IntegrationFirewallPolicyIpv4AndIpv6ProtocolPresetFilterDto::validate(value)?;
+                    } else if tag.equals("PROTOCOL_NUMBER") {
+                        crate::network::models::FirewallPolicyIPv4AndIPv6ProtocolNumber::validate(
+                            value,
+                        )?;
+                    } else {
+                        return Err(JsonError::Type);
+                    }
                 }
             }
             Ok(())
@@ -6449,11 +6470,14 @@ pub mod models {
         }
     }
     /// Firewall policy IPv4 protocol. Defines protocol matching. If null, matches all protocols.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct FirewallPolicyIPv4Protocol<'a>(Json<'a>);
     impl<'a> View<'a> for FirewallPolicyIPv4Protocol<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -6469,26 +6493,28 @@ pub mod models {
             let _ = value;
             {
                 let _ = value;
-                value.object()?;
-                {
-                    let field = value.required("type")?;
-                    let _ = field;
+                if !value.is_null() {
+                    value.object()?;
                     {
-                        let value = field;
-                        let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        let field = value.required("type")?;
+                        let _ = field;
+                        {
+                            let value = field;
+                            let _ = value;
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
-                }
-                let tag = value.required("type")?.string()?;
-                if tag.equals("NAMED_PROTOCOL") {
-                    crate::network::models::IntegrationFirewallPolicyIpv4NamedProtocolFilterDto::validate(value)?;
-                } else if tag.equals("PRESET") {
-                    crate::network::models::IntegrationFirewallPolicyIpv4ProtocolPresetFilterDto::validate(value)?;
-                } else if tag.equals("PROTOCOL_NUMBER") {
-                    crate::network::models::FirewallPolicyIPv4ProtocolNumber::validate(value)?;
-                } else {
-                    return Err(JsonError::Type);
+                    let tag = value.required("type")?.string()?;
+                    if tag.equals("NAMED_PROTOCOL") {
+                        crate::network::models::IntegrationFirewallPolicyIpv4NamedProtocolFilterDto::validate(value)?;
+                    } else if tag.equals("PRESET") {
+                        crate::network::models::IntegrationFirewallPolicyIpv4ProtocolPresetFilterDto::validate(value)?;
+                    } else if tag.equals("PROTOCOL_NUMBER") {
+                        crate::network::models::FirewallPolicyIPv4ProtocolNumber::validate(value)?;
+                    } else {
+                        return Err(JsonError::Type);
+                    }
                 }
             }
             Ok(())
@@ -6884,11 +6910,14 @@ pub mod models {
         }
     }
     /// Firewall policy IPv6 protocol. Defines protocol matching. If null, matches all protocols.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct FirewallPolicyIPv6Protocol<'a>(Json<'a>);
     impl<'a> View<'a> for FirewallPolicyIPv6Protocol<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -6904,26 +6933,28 @@ pub mod models {
             let _ = value;
             {
                 let _ = value;
-                value.object()?;
-                {
-                    let field = value.required("type")?;
-                    let _ = field;
+                if !value.is_null() {
+                    value.object()?;
                     {
-                        let value = field;
-                        let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        let field = value.required("type")?;
+                        let _ = field;
+                        {
+                            let value = field;
+                            let _ = value;
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
-                }
-                let tag = value.required("type")?.string()?;
-                if tag.equals("NAMED_PROTOCOL") {
-                    crate::network::models::IntegrationFirewallPolicyIpv6NamedProtocolFilterDto::validate(value)?;
-                } else if tag.equals("PRESET") {
-                    crate::network::models::IntegrationFirewallPolicyIpv6ProtocolPresetFilterDto::validate(value)?;
-                } else if tag.equals("PROTOCOL_NUMBER") {
-                    crate::network::models::FirewallPolicyIPv4ProtocolNumber::validate(value)?;
-                } else {
-                    return Err(JsonError::Type);
+                    let tag = value.required("type")?.string()?;
+                    if tag.equals("NAMED_PROTOCOL") {
+                        crate::network::models::IntegrationFirewallPolicyIpv6NamedProtocolFilterDto::validate(value)?;
+                    } else if tag.equals("PRESET") {
+                        crate::network::models::IntegrationFirewallPolicyIpv6ProtocolPresetFilterDto::validate(value)?;
+                    } else if tag.equals("PROTOCOL_NUMBER") {
+                        crate::network::models::FirewallPolicyIPv4ProtocolNumber::validate(value)?;
+                    } else {
+                        return Err(JsonError::Type);
+                    }
                 }
             }
             Ok(())
@@ -8960,11 +8991,14 @@ pub mod models {
         }
     }
     /// Firewall schedule. Defines date and time when the entity is active. If null, the entity is always active.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct FirewallSchedule<'a>(Json<'a>);
     impl<'a> View<'a> for FirewallSchedule<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -8980,34 +9014,36 @@ pub mod models {
             let _ = value;
             {
                 let _ = value;
-                value.object()?;
-                {
-                    let field = value.required("mode")?;
-                    let _ = field;
+                if !value.is_null() {
+                    value.object()?;
                     {
-                        let value = field;
-                        let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        let field = value.required("mode")?;
+                        let _ = field;
+                        {
+                            let value = field;
+                            let _ = value;
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
-                }
-                let tag = value.required("mode")?.string()?;
-                if tag.equals("CUSTOM") {
-                    crate::network::models::IntegrationFirewallScheduleCustomDto::validate(value)?;
-                } else if tag.equals("EVERY_DAY") {
-                    crate::network::models::IntegrationFirewallScheduleEveryDayDto::validate(
-                        value,
-                    )?;
-                } else if tag.equals("EVERY_WEEK") {
-                    crate::network::models::IntegrationFirewallScheduleEveryWeekDto::validate(
-                        value,
-                    )?;
-                } else if tag.equals("ONE_TIME_ONLY") {
-                    crate::network::models::IntegrationFirewallScheduleOneTimeOnlyDto::validate(
-                        value,
-                    )?;
-                } else {
-                    return Err(JsonError::Type);
+                    let tag = value.required("mode")?.string()?;
+                    if tag.equals("CUSTOM") {
+                        crate::network::models::IntegrationFirewallScheduleCustomDto::validate(
+                            value,
+                        )?;
+                    } else if tag.equals("EVERY_DAY") {
+                        crate::network::models::IntegrationFirewallScheduleEveryDayDto::validate(
+                            value,
+                        )?;
+                    } else if tag.equals("EVERY_WEEK") {
+                        crate::network::models::IntegrationFirewallScheduleEveryWeekDto::validate(
+                            value,
+                        )?;
+                    } else if tag.equals("ONE_TIME_ONLY") {
+                        crate::network::models::IntegrationFirewallScheduleOneTimeOnlyDto::validate(value)?;
+                    } else {
+                        return Err(JsonError::Type);
+                    }
                 }
             }
             Ok(())
@@ -9022,11 +9058,14 @@ pub mod models {
         }
     }
     /// Firewall schedule time. Defines the time range when the entity is active. If null, the entity is active all day.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct FirewallScheduleTime<'a>(Json<'a>);
     impl<'a> View<'a> for FirewallScheduleTime<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -9042,25 +9081,27 @@ pub mod models {
             let _ = value;
             {
                 let _ = value;
-                value.object()?;
-                {
-                    let field = value.required("startTime")?;
-                    let _ = field;
+                if !value.is_null() {
+                    value.object()?;
                     {
-                        let value = field;
-                        let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        let field = value.required("startTime")?;
+                        let _ = field;
+                        {
+                            let value = field;
+                            let _ = value;
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
-                }
-                {
-                    let field = value.required("stopTime")?;
-                    let _ = field;
                     {
-                        let value = field;
-                        let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        let field = value.required("stopTime")?;
+                        let _ = field;
+                        {
+                            let value = field;
+                            let _ = value;
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
                 }
             }
@@ -9337,7 +9378,11 @@ pub mod models {
                 }
                 if let Some(field) = value.get("dhcpConfiguration")? {
                     let _ = field;
-                    crate::network::models::GatewayManagedIPv4DhcpConfiguration::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::GatewayManagedIPv4DhcpConfiguration::validate(
+                            field,
+                        )?;
+                    }
                 }
                 {
                     let field = value.required("hostIpAddress")?;
@@ -9557,8 +9602,10 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
                 }
                 {
@@ -9815,7 +9862,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("dhcpGuarding")? {
                     let _ = field;
-                    crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -9905,7 +9954,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("ipv6Configuration")? {
                     let _ = field;
-                    crate::network::models::NetworkIPv6Configuration::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkIPv6Configuration::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("isolationEnabled")?;
@@ -11936,8 +11987,10 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
                 }
                 {
@@ -12087,7 +12140,9 @@ pub mod models {
                 value.object()?;
                 if let Some(field) = value.get("dhcpConfiguration")? {
                     let _ = field;
-                    crate::network::models::DhcpConfigurationForIPv6Network::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::DhcpConfigurationForIPv6Network::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("slaacEnabled")?;
@@ -15356,7 +15411,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -15434,7 +15491,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -15508,7 +15567,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -15582,7 +15643,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -15658,7 +15721,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -15734,7 +15799,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -15866,7 +15933,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("regionFilter")?;
@@ -15940,7 +16009,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("siteToSiteVpnTunnelFilter")?;
@@ -16020,7 +16091,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("vpnServerFilter")?;
@@ -17168,8 +17241,10 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                         if !(crate::validation::equivalent(
                             value,
                             Json::parse(b"\"ADDRESS_MASK_REPLY\"")?,
@@ -17278,7 +17353,8 @@ pub mod models {
                         ) || crate::validation::equivalent(
                             value,
                             Json::parse(b"\"TTL_ZERO_DURING_TRANSIT\"")?,
-                        )) {
+                        ) || crate::validation::equivalent(value, Json::parse(b"null")?))
+                        {
                             return Err(JsonError::Type);
                         }
                     }
@@ -17304,7 +17380,7 @@ pub mod models {
         pub fn name(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0.optional("name")?.map(Json::string).transpose()
         }
-        /// Match specific type of ICMP traffic. If null, matches all types. Values: ADDRESS_MASK_REPLY, ADDRESS_MASK_REQUEST, COMMUNICATION_PROHIBITED, DESTINATION_UNREACHABLE, ECHO_REPLY, ECHO_REQUEST, FRAGMENTATION_NEEDED, HOST_PRECEDENCE_VIOLATION, HOST_PROHIBITED, HOST_REDIRECT, HOST_UNKNOWN, HOST_UNREACHABLE, IP_HEADER_BAD, NETWORK_PROHIBITED, NETWORK_REDIRECT, NETWORK_UNKNOWN, NETWORK_UNREACHABLE, PARAMETER_PROBLEM, PORT_UNREACHABLE, PRECEDENCE_CUTOFF, PROTOCOL_UNREACHABLE, REDIRECT, REQUIRED_OPTION_MISSING, ROUTER_ADVERTISEMENT, ROUTER_SOLICITATION, SOURCE_QUENCH, SOURCE_ROUTE_FAILED, TIME_EXCEEDED, TIMESTAMP_REPLY, TIMESTAMP_REQUEST, TOS_HOST_REDIRECT, TOS_HOST_UNREACHABLE, TOS_NETWORK_REDIRECT, TOS_NETWORK_UNREACHABLE, TTL_ZERO_DURING_REASSEMBLY, TTL_ZERO_DURING_TRANSIT.
+        /// Match specific type of ICMP traffic. If null, matches all types. Values: ADDRESS_MASK_REPLY, ADDRESS_MASK_REQUEST, COMMUNICATION_PROHIBITED, DESTINATION_UNREACHABLE, ECHO_REPLY, ECHO_REQUEST, FRAGMENTATION_NEEDED, HOST_PRECEDENCE_VIOLATION, HOST_PROHIBITED, HOST_REDIRECT, HOST_UNKNOWN, HOST_UNREACHABLE, IP_HEADER_BAD, NETWORK_PROHIBITED, NETWORK_REDIRECT, NETWORK_UNKNOWN, NETWORK_UNREACHABLE, PARAMETER_PROBLEM, PORT_UNREACHABLE, PRECEDENCE_CUTOFF, PROTOCOL_UNREACHABLE, REDIRECT, REQUIRED_OPTION_MISSING, ROUTER_ADVERTISEMENT, ROUTER_SOLICITATION, SOURCE_QUENCH, SOURCE_ROUTE_FAILED, TIME_EXCEEDED, TIMESTAMP_REPLY, TIMESTAMP_REQUEST, TOS_HOST_REDIRECT, TOS_HOST_UNREACHABLE, TOS_NETWORK_REDIRECT, TOS_NETWORK_UNREACHABLE, TTL_ZERO_DURING_REASSEMBLY, TTL_ZERO_DURING_TRANSIT, None.
         pub fn typename_filter(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0
                 .optional("typenameFilter")?
@@ -17856,8 +17932,10 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                         if !(crate::validation::equivalent(
                             value,
                             Json::parse(b"\"ADDRESS_UNREACHABLE\"")?,
@@ -17927,7 +18005,8 @@ pub mod models {
                         ) || crate::validation::equivalent(
                             value,
                             Json::parse(b"\"UNKNOWN_OPTION\"")?,
-                        )) {
+                        ) || crate::validation::equivalent(value, Json::parse(b"null")?))
+                        {
                             return Err(JsonError::Type);
                         }
                     }
@@ -17976,7 +18055,7 @@ pub mod models {
         pub fn name(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0.optional("name")?.map(Json::string).transpose()
         }
-        /// Match specific type of ICMPv6 traffic. If null, matches all types. Values: ADDRESS_UNREACHABLE, BAD_HEADER, BEYOND_SCOPE, COMMUNICATION_PROHIBITED, DESTINATION_UNREACHABLE, ECHO_REPLY, ECHO_REQUEST, FAILED_POLICY, NEIGHBOR_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NO_ROUTE, PACKET_TOO_BIG, PARAMETER_PROBLEM, PORT_UNREACHABLE, REDIRECT, REJECT_ROUTE, ROUTER_ADVERTISEMENT, ROUTER_SOLICITATION, TIME_EXCEEDED, TTL_ZERO_DURING_REASSEMBLY, TTL_ZERO_DURING_TRANSIT, UNKNOWN_HEADER_TYPE, UNKNOWN_OPTION.
+        /// Match specific type of ICMPv6 traffic. If null, matches all types. Values: ADDRESS_UNREACHABLE, BAD_HEADER, BEYOND_SCOPE, COMMUNICATION_PROHIBITED, DESTINATION_UNREACHABLE, ECHO_REPLY, ECHO_REQUEST, FAILED_POLICY, NEIGHBOR_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NO_ROUTE, PACKET_TOO_BIG, PARAMETER_PROBLEM, PORT_UNREACHABLE, REDIRECT, REJECT_ROUTE, ROUTER_ADVERTISEMENT, ROUTER_SOLICITATION, TIME_EXCEEDED, TTL_ZERO_DURING_REASSEMBLY, TTL_ZERO_DURING_TRANSIT, UNKNOWN_HEADER_TYPE, UNKNOWN_OPTION, None.
         pub fn typename_filter(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0
                 .optional("typenameFilter")?
@@ -18425,13 +18504,17 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -18517,13 +18600,17 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -18606,7 +18693,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -18678,8 +18767,10 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                     }
                 }
                 {
@@ -18689,7 +18780,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -18827,7 +18920,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("regionFilter")?;
@@ -18901,7 +18996,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("siteToSiteVpnTunnelFilter")?;
@@ -18981,7 +19078,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("portFilter")? {
                     let _ = field;
-                    crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::FirewallPolicyPortFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("vpnServerFilter")?;
@@ -19611,7 +19710,9 @@ pub mod models {
                 value.object()?;
                 if let Some(field) = value.get("dhcpGuarding")? {
                     let _ = field;
-                    crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -19683,7 +19784,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("ipv6Configuration")? {
                     let _ = field;
-                    crate::network::models::NetworkIPv6Configuration::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkIPv6Configuration::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("isolationEnabled")?;
@@ -19699,7 +19802,9 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        value.boolean()?;
+                        if !value.is_null() {
+                            value.boolean()?;
+                        }
                     }
                 }
                 if let Some(field) = value.get("zoneId")? {
@@ -19828,7 +19933,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("broadcastingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("channel2gLockedTo6")?;
@@ -20101,7 +20208,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("broadcastingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("channel2gLockedTo6")?;
@@ -20389,7 +20498,9 @@ pub mod models {
                 value.object()?;
                 if let Some(field) = value.get("broadcastingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -20571,7 +20682,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("enforcingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    }
                 }
                 if let Some(field) = value.get("index")? {
                     let _ = field;
@@ -20617,28 +20730,31 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let items = value.items()?;
-                        let _ = &items;
-                        if items.clone().count() < 1 {
-                            return Err(JsonError::Type);
-                        }
-                        if items.clone().count() > 2147483647 {
-                            return Err(JsonError::Type);
-                        }
-                        crate::validation::unique(value)?;
-                        for item in items {
-                            {
-                                let value = item;
-                                let _ = value;
-                                let text = value.string()?;
-                                let _ = text;
-                                if !(crate::validation::equivalent(value, Json::parse(b"\"TCP\"")?)
-                                    || crate::validation::equivalent(
+                        if !value.is_null() {
+                            let items = value.items()?;
+                            let _ = &items;
+                            if items.clone().count() < 1 {
+                                return Err(JsonError::Type);
+                            }
+                            if items.clone().count() > 2147483647 {
+                                return Err(JsonError::Type);
+                            }
+                            crate::validation::unique(value)?;
+                            for item in items {
+                                {
+                                    let value = item;
+                                    let _ = value;
+                                    let text = value.string()?;
+                                    let _ = text;
+                                    if !(crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"TCP\"")?,
+                                    ) || crate::validation::equivalent(
                                         value,
                                         Json::parse(b"\"UDP\"")?,
-                                    ))
-                                {
-                                    return Err(JsonError::Type);
+                                    )) {
+                                        return Err(JsonError::Type);
+                                    }
                                 }
                             }
                         }
@@ -20782,7 +20898,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("enforcingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("id")?;
@@ -20847,28 +20965,31 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let items = value.items()?;
-                        let _ = &items;
-                        if items.clone().count() < 1 {
-                            return Err(JsonError::Type);
-                        }
-                        if items.clone().count() > 2147483647 {
-                            return Err(JsonError::Type);
-                        }
-                        crate::validation::unique(value)?;
-                        for item in items {
-                            {
-                                let value = item;
-                                let _ = value;
-                                let text = value.string()?;
-                                let _ = text;
-                                if !(crate::validation::equivalent(value, Json::parse(b"\"TCP\"")?)
-                                    || crate::validation::equivalent(
+                        if !value.is_null() {
+                            let items = value.items()?;
+                            let _ = &items;
+                            if items.clone().count() < 1 {
+                                return Err(JsonError::Type);
+                            }
+                            if items.clone().count() > 2147483647 {
+                                return Err(JsonError::Type);
+                            }
+                            crate::validation::unique(value)?;
+                            for item in items {
+                                {
+                                    let value = item;
+                                    let _ = value;
+                                    let text = value.string()?;
+                                    let _ = text;
+                                    if !(crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"TCP\"")?,
+                                    ) || crate::validation::equivalent(
                                         value,
                                         Json::parse(b"\"UDP\"")?,
-                                    ))
-                                {
-                                    return Err(JsonError::Type);
+                                    )) {
+                                        return Err(JsonError::Type);
+                                    }
                                 }
                             }
                         }
@@ -21018,38 +21139,40 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let items = value.items()?;
-                        let _ = &items;
-                        if items.clone().count() < 1 {
-                            return Err(JsonError::Type);
-                        }
-                        if items.clone().count() > 2147483647 {
-                            return Err(JsonError::Type);
-                        }
-                        crate::validation::unique(value)?;
-                        for item in items {
-                            {
-                                let value = item;
-                                let _ = value;
-                                let number = value.integer()?;
-                                let _ = number;
-                                if number < 1_i64 {
+                        if !value.is_null() {
+                            let items = value.items()?;
+                            let _ = &items;
+                            if items.clone().count() < 1 {
+                                return Err(JsonError::Type);
+                            }
+                            if items.clone().count() > 2147483647 {
+                                return Err(JsonError::Type);
+                            }
+                            crate::validation::unique(value)?;
+                            for item in items {
+                                {
+                                    let value = item;
+                                    let _ = value;
+                                    let number = value.integer()?;
+                                    let _ = number;
+                                    if number < 1_i64 {
+                                        return Err(JsonError::Type);
+                                    }
+                                    if number > 65535_i64 {
+                                        return Err(JsonError::Type);
+                                    }
+                                }
+                            }
+                            if let Ok(number) = value.number() {
+                                if !number.is_finite() {
                                     return Err(JsonError::Type);
                                 }
-                                if number > 65535_i64 {
+                                if number < 1_f64 {
                                     return Err(JsonError::Type);
                                 }
-                            }
-                        }
-                        if let Ok(number) = value.number() {
-                            if !number.is_finite() {
-                                return Err(JsonError::Type);
-                            }
-                            if number < 1_f64 {
-                                return Err(JsonError::Type);
-                            }
-                            if number > 65535_f64 {
-                                return Err(JsonError::Type);
+                                if number > 65535_f64 {
+                                    return Err(JsonError::Type);
+                                }
                             }
                         }
                     }
@@ -21240,38 +21363,40 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let items = value.items()?;
-                        let _ = &items;
-                        if items.clone().count() < 1 {
-                            return Err(JsonError::Type);
-                        }
-                        if items.clone().count() > 2147483647 {
-                            return Err(JsonError::Type);
-                        }
-                        crate::validation::unique(value)?;
-                        for item in items {
-                            {
-                                let value = item;
-                                let _ = value;
-                                let number = value.integer()?;
-                                let _ = number;
-                                if number < 1_i64 {
+                        if !value.is_null() {
+                            let items = value.items()?;
+                            let _ = &items;
+                            if items.clone().count() < 1 {
+                                return Err(JsonError::Type);
+                            }
+                            if items.clone().count() > 2147483647 {
+                                return Err(JsonError::Type);
+                            }
+                            crate::validation::unique(value)?;
+                            for item in items {
+                                {
+                                    let value = item;
+                                    let _ = value;
+                                    let number = value.integer()?;
+                                    let _ = number;
+                                    if number < 1_i64 {
+                                        return Err(JsonError::Type);
+                                    }
+                                    if number > 65535_i64 {
+                                        return Err(JsonError::Type);
+                                    }
+                                }
+                            }
+                            if let Ok(number) = value.number() {
+                                if !number.is_finite() {
                                     return Err(JsonError::Type);
                                 }
-                                if number > 65535_i64 {
+                                if number < 1_f64 {
                                     return Err(JsonError::Type);
                                 }
-                            }
-                        }
-                        if let Ok(number) = value.number() {
-                            if !number.is_finite() {
-                                return Err(JsonError::Type);
-                            }
-                            if number < 1_f64 {
-                                return Err(JsonError::Type);
-                            }
-                            if number > 65535_f64 {
-                                return Err(JsonError::Type);
+                                if number > 65535_f64 {
+                                    return Err(JsonError::Type);
+                                }
                             }
                         }
                     }
@@ -22284,7 +22409,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("enforcingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    }
                 }
                 if let Some(field) = value.get("index")? {
                     let _ = field;
@@ -22471,7 +22598,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("enforcingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::AclRuleDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("id")?;
@@ -22682,13 +22811,15 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let number = value.integer()?;
-                        let _ = number;
-                        if number < 1_i64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > 48_i64 {
-                            return Err(JsonError::Type);
+                        if !value.is_null() {
+                            let number = value.integer()?;
+                            let _ = number;
+                            if number < 1_i64 {
+                                return Err(JsonError::Type);
+                            }
+                            if number > 48_i64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -24051,7 +24182,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("broadcastingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("channel2gLockedTo6")?;
@@ -24240,7 +24373,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("handoffSuggestionsConfiguration")? {
                     let _ = field;
-                    crate::network::models::IntegrationWifiHandoffSuggestionsConfigurationDto::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::IntegrationWifiHandoffSuggestionsConfigurationDto::validate(field)?;
+                    }
                 }
                 if let Some(field) = value.get("hotspotConfiguration")? {
                     let _ = field;
@@ -24490,7 +24625,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("broadcastingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("channel2gLockedTo6")?;
@@ -24696,7 +24833,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("handoffSuggestionsConfiguration")? {
                     let _ = field;
-                    crate::network::models::IntegrationWifiHandoffSuggestionsConfigurationDto::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::IntegrationWifiHandoffSuggestionsConfigurationDto::validate(field)?;
+                    }
                 }
                 if let Some(field) = value.get("hotspotConfiguration")? {
                     let _ = field;
@@ -24943,7 +25082,9 @@ pub mod models {
                 value.object()?;
                 if let Some(field) = value.get("broadcastingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -25139,7 +25280,9 @@ pub mod models {
                 value.object()?;
                 if let Some(field) = value.get("dhcpGuarding")? {
                     let _ = field;
-                    crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -26022,7 +26165,9 @@ pub mod models {
                 value.object()?;
                 if let Some(field) = value.get("dhcpGuarding")? {
                     let _ = field;
-                    crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -27396,13 +27541,15 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let number = value.integer()?;
-                        let _ = number;
-                        if number < -80_i64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > -60_i64 {
-                            return Err(JsonError::Type);
+                        if !value.is_null() {
+                            let number = value.integer()?;
+                            let _ = number;
+                            if number < -80_i64 {
+                                return Err(JsonError::Type);
+                            }
+                            if number > -60_i64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -27411,13 +27558,15 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let number = value.integer()?;
-                        let _ = number;
-                        if number < -90_i64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > -70_i64 {
-                            return Err(JsonError::Type);
+                        if !value.is_null() {
+                            let number = value.integer()?;
+                            let _ = number;
+                            if number < -90_i64 {
+                                return Err(JsonError::Type);
+                            }
+                            if number > -70_i64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -27535,7 +27684,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("deviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 if let Some(field) = value.get("bridgingNetworkIds")? {
                     let _ = field;
@@ -27706,7 +27857,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("deviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
             }
             {
@@ -28331,15 +28484,18 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                         if !(crate::validation::equivalent(
                             value,
                             Json::parse(b"\"ENHANCED_OPEN\"")?,
                         ) || crate::validation::equivalent(
                             value,
                             Json::parse(b"\"ENHANCED_OPEN_WITH_TRANSITION\"")?,
-                        )) {
+                        ) || crate::validation::equivalent(value, Json::parse(b"null")?))
+                        {
                             return Err(JsonError::Type);
                         }
                     }
@@ -28368,7 +28524,7 @@ pub mod models {
             let value = self.0.required("type")?;
             value.string()
         }
-        /// Encryption mode for open security. If null, plain open with no encryption. Values: ENHANCED_OPEN, ENHANCED_OPEN_WITH_TRANSITION.
+        /// Encryption mode for open security. If null, plain open with no encryption. Values: ENHANCED_OPEN, ENHANCED_OPEN_WITH_TRANSITION, None.
         pub fn encryption(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0.optional("encryption")?.map(Json::string).transpose()
         }
@@ -28875,13 +29031,15 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let number = value.integer()?;
-                        let _ = number;
-                        if number < 1_i64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > 86400_i64 {
-                            return Err(JsonError::Type);
+                        if !value.is_null() {
+                            let number = value.integer()?;
+                            let _ = number;
+                            if number < 1_i64 {
+                                return Err(JsonError::Type);
+                            }
+                            if number > 86400_i64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -28890,10 +29048,13 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                         if !(crate::validation::equivalent(value, Json::parse(b"\"REQUIRED\"")?)
-                            || crate::validation::equivalent(value, Json::parse(b"\"OPTIONAL\"")?))
+                            || crate::validation::equivalent(value, Json::parse(b"\"OPTIONAL\"")?)
+                            || crate::validation::equivalent(value, Json::parse(b"null")?))
                         {
                             return Err(JsonError::Type);
                         }
@@ -28939,7 +29100,7 @@ pub mod models {
                 .map(Json::integer)
                 .transpose()
         }
-        /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL.
+        /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL, None.
         pub fn pmf_mode(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0.optional("pmfMode")?.map(Json::string).transpose()
         }
@@ -29056,13 +29217,15 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let number = value.integer()?;
-                        let _ = number;
-                        if number < 1_i64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > 86400_i64 {
-                            return Err(JsonError::Type);
+                        if !value.is_null() {
+                            let number = value.integer()?;
+                            let _ = number;
+                            if number < 1_i64 {
+                                return Err(JsonError::Type);
+                            }
+                            if number > 86400_i64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -29086,10 +29249,13 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                         if !(crate::validation::equivalent(value, Json::parse(b"\"REQUIRED\"")?)
-                            || crate::validation::equivalent(value, Json::parse(b"\"OPTIONAL\"")?))
+                            || crate::validation::equivalent(value, Json::parse(b"\"OPTIONAL\"")?)
+                            || crate::validation::equivalent(value, Json::parse(b"null")?))
                         {
                             return Err(JsonError::Type);
                         }
@@ -29155,7 +29321,7 @@ pub mod models {
         pub fn passphrase(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0.optional("passphrase")?.map(Json::string).transpose()
         }
-        /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL.
+        /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL, None.
         pub fn pmf_mode(self) -> Result<Option<JsonString<'a>>, JsonError> {
             self.0.optional("pmfMode")?.map(Json::string).transpose()
         }
@@ -29312,13 +29478,15 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let number = value.integer()?;
-                        let _ = number;
-                        if number < 1_i64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > 86400_i64 {
-                            return Err(JsonError::Type);
+                        if !value.is_null() {
+                            let number = value.integer()?;
+                            let _ = number;
+                            if number < 1_i64 {
+                                return Err(JsonError::Type);
+                            }
+                            if number > 86400_i64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -29328,10 +29496,13 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                         if !(crate::validation::equivalent(value, Json::parse(b"\"REQUIRED\"")?)
-                            || crate::validation::equivalent(value, Json::parse(b"\"OPTIONAL\"")?))
+                            || crate::validation::equivalent(value, Json::parse(b"\"OPTIONAL\"")?)
+                            || crate::validation::equivalent(value, Json::parse(b"null")?))
                         {
                             return Err(JsonError::Type);
                         }
@@ -29386,7 +29557,7 @@ pub mod models {
                 .map(Json::integer)
                 .transpose()
         }
-        /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL.
+        /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL, None.
         pub fn pmf_mode(self) -> Result<JsonString<'a>, JsonError> {
             let value = self.0.required("pmfMode")?;
             value.string()
@@ -29509,13 +29680,15 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let number = value.integer()?;
-                        let _ = number;
-                        if number < 1_i64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > 86400_i64 {
-                            return Err(JsonError::Type);
+                        if !value.is_null() {
+                            let number = value.integer()?;
+                            let _ = number;
+                            if number < 1_i64 {
+                                return Err(JsonError::Type);
+                            }
+                            if number > 86400_i64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -29541,10 +29714,13 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let text = value.string()?;
-                        let _ = text;
+                        if !value.is_null() {
+                            let text = value.string()?;
+                            let _ = text;
+                        }
                         if !(crate::validation::equivalent(value, Json::parse(b"\"REQUIRED\"")?)
-                            || crate::validation::equivalent(value, Json::parse(b"\"OPTIONAL\"")?))
+                            || crate::validation::equivalent(value, Json::parse(b"\"OPTIONAL\"")?)
+                            || crate::validation::equivalent(value, Json::parse(b"null")?))
                         {
                             return Err(JsonError::Type);
                         }
@@ -29607,7 +29783,7 @@ pub mod models {
             let value = self.0.required("passphrase")?;
             value.string()
         }
-        /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL.
+        /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration. Values: REQUIRED, OPTIONAL, None.
         pub fn pmf_mode(self) -> Result<JsonString<'a>, JsonError> {
             let value = self.0.required("pmfMode")?;
             value.string()
@@ -29747,13 +29923,15 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let number = value.integer()?;
-                        let _ = number;
-                        if number < 1_i64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > 86400_i64 {
-                            return Err(JsonError::Type);
+                        if !value.is_null() {
+                            let number = value.integer()?;
+                            let _ = number;
+                            if number < 1_i64 {
+                                return Err(JsonError::Type);
+                            }
+                            if number > 86400_i64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -29933,13 +30111,15 @@ pub mod models {
                     {
                         let value = field;
                         let _ = value;
-                        let number = value.integer()?;
-                        let _ = number;
-                        if number < 1_i64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > 86400_i64 {
-                            return Err(JsonError::Type);
+                        if !value.is_null() {
+                            let number = value.integer()?;
+                            let _ = number;
+                            if number < 1_i64 {
+                                return Err(JsonError::Type);
+                            }
+                            if number > 86400_i64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -31282,7 +31462,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("dhcpGuarding")? {
                     let _ = field;
-                    crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -34338,7 +34520,11 @@ pub mod models {
                 }
                 if let Some(field) = value.get("dhcpConfiguration")? {
                     let _ = field;
-                    crate::network::models::SwitchManagedIPv4DhcpConfiguration::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::SwitchManagedIPv4DhcpConfiguration::validate(
+                            field,
+                        )?;
+                    }
                 }
                 {
                     let field = value.required("hostIpAddress")?;
@@ -34493,7 +34679,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("dhcpGuarding")? {
                     let _ = field;
-                    crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -35911,7 +36099,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("dhcpGuarding")? {
                     let _ = field;
-                    crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::NetworkDhcpGuarding::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -37447,7 +37637,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("broadcastingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("channel2gLockedTo6")?;
@@ -37721,7 +37913,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("broadcastingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("channel2gLockedTo6")?;
@@ -38012,7 +38206,9 @@ pub mod models {
                 value.object()?;
                 if let Some(field) = value.get("broadcastingDeviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 {
                     let field = value.required("enabled")?;
@@ -39182,7 +39378,9 @@ pub mod models {
                 }
                 if let Some(field) = value.get("deviceFilter")? {
                     let _ = field;
-                    crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    if !field.is_null() {
+                        crate::network::models::BroadcastingDeviceFilter::validate(field)?;
+                    }
                 }
                 let tag = value.required("action")?.string()?;
                 if tag.equals("ALLOW") {
@@ -39320,7 +39518,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("enforcingDeviceFilter", value)?;
                 self.present |= 1u128 << 4;
                 Ok(self)
@@ -39549,7 +39749,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("enforcingDeviceFilter", value)?;
                 self.present |= 1u128 << 4;
                 Ok(self)
@@ -39665,7 +39867,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("enforcingDeviceFilter", value)?;
                 self.present |= 1u128 << 4;
                 Ok(self)
@@ -41178,7 +41382,9 @@ pub mod models {
             }
             /// DHCP Guarding settings for this Network. If this field is omitted or null, the feature is disabled
             pub fn dhcp_guarding(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                }
                 self.writer.raw_field("dhcpGuarding", value)?;
                 self.present |= 1u128 << 0;
                 Ok(self)
@@ -41266,36 +41472,38 @@ pub mod models {
             ) -> Result<&mut Self, JsonError> {
                 {
                     let _ = value;
-                    let items = value.items()?;
-                    let _ = &items;
-                    if items.clone().count() < 1 {
-                        return Err(JsonError::Type);
-                    }
-                    if items.clone().count() > 2147483647 {
-                        return Err(JsonError::Type);
-                    }
-                    crate::validation::unique(value)?;
-                    for item in items {
-                        {
-                            let value = item;
-                            let _ = value;
-                            let text = value.string()?;
-                            let _ = text;
-                            if !(crate::validation::equivalent(value, Json::parse(b"\"NEW\"")?)
-                                || crate::validation::equivalent(
-                                    value,
-                                    Json::parse(b"\"INVALID\"")?,
-                                )
-                                || crate::validation::equivalent(
-                                    value,
-                                    Json::parse(b"\"ESTABLISHED\"")?,
-                                )
-                                || crate::validation::equivalent(
-                                    value,
-                                    Json::parse(b"\"RELATED\"")?,
-                                ))
+                    if !value.is_null() {
+                        let items = value.items()?;
+                        let _ = &items;
+                        if items.clone().count() < 1 {
+                            return Err(JsonError::Type);
+                        }
+                        if items.clone().count() > 2147483647 {
+                            return Err(JsonError::Type);
+                        }
+                        crate::validation::unique(value)?;
+                        for item in items {
                             {
-                                return Err(JsonError::Type);
+                                let value = item;
+                                let _ = value;
+                                let text = value.string()?;
+                                let _ = text;
+                                if !(crate::validation::equivalent(value, Json::parse(b"\"NEW\"")?)
+                                    || crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"INVALID\"")?,
+                                    )
+                                    || crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"ESTABLISHED\"")?,
+                                    )
+                                    || crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"RELATED\"")?,
+                                    ))
+                                {
+                                    return Err(JsonError::Type);
+                                }
                             }
                         }
                     }
@@ -41332,9 +41540,6 @@ pub mod models {
             }
             /// Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic.
             pub fn ipsec_filter(&mut self, value: &str) -> Result<&mut Self, JsonError> {
-                if !["MATCH_ENCRYPTED", "MATCH_NOT_ENCRYPTED"].contains(&value) {
-                    return Err(JsonError::Type);
-                }
                 self.writer.field("ipsecFilter", &value)?;
                 self.present |= 1u128 << 6;
                 Ok(self)
@@ -43333,36 +43538,38 @@ pub mod models {
             ) -> Result<&mut Self, JsonError> {
                 {
                     let _ = value;
-                    let items = value.items()?;
-                    let _ = &items;
-                    if items.clone().count() < 1 {
-                        return Err(JsonError::Type);
-                    }
-                    if items.clone().count() > 2147483647 {
-                        return Err(JsonError::Type);
-                    }
-                    crate::validation::unique(value)?;
-                    for item in items {
-                        {
-                            let value = item;
-                            let _ = value;
-                            let text = value.string()?;
-                            let _ = text;
-                            if !(crate::validation::equivalent(value, Json::parse(b"\"NEW\"")?)
-                                || crate::validation::equivalent(
-                                    value,
-                                    Json::parse(b"\"INVALID\"")?,
-                                )
-                                || crate::validation::equivalent(
-                                    value,
-                                    Json::parse(b"\"ESTABLISHED\"")?,
-                                )
-                                || crate::validation::equivalent(
-                                    value,
-                                    Json::parse(b"\"RELATED\"")?,
-                                ))
+                    if !value.is_null() {
+                        let items = value.items()?;
+                        let _ = &items;
+                        if items.clone().count() < 1 {
+                            return Err(JsonError::Type);
+                        }
+                        if items.clone().count() > 2147483647 {
+                            return Err(JsonError::Type);
+                        }
+                        crate::validation::unique(value)?;
+                        for item in items {
                             {
-                                return Err(JsonError::Type);
+                                let value = item;
+                                let _ = value;
+                                let text = value.string()?;
+                                let _ = text;
+                                if !(crate::validation::equivalent(value, Json::parse(b"\"NEW\"")?)
+                                    || crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"INVALID\"")?,
+                                    )
+                                    || crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"ESTABLISHED\"")?,
+                                    )
+                                    || crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"RELATED\"")?,
+                                    ))
+                                {
+                                    return Err(JsonError::Type);
+                                }
                             }
                         }
                     }
@@ -43411,9 +43618,6 @@ pub mod models {
             }
             /// Match on traffic encrypted, or not encrypted by IPsec. If null, matches all traffic.
             pub fn ipsec_filter(&mut self, value: &str) -> Result<&mut Self, JsonError> {
-                if !["MATCH_ENCRYPTED", "MATCH_NOT_ENCRYPTED"].contains(&value) {
-                    return Err(JsonError::Type);
-                }
                 self.writer.field("ipsecFilter", &value)?;
                 self.present |= 1u128 << 8;
                 Ok(self)
@@ -45637,7 +45841,9 @@ pub mod models {
             }
             /// IPv4 DHCP configuration for this network. If this field is omitted or null, DHCP is not working and hosts must get an address statically or from another server in this broadcast domain.
             pub fn dhcp_configuration(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::GatewayManagedIPv4DhcpConfiguration::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::GatewayManagedIPv4DhcpConfiguration::validate(value)?;
+                }
                 self.writer.raw_field("dhcpConfiguration", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -45992,7 +46198,9 @@ pub mod models {
             }
             /// DHCP Guarding settings for this Network. If this field is omitted or null, the feature is disabled
             pub fn dhcp_guarding(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                }
                 self.writer.raw_field("dhcpGuarding", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -46066,7 +46274,9 @@ pub mod models {
             }
             /// Details about IPv6 configuration for this Network. If this field is omitted or null then IPv6 is not configured on this Network.
             pub fn ipv6_configuration(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkIPv6Configuration::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkIPv6Configuration::validate(value)?;
+                }
                 self.writer.raw_field("ipv6Configuration", value)?;
                 self.present |= 1u128 << 11;
                 Ok(self)
@@ -47556,7 +47766,9 @@ pub mod models {
             }
             /// IPv6 DHCP configuration for this network. At least one addressing method must be active: either enable SLAAC or provide DHCP configuration. If this field is null, SLAAC must be enabled.
             pub fn dhcp_configuration(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::DhcpConfigurationForIPv6Network::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::DhcpConfigurationForIPv6Network::validate(value)?;
+                }
                 self.writer.raw_field("dhcpConfiguration", value)?;
                 self.present |= 1u128 << 0;
                 Ok(self)
@@ -49872,7 +50084,9 @@ pub mod models {
             }
             /// Match destination traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -49931,7 +50145,9 @@ pub mod models {
             }
             /// Match destination traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -49990,7 +50206,9 @@ pub mod models {
             }
             /// Match destination traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -50049,7 +50267,9 @@ pub mod models {
             }
             /// Match destination traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -50110,7 +50330,9 @@ pub mod models {
             }
             /// Match destination traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -50169,7 +50391,9 @@ pub mod models {
             }
             /// Match destination traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -50272,7 +50496,9 @@ pub mod models {
             }
             /// Match destination traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -50331,7 +50557,9 @@ pub mod models {
             }
             /// Match destination traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -50393,7 +50621,9 @@ pub mod models {
             }
             /// Match destination traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -51192,48 +51422,6 @@ pub mod models {
             }
             /// Match specific type of ICMP traffic. If null, matches all types.
             pub fn typename_filter(&mut self, value: &str) -> Result<&mut Self, JsonError> {
-                if ![
-                    "ADDRESS_MASK_REPLY",
-                    "ADDRESS_MASK_REQUEST",
-                    "COMMUNICATION_PROHIBITED",
-                    "DESTINATION_UNREACHABLE",
-                    "ECHO_REPLY",
-                    "ECHO_REQUEST",
-                    "FRAGMENTATION_NEEDED",
-                    "HOST_PRECEDENCE_VIOLATION",
-                    "HOST_PROHIBITED",
-                    "HOST_REDIRECT",
-                    "HOST_UNKNOWN",
-                    "HOST_UNREACHABLE",
-                    "IP_HEADER_BAD",
-                    "NETWORK_PROHIBITED",
-                    "NETWORK_REDIRECT",
-                    "NETWORK_UNKNOWN",
-                    "NETWORK_UNREACHABLE",
-                    "PARAMETER_PROBLEM",
-                    "PORT_UNREACHABLE",
-                    "PRECEDENCE_CUTOFF",
-                    "PROTOCOL_UNREACHABLE",
-                    "REDIRECT",
-                    "REQUIRED_OPTION_MISSING",
-                    "ROUTER_ADVERTISEMENT",
-                    "ROUTER_SOLICITATION",
-                    "SOURCE_QUENCH",
-                    "SOURCE_ROUTE_FAILED",
-                    "TIME_EXCEEDED",
-                    "TIMESTAMP_REPLY",
-                    "TIMESTAMP_REQUEST",
-                    "TOS_HOST_REDIRECT",
-                    "TOS_HOST_UNREACHABLE",
-                    "TOS_NETWORK_REDIRECT",
-                    "TOS_NETWORK_UNREACHABLE",
-                    "TTL_ZERO_DURING_REASSEMBLY",
-                    "TTL_ZERO_DURING_TRANSIT",
-                ]
-                .contains(&value)
-                {
-                    return Err(JsonError::Type);
-                }
                 self.writer.field("typenameFilter", &value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -51646,35 +51834,6 @@ pub mod models {
             }
             /// Match specific type of ICMPv6 traffic. If null, matches all types.
             pub fn typename_filter(&mut self, value: &str) -> Result<&mut Self, JsonError> {
-                if ![
-                    "ADDRESS_UNREACHABLE",
-                    "BAD_HEADER",
-                    "BEYOND_SCOPE",
-                    "COMMUNICATION_PROHIBITED",
-                    "DESTINATION_UNREACHABLE",
-                    "ECHO_REPLY",
-                    "ECHO_REQUEST",
-                    "FAILED_POLICY",
-                    "NEIGHBOR_ADVERTISEMENT",
-                    "NEIGHBOR_SOLICITATION",
-                    "NO_ROUTE",
-                    "PACKET_TOO_BIG",
-                    "PARAMETER_PROBLEM",
-                    "PORT_UNREACHABLE",
-                    "REDIRECT",
-                    "REJECT_ROUTE",
-                    "ROUTER_ADVERTISEMENT",
-                    "ROUTER_SOLICITATION",
-                    "TIME_EXCEEDED",
-                    "TTL_ZERO_DURING_REASSEMBLY",
-                    "TTL_ZERO_DURING_TRANSIT",
-                    "UNKNOWN_HEADER_TYPE",
-                    "UNKNOWN_OPTION",
-                ]
-                .contains(&value)
-                {
-                    return Err(JsonError::Type);
-                }
                 self.writer.field("typenameFilter", &value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -52052,7 +52211,9 @@ pub mod models {
             }
             /// Match source traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 3;
                 Ok(self)
@@ -52120,7 +52281,9 @@ pub mod models {
             }
             /// Match source traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 3;
                 Ok(self)
@@ -52180,7 +52343,9 @@ pub mod models {
             }
             /// Match source traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -52245,7 +52410,9 @@ pub mod models {
             }
             /// Match source traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 3;
                 Ok(self)
@@ -52347,7 +52514,9 @@ pub mod models {
             }
             /// Match source traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -52406,7 +52575,9 @@ pub mod models {
             }
             /// Match source traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -52468,7 +52639,9 @@ pub mod models {
             }
             /// Match source traffic additionally by ports. If null, match all ports.
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::FirewallPolicyPortFilter::validate(value)?;
+                }
                 self.writer.raw_field("portFilter", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -52978,7 +53151,9 @@ pub mod models {
             }
             /// DHCP Guarding settings for this Network. If this field is omitted or null, the feature is disabled
             pub fn dhcp_guarding(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                }
                 self.writer.raw_field("dhcpGuarding", value)?;
                 self.present |= 1u128 << 0;
                 Ok(self)
@@ -53034,7 +53209,9 @@ pub mod models {
             }
             /// Details about IPv6 configuration for this Network. If this field is omitted or null then IPv6 is not configured on this Network.
             pub fn ipv6_configuration(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkIPv6Configuration::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkIPv6Configuration::validate(value)?;
+                }
                 self.writer.raw_field("ipv6Configuration", value)?;
                 self.present |= 1u128 << 8;
                 Ok(self)
@@ -53134,7 +53311,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("broadcastingDeviceFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -53332,7 +53511,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("broadcastingDeviceFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -53521,7 +53702,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("broadcastingDeviceFilter", value)?;
                 self.present |= 1u128 << 0;
                 Ok(self)
@@ -53651,7 +53834,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("enforcingDeviceFilter", value)?;
                 self.present |= 1u128 << 4;
                 Ok(self)
@@ -53691,25 +53876,30 @@ pub mod models {
             pub fn protocol_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
                 {
                     let _ = value;
-                    let items = value.items()?;
-                    let _ = &items;
-                    if items.clone().count() < 1 {
-                        return Err(JsonError::Type);
-                    }
-                    if items.clone().count() > 2147483647 {
-                        return Err(JsonError::Type);
-                    }
-                    crate::validation::unique(value)?;
-                    for item in items {
-                        {
-                            let value = item;
-                            let _ = value;
-                            let text = value.string()?;
-                            let _ = text;
-                            if !(crate::validation::equivalent(value, Json::parse(b"\"TCP\"")?)
-                                || crate::validation::equivalent(value, Json::parse(b"\"UDP\"")?))
+                    if !value.is_null() {
+                        let items = value.items()?;
+                        let _ = &items;
+                        if items.clone().count() < 1 {
+                            return Err(JsonError::Type);
+                        }
+                        if items.clone().count() > 2147483647 {
+                            return Err(JsonError::Type);
+                        }
+                        crate::validation::unique(value)?;
+                        for item in items {
                             {
-                                return Err(JsonError::Type);
+                                let value = item;
+                                let _ = value;
+                                let text = value.string()?;
+                                let _ = text;
+                                if !(crate::validation::equivalent(value, Json::parse(b"\"TCP\"")?)
+                                    || crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"UDP\"")?,
+                                    ))
+                                {
+                                    return Err(JsonError::Type);
+                                }
                             }
                         }
                     }
@@ -53797,7 +53987,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("enforcingDeviceFilter", value)?;
                 self.present |= 1u128 << 4;
                 Ok(self)
@@ -53852,25 +54044,30 @@ pub mod models {
             pub fn protocol_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
                 {
                     let _ = value;
-                    let items = value.items()?;
-                    let _ = &items;
-                    if items.clone().count() < 1 {
-                        return Err(JsonError::Type);
-                    }
-                    if items.clone().count() > 2147483647 {
-                        return Err(JsonError::Type);
-                    }
-                    crate::validation::unique(value)?;
-                    for item in items {
-                        {
-                            let value = item;
-                            let _ = value;
-                            let text = value.string()?;
-                            let _ = text;
-                            if !(crate::validation::equivalent(value, Json::parse(b"\"TCP\"")?)
-                                || crate::validation::equivalent(value, Json::parse(b"\"UDP\"")?))
+                    if !value.is_null() {
+                        let items = value.items()?;
+                        let _ = &items;
+                        if items.clone().count() < 1 {
+                            return Err(JsonError::Type);
+                        }
+                        if items.clone().count() > 2147483647 {
+                            return Err(JsonError::Type);
+                        }
+                        crate::validation::unique(value)?;
+                        for item in items {
                             {
-                                return Err(JsonError::Type);
+                                let value = item;
+                                let _ = value;
+                                let text = value.string()?;
+                                let _ = text;
+                                if !(crate::validation::equivalent(value, Json::parse(b"\"TCP\"")?)
+                                    || crate::validation::equivalent(
+                                        value,
+                                        Json::parse(b"\"UDP\"")?,
+                                    ))
+                                {
+                                    return Err(JsonError::Type);
+                                }
                             }
                         }
                     }
@@ -53958,38 +54155,40 @@ pub mod models {
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
                 {
                     let _ = value;
-                    let items = value.items()?;
-                    let _ = &items;
-                    if items.clone().count() < 1 {
-                        return Err(JsonError::Type);
-                    }
-                    if items.clone().count() > 2147483647 {
-                        return Err(JsonError::Type);
-                    }
-                    crate::validation::unique(value)?;
-                    for item in items {
-                        {
-                            let value = item;
-                            let _ = value;
-                            let number = value.integer()?;
-                            let _ = number;
-                            if number < 1_i64 {
+                    if !value.is_null() {
+                        let items = value.items()?;
+                        let _ = &items;
+                        if items.clone().count() < 1 {
+                            return Err(JsonError::Type);
+                        }
+                        if items.clone().count() > 2147483647 {
+                            return Err(JsonError::Type);
+                        }
+                        crate::validation::unique(value)?;
+                        for item in items {
+                            {
+                                let value = item;
+                                let _ = value;
+                                let number = value.integer()?;
+                                let _ = number;
+                                if number < 1_i64 {
+                                    return Err(JsonError::Type);
+                                }
+                                if number > 65535_i64 {
+                                    return Err(JsonError::Type);
+                                }
+                            }
+                        }
+                        if let Ok(number) = value.number() {
+                            if !number.is_finite() {
                                 return Err(JsonError::Type);
                             }
-                            if number > 65535_i64 {
+                            if number < 1_f64 {
                                 return Err(JsonError::Type);
                             }
-                        }
-                    }
-                    if let Ok(number) = value.number() {
-                        if !number.is_finite() {
-                            return Err(JsonError::Type);
-                        }
-                        if number < 1_f64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > 65535_f64 {
-                            return Err(JsonError::Type);
+                            if number > 65535_f64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -54154,38 +54353,40 @@ pub mod models {
             pub fn port_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
                 {
                     let _ = value;
-                    let items = value.items()?;
-                    let _ = &items;
-                    if items.clone().count() < 1 {
-                        return Err(JsonError::Type);
-                    }
-                    if items.clone().count() > 2147483647 {
-                        return Err(JsonError::Type);
-                    }
-                    crate::validation::unique(value)?;
-                    for item in items {
-                        {
-                            let value = item;
-                            let _ = value;
-                            let number = value.integer()?;
-                            let _ = number;
-                            if number < 1_i64 {
+                    if !value.is_null() {
+                        let items = value.items()?;
+                        let _ = &items;
+                        if items.clone().count() < 1 {
+                            return Err(JsonError::Type);
+                        }
+                        if items.clone().count() > 2147483647 {
+                            return Err(JsonError::Type);
+                        }
+                        crate::validation::unique(value)?;
+                        for item in items {
+                            {
+                                let value = item;
+                                let _ = value;
+                                let number = value.integer()?;
+                                let _ = number;
+                                if number < 1_i64 {
+                                    return Err(JsonError::Type);
+                                }
+                                if number > 65535_i64 {
+                                    return Err(JsonError::Type);
+                                }
+                            }
+                        }
+                        if let Ok(number) = value.number() {
+                            if !number.is_finite() {
                                 return Err(JsonError::Type);
                             }
-                            if number > 65535_i64 {
+                            if number < 1_f64 {
                                 return Err(JsonError::Type);
                             }
-                        }
-                    }
-                    if let Ok(number) = value.number() {
-                        if !number.is_finite() {
-                            return Err(JsonError::Type);
-                        }
-                        if number < 1_f64 {
-                            return Err(JsonError::Type);
-                        }
-                        if number > 65535_f64 {
-                            return Err(JsonError::Type);
+                            if number > 65535_f64 {
+                                return Err(JsonError::Type);
+                            }
                         }
                     }
                 }
@@ -54956,7 +55157,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("enforcingDeviceFilter", value)?;
                 self.present |= 1u128 << 4;
                 Ok(self)
@@ -55077,7 +55280,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::AclRuleDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("enforcingDeviceFilter", value)?;
                 self.present |= 1u128 << 4;
                 Ok(self)
@@ -56226,7 +56431,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("broadcastingDeviceFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -56430,7 +56637,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::IntegrationWifiHandoffSuggestionsConfigurationDto::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::IntegrationWifiHandoffSuggestionsConfigurationDto::validate(value)?;
+                }
                 self.writer
                     .raw_field("handoffSuggestionsConfiguration", value)?;
                 self.present |= 1u128 << 24;
@@ -56544,7 +56753,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("broadcastingDeviceFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -56761,7 +56972,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::IntegrationWifiHandoffSuggestionsConfigurationDto::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::IntegrationWifiHandoffSuggestionsConfigurationDto::validate(value)?;
+                }
                 self.writer
                     .raw_field("handoffSuggestionsConfiguration", value)?;
                 self.present |= 1u128 << 26;
@@ -56851,7 +57064,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("broadcastingDeviceFilter", value)?;
                 self.present |= 1u128 << 0;
                 Ok(self)
@@ -57000,7 +57215,9 @@ pub mod models {
             }
             /// DHCP Guarding settings for this Network. If this field is omitted or null, the feature is disabled
             pub fn dhcp_guarding(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                }
                 self.writer.raw_field("dhcpGuarding", value)?;
                 self.present |= 1u128 << 0;
                 Ok(self)
@@ -57628,7 +57845,9 @@ pub mod models {
             }
             /// DHCP Guarding settings for this Network. If this field is omitted or null, the feature is disabled
             pub fn dhcp_guarding(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                }
                 self.writer.raw_field("dhcpGuarding", value)?;
                 self.present |= 1u128 << 0;
                 Ok(self)
@@ -58778,7 +58997,9 @@ pub mod models {
             }
             /// Defines the custom scope of devices that will filter Mdns. If null, the mDNS filtering will be added to all Access Point capable devices.
             pub fn device_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("deviceFilter", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -58919,7 +59140,9 @@ pub mod models {
             }
             /// Defines the custom scope of devices that will filter Mdns. If null, the mDNS filtering will be added to all Access Point capable devices.
             pub fn device_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("deviceFilter", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -59396,9 +59619,6 @@ pub mod models {
             }
             /// Encryption mode for open security. If null, plain open with no encryption.
             pub fn encryption(&mut self, value: &str) -> Result<&mut Self, JsonError> {
-                if !["ENHANCED_OPEN", "ENHANCED_OPEN_WITH_TRANSITION"].contains(&value) {
-                    return Err(JsonError::Type);
-                }
                 self.writer.field("encryption", &value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -59838,9 +60058,6 @@ pub mod models {
             }
             /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration.
             pub fn pmf_mode(&mut self, value: &str) -> Result<&mut Self, JsonError> {
-                if !["REQUIRED", "OPTIONAL"].contains(&value) {
-                    return Err(JsonError::Type);
-                }
                 self.writer.field("pmfMode", &value)?;
                 self.present |= 1u128 << 5;
                 Ok(self)
@@ -59981,9 +60198,6 @@ pub mod models {
             }
             /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration.
             pub fn pmf_mode(&mut self, value: &str) -> Result<&mut Self, JsonError> {
-                if !["REQUIRED", "OPTIONAL"].contains(&value) {
-                    return Err(JsonError::Type);
-                }
                 self.writer.field("pmfMode", &value)?;
                 self.present |= 1u128 << 5;
                 Ok(self)
@@ -60159,9 +60373,6 @@ pub mod models {
             }
             /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration.
             pub fn pmf_mode(&mut self, value: &str) -> Result<&mut Self, JsonError> {
-                if !["REQUIRED", "OPTIONAL"].contains(&value) {
-                    return Err(JsonError::Type);
-                }
                 self.writer.field("pmfMode", &value)?;
                 self.present |= 1u128 << 5;
                 Ok(self)
@@ -60312,9 +60523,6 @@ pub mod models {
             }
             /// Protected Management Frames mode. If null, then it is disabled. This feature is not available for IoT configuration.
             pub fn pmf_mode(&mut self, value: &str) -> Result<&mut Self, JsonError> {
-                if !["REQUIRED", "OPTIONAL"].contains(&value) {
-                    return Err(JsonError::Type);
-                }
                 self.writer.field("pmfMode", &value)?;
                 self.present |= 1u128 << 5;
                 Ok(self)
@@ -61579,7 +61787,9 @@ pub mod models {
             }
             /// DHCP Guarding settings for this Network. If this field is omitted or null, the feature is disabled
             pub fn dhcp_guarding(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                }
                 self.writer.raw_field("dhcpGuarding", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -63955,7 +64165,9 @@ pub mod models {
             }
             /// IPv4 DHCP configuration for this network. If this field is omitted or null, DHCP is not working and hosts must get an address statically or from another server in this broadcast domain.
             pub fn dhcp_configuration(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::SwitchManagedIPv4DhcpConfiguration::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::SwitchManagedIPv4DhcpConfiguration::validate(value)?;
+                }
                 self.writer.raw_field("dhcpConfiguration", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -64066,7 +64278,9 @@ pub mod models {
             }
             /// DHCP Guarding settings for this Network. If this field is omitted or null, the feature is disabled
             pub fn dhcp_guarding(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                }
                 self.writer.raw_field("dhcpGuarding", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -65095,7 +65309,9 @@ pub mod models {
             }
             /// DHCP Guarding settings for this Network. If this field is omitted or null, the feature is disabled
             pub fn dhcp_guarding(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::NetworkDhcpGuarding::validate(value)?;
+                }
                 self.writer.raw_field("dhcpGuarding", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)
@@ -66158,7 +66374,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("broadcastingDeviceFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -66354,7 +66572,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("broadcastingDeviceFilter", value)?;
                 self.present |= 1u128 << 2;
                 Ok(self)
@@ -66541,7 +66761,9 @@ pub mod models {
                 &mut self,
                 value: Json<'_>,
             ) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("broadcastingDeviceFilter", value)?;
                 self.present |= 1u128 << 0;
                 Ok(self)
@@ -67295,7 +67517,9 @@ pub mod models {
             }
             /// Defines the custom scope of devices that will filter Mdns. If null, the mDNS filtering will be added to all Access Point capable devices.
             pub fn device_filter(&mut self, value: Json<'_>) -> Result<&mut Self, JsonError> {
-                crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                if !value.is_null() {
+                    crate::network::models::BroadcastingDeviceFilter::validate(value)?;
+                }
                 self.writer.raw_field("deviceFilter", value)?;
                 self.present |= 1u128 << 1;
                 Ok(self)

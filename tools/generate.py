@@ -33,6 +33,24 @@ def allows_null(schema):
     kind = schema.get('type')
     return schema.get('nullable', False) or isinstance(kind, list) and 'null' in kind
 
+def network_documented_nullability(schema):
+    """Restore null allowances stated only in the pinned Network descriptions."""
+    description = schema.get('description', '')
+    if isinstance(description, str) and re.search(
+        r'\b(?:if|when) (?:this field is (?:omitted or )?)?null\b', description, re.I
+    ):
+        schema['nullable'] = True
+        if 'enum' in schema and None not in schema['enum']:
+            schema['enum'].append(None)
+    for child in schema.get('properties', {}).values():
+        network_documented_nullability(child)
+    for keyword in ('allOf', 'anyOf', 'oneOf'):
+        for child in schema.get(keyword, []):
+            network_documented_nullability(child)
+    for keyword in ('items', 'additionalProperties'):
+        if isinstance(schema.get(keyword), dict):
+            network_documented_nullability(schema[keyword])
+
 def wire_discriminator(schema):
     discriminator=schema.get('discriminator',{})
     mapping=discriminator.get('mapping',{})
@@ -53,6 +71,9 @@ def operation_id(path, method, operation):
 def generate(surface, request_models=None, model_names=None):
     spec = json.loads((ROOT/'schemas'/f'{surface}.json').read_text())
     schemas = dict(spec.get('components',{}).get('schemas',{}))
+    if surface == 'network':
+        for schema in schemas.values():
+            network_documented_nullability(schema)
     # Site Manager uses inline schemas; promote those to named response/request views.
     for path, methods in spec['paths'].items():
         for method, op in methods.items():
@@ -156,7 +177,8 @@ def generate(surface, request_models=None, model_names=None):
         module = surface.replace('-','_')
         if '$ref' in schema:
             target = names[schema['$ref'].rsplit('/',1)[1]]
-            return f'crate::{module}::models::{target}::validate({expression})?;\n'
+            check = f'crate::{module}::models::{target}::validate({expression})?;\n'
+            return f'if !{expression}.is_null() {{\n{check}}}\n' if allows_null(schema) else check
         out=['{\n'+('let value = '+expression+';\n' if expression!='value' else '')+'let _ = value;\n']
         kind=schema.get('type')
         nullable=allows_null(schema)
