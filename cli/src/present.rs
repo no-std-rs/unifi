@@ -131,9 +131,7 @@ pub fn show(
     if args.starts_with(&["vpn", "health"]) {
         json = payload::select(json, "subsystem", "vpn")?;
     }
-    if options.demo || args.first() == Some(&"settings") || args.first() == Some(&"vpn") {
-        json = payload::sanitize(json, options.demo, options.with_secrets, sanitized)?;
-    }
+    json = payload::sanitize(json, options.demo, options.with_secrets, sanitized)?;
     let mut ids = [0; 131072];
     if options.id_only {
         use core::fmt::Write;

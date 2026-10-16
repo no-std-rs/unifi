@@ -91,17 +91,21 @@ fn wifi<'a>(
         }
         let mut frequencies_out = [0; 512];
         let mut w = Buffer::new(&mut frequencies_out);
-        w.write_char('[').unwrap();
+        w.write_char('[')
+            .map_err(|_| "frequency list exceeds capacity")?;
         for (i, value) in compat::csv(frequencies)?.iter().enumerate() {
             if !["2.4", "5", "5.0", "6", "6.0"].contains(value) {
                 return Err("frequencies must be 2.4, 5 or 6");
             }
             if i > 0 {
-                w.write_char(',').unwrap();
+                w.write_char(',')
+                    .map_err(|_| "frequency list exceeds capacity")?;
             }
-            w.write_str(value).unwrap();
+            w.write_str(value)
+                .map_err(|_| "frequency list exceeds capacity")?;
         }
-        w.write_char(']').unwrap();
+        w.write_char(']')
+            .map_err(|_| "frequency list exceeds capacity")?;
         patch
             .raw_field(
                 "broadcastingFrequenciesGHz",
@@ -219,6 +223,8 @@ fn wifi<'a>(
 }
 
 fn network<'a>(
+    remote: &mut Remote<'_, '_>,
+    site: &str,
     base: Json<'_>,
     flags: &mut Flags<'_>,
     out: &'a mut [u8],
@@ -245,7 +251,8 @@ fn network<'a>(
             .unwrap();
     }
     if let Some(zone) = flags.take("zone") {
-        w.field("zoneId", &zone)
+        let zone = crate::policies::resolve(remote, site, zone, true)?;
+        w.field("zoneId", &zone.as_str())
             .map_err(|_| "zone ID exceeds capacity")?;
     }
     if management != "UNMANAGED" {
@@ -693,7 +700,10 @@ pub fn prepare<'a>(
     input.object().map_err(|_| "request must be an object")?;
     let mut current_buffer = [0; 131072];
     let current = if call.operation.method == Method::PUT {
-        if incoming.is_none() && !flags.remaining() {
+        if incoming.is_none()
+            && !flags.remaining()
+            && !(family == "wifi" && options.network.is_some())
+        {
             return Err("no update changes supplied");
         }
         flows::copy(
@@ -723,8 +733,18 @@ pub fn prepare<'a>(
         &mut merged,
     )?;
     let result = match family {
-        "wifi" => wifi(base, flags, &options, output)?,
-        "network" => network(base, flags, output)?,
+        "wifi" => {
+            let network = options
+                .network
+                .map(|selector| crate::policies::resolve(remote, site, selector, false))
+                .transpose()?;
+            let options = Options {
+                network: network.as_deref(),
+                ..options
+            };
+            wifi(base, flags, &options, output)?
+        }
+        "network" => network(remote, site, base, flags, output)?,
         "dns" => dns(base, flags, output)?,
         "policy" | "policy_patch" => {
             crate::policies::firewall(remote, site, base, flags, family == "policy_patch", output)?
