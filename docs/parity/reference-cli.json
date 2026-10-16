@@ -1,0 +1,8000 @@
+{
+  "unifly": {
+    "commands": [
+      {
+        "path": [],
+        "children": [
+          "api",
+          "acl",
+          "admin",
+          "alarms",
+          "clients",
+          "completions",
+          "cloud",
+          "config",
+          "countries",
+          "devices",
+          "dns",
+          "dpi",
+          "events",
+          "firewall",
+          "hotspot",
+          "nat",
+          "networks",
+          "radius",
+          "settings",
+          "sites",
+          "stats",
+          "system",
+          "topology",
+          "traffic-lists",
+          "vpn",
+          "wans",
+          "wifi",
+          "tui"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "api"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "data",
+          "demo",
+          "help",
+          "insecure",
+          "method",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "acl"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete",
+          "reorder"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "admin"
+        ],
+        "children": [
+          "list",
+          "invite",
+          "revoke",
+          "update"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "alarms"
+        ],
+        "children": [
+          "list",
+          "archive",
+          "archive-all"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients"
+        ],
+        "children": [
+          "list",
+          "find",
+          "get",
+          "roams",
+          "wifi",
+          "authorize",
+          "unauthorize",
+          "block",
+          "unblock",
+          "kick",
+          "forget",
+          "reservations",
+          "set-ip",
+          "remove-ip"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "completions"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "cloud"
+        ],
+        "children": [
+          "hosts",
+          "sites",
+          "switch",
+          "devices",
+          "isp",
+          "sdwan"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "config"
+        ],
+        "children": [
+          "init",
+          "cloud-setup",
+          "show",
+          "set",
+          "profiles",
+          "use",
+          "theme",
+          "set-password"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "countries"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices"
+        ],
+        "children": [
+          "list",
+          "get",
+          "adopt",
+          "remove",
+          "restart",
+          "locate",
+          "port-cycle",
+          "stats",
+          "pending",
+          "upgrade",
+          "provision",
+          "speedtest",
+          "tags",
+          "ports",
+          "ports-export",
+          "port-set"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dns"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dpi"
+        ],
+        "children": [
+          "apps",
+          "categories",
+          "status",
+          "enable",
+          "disable"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "events"
+        ],
+        "children": [
+          "list",
+          "watch"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall"
+        ],
+        "children": [
+          "policies",
+          "zones",
+          "groups"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "hotspot"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "delete",
+          "purge"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "nat"
+        ],
+        "children": [
+          "policies"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "networks"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete",
+          "refs"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "radius"
+        ],
+        "children": [
+          "profiles"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "settings"
+        ],
+        "children": [
+          "list",
+          "get",
+          "set",
+          "export"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "sites"
+        ],
+        "children": [
+          "list",
+          "create",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "stats"
+        ],
+        "children": [
+          "site",
+          "device",
+          "client",
+          "gateway",
+          "dpi"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system"
+        ],
+        "children": [
+          "info",
+          "health",
+          "sysinfo",
+          "backup",
+          "reboot",
+          "poweroff"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "topology"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "traffic-lists"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn"
+        ],
+        "children": [
+          "servers",
+          "tunnels",
+          "status",
+          "health",
+          "site-to-site",
+          "remote-access",
+          "clients",
+          "connections",
+          "peers",
+          "magic-site-to-site",
+          "settings"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wans"
+        ],
+        "children": [
+          "list"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wifi"
+        ],
+        "children": [
+          "list",
+          "get",
+          "neighbors",
+          "channels",
+          "create",
+          "update",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "tui"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "log-file",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "acl",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "acl",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "acl",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "action",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "dest-zone",
+          "destination-port",
+          "from-file",
+          "help",
+          "insecure",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "protocol",
+          "quiet",
+          "rule-type",
+          "site",
+          "source-port",
+          "source-zone",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "acl",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "action",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "dest-zone",
+          "destination-port",
+          "enabled",
+          "from-file",
+          "help",
+          "insecure",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "protocol",
+          "quiet",
+          "rule-type",
+          "site",
+          "source-port",
+          "source-zone",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "acl",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "acl",
+          "reorder"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "get",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "set",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "admin",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "admin",
+          "invite"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "email",
+          "help",
+          "insecure",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "role",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "admin",
+          "revoke"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "admin",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "role",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "alarms",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "unarchived",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "alarms",
+          "archive"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "alarms",
+          "archive-all"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "find"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "roams"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "wifi"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "authorize"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "data-limit-mb",
+          "demo",
+          "help",
+          "insecure",
+          "minutes",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "rx-limit-kbps",
+          "site",
+          "theme",
+          "timeout",
+          "tx-limit-kbps",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "unauthorize"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "block"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "unblock"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "kick"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "forget"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "reservations"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "set-ip"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "ip",
+          "network",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "clients",
+          "remove-ip"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "network",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "cloud",
+          "hosts"
+        ],
+        "children": [
+          "get"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": true
+      },
+      {
+        "path": [
+          "cloud",
+          "sites"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "cloud",
+          "switch"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "cloud",
+          "devices"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "host",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "cloud",
+          "isp"
+        ],
+        "children": [
+          "query"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "type",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": true
+      },
+      {
+        "path": [
+          "cloud",
+          "sdwan"
+        ],
+        "children": [
+          "get",
+          "status"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": true
+      },
+      {
+        "path": [
+          "config",
+          "init"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "config",
+          "cloud-setup"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "config",
+          "show"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "config",
+          "set"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "config",
+          "profiles"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "config",
+          "use"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "config",
+          "theme"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "config",
+          "set-password"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "adopt"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "ignore-limit",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "remove"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "restart"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "locate"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "on",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "port-cycle"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "stats"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "pending"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "upgrade"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "url",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "provision"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "speedtest"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "tags"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "ports"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "with-clients",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "ports-export"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "with-clients",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "devices",
+          "port-set"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "mode",
+          "name",
+          "native-vlan",
+          "no-cache",
+          "no-effects",
+          "output",
+          "poe",
+          "profile",
+          "quiet",
+          "reset",
+          "site",
+          "speed",
+          "tagged-vlans",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dns",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dns",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dns",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "domain",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "priority",
+          "profile",
+          "quiet",
+          "record-type",
+          "site",
+          "theme",
+          "timeout",
+          "ttl",
+          "value",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dns",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dns",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dpi",
+          "apps"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dpi",
+          "categories"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dpi",
+          "status"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dpi",
+          "enable"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "dpi",
+          "disable"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "events",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "within",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "events",
+          "watch"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "types",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "policies"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "patch",
+          "delete",
+          "reorder"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "zones"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "groups"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "hotspot",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "hotspot",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "hotspot",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "count",
+          "data-limit-mb",
+          "demo",
+          "guest-limit",
+          "help",
+          "insecure",
+          "minutes",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "rx-limit-kbps",
+          "site",
+          "theme",
+          "timeout",
+          "tx-limit-kbps",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "hotspot",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "hotspot",
+          "purge"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "nat",
+          "policies"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "networks",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "networks",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "networks",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "dhcp",
+          "dhcp-lease",
+          "dhcp-start",
+          "dhcp-stop",
+          "dns",
+          "enabled",
+          "from-file",
+          "help",
+          "insecure",
+          "internet",
+          "ipv4-host",
+          "isolated",
+          "management",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "vlan",
+          "yes",
+          "zone"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "networks",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "enabled",
+          "from-file",
+          "help",
+          "insecure",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "vlan",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "networks",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "force",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "networks",
+          "refs"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "radius",
+          "profiles"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "settings",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "settings",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "settings",
+          "set"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "data",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "settings",
+          "export"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "sites",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "sites",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "description",
+          "help",
+          "insecure",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "sites",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "stats",
+          "site"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "attrs",
+          "color",
+          "controller",
+          "demo",
+          "end",
+          "help",
+          "insecure",
+          "interval",
+          "macs",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "start",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "stats",
+          "device"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "attrs",
+          "color",
+          "controller",
+          "demo",
+          "end",
+          "help",
+          "insecure",
+          "interval",
+          "macs",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "start",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "stats",
+          "client"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "attrs",
+          "color",
+          "controller",
+          "demo",
+          "end",
+          "help",
+          "insecure",
+          "interval",
+          "macs",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "start",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "stats",
+          "gateway"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "attrs",
+          "color",
+          "controller",
+          "demo",
+          "end",
+          "help",
+          "insecure",
+          "interval",
+          "macs",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "start",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "stats",
+          "dpi"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "group-by",
+          "help",
+          "insecure",
+          "macs",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "info"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "health"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "sysinfo"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "backup"
+        ],
+        "children": [
+          "create",
+          "list",
+          "download",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "reboot"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "poweroff"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "traffic-lists",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "traffic-lists",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "traffic-lists",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "items",
+          "list-type",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "traffic-lists",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "traffic-lists",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "servers"
+        ],
+        "children": [
+          "get"
+        ],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": true
+      },
+      {
+        "path": [
+          "vpn",
+          "tunnels"
+        ],
+        "children": [
+          "get"
+        ],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": true
+      },
+      {
+        "path": [
+          "vpn",
+          "status"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "health"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "site-to-site"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "remote-access"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "suggest-port",
+          "download-config",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "clients"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "connections"
+        ],
+        "children": [
+          "list",
+          "get",
+          "restart"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "peers"
+        ],
+        "children": [
+          "list",
+          "get",
+          "create",
+          "update",
+          "delete",
+          "subnets"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "magic-site-to-site"
+        ],
+        "children": [
+          "list",
+          "get"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "settings"
+        ],
+        "children": [
+          "list",
+          "get",
+          "set",
+          "patch"
+        ],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wans",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wifi",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wifi",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wifi",
+          "neighbors"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "within",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wifi",
+          "channels"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wifi",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "band-steering",
+          "broadcast-type",
+          "color",
+          "controller",
+          "demo",
+          "fast-roaming",
+          "frequencies",
+          "from-file",
+          "help",
+          "hidden",
+          "insecure",
+          "name",
+          "network",
+          "no-cache",
+          "no-effects",
+          "output",
+          "passphrase",
+          "profile",
+          "quiet",
+          "security",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wifi",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "enabled",
+          "from-file",
+          "help",
+          "insecure",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "passphrase",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "wifi",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "force",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "cloud",
+          "hosts",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "cloud",
+          "isp",
+          "query"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "sites",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "cloud",
+          "sdwan",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "cloud",
+          "sdwan",
+          "status"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "policies",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "policies",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "policies",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "action",
+          "after-system",
+          "allow-return-traffic",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "description",
+          "dest-zone",
+          "dst-address-group",
+          "dst-ip",
+          "dst-network",
+          "dst-port",
+          "dst-port-group",
+          "enabled",
+          "from-file",
+          "help",
+          "insecure",
+          "ip-version",
+          "logging",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "source-zone",
+          "src-address-group",
+          "src-ip",
+          "src-network",
+          "src-port",
+          "src-port-group",
+          "states",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "policies",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "allow-return-traffic",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "dst-address-group",
+          "dst-ip",
+          "dst-network",
+          "dst-port",
+          "dst-port-group",
+          "from-file",
+          "help",
+          "insecure",
+          "ip-version",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "src-address-group",
+          "src-ip",
+          "src-network",
+          "src-port",
+          "src-port-group",
+          "states",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "policies",
+          "patch"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "enabled",
+          "help",
+          "insecure",
+          "logging",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "policies",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "policies",
+          "reorder"
+        ],
+        "children": [],
+        "flags": [
+          "after-system",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "dest-zone",
+          "get",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "set",
+          "site",
+          "source-zone",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "zones",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "zones",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "zones",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "name",
+          "networks",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "zones",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "name",
+          "networks",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "zones",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "groups",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "type",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "groups",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "groups",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "members",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "type",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "groups",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "members",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "firewall",
+          "groups",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "nat",
+          "policies",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "nat",
+          "policies",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "nat",
+          "policies",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "description",
+          "dst-address",
+          "dst-port",
+          "enabled",
+          "from-file",
+          "help",
+          "insecure",
+          "interface-id",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "protocol",
+          "quiet",
+          "site",
+          "src-address",
+          "src-port",
+          "theme",
+          "timeout",
+          "translated-address",
+          "translated-port",
+          "type",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "nat",
+          "policies",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "description",
+          "dst-address",
+          "dst-port",
+          "enabled",
+          "from-file",
+          "help",
+          "insecure",
+          "interface-id",
+          "name",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "protocol",
+          "quiet",
+          "site",
+          "src-address",
+          "src-port",
+          "theme",
+          "timeout",
+          "translated-address",
+          "translated-port",
+          "type",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "nat",
+          "policies",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "backup",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "backup",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "backup",
+          "download"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "path",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "system",
+          "backup",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "servers",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "tunnels",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "site-to-site",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "site-to-site",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "site-to-site",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "site-to-site",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "site-to-site",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "remote-access",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "remote-access",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "remote-access",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "remote-access",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "remote-access",
+          "suggest-port"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "remote-access",
+          "download-config"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "path",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "remote-access",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "clients",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "clients",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "clients",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "clients",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "clients",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "connections",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "connections",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "connections",
+          "restart"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "peers",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "peers",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "peers",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "peers",
+          "update"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "peers",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "peers",
+          "subnets"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "magic-site-to-site",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "magic-site-to-site",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "settings",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "all",
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "filter",
+          "help",
+          "insecure",
+          "limit",
+          "no-cache",
+          "no-effects",
+          "offset",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "settings",
+          "get"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "settings",
+          "set"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "enabled",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "vpn",
+          "settings",
+          "patch"
+        ],
+        "children": [],
+        "flags": [
+          "api-key",
+          "color",
+          "controller",
+          "demo",
+          "from-file",
+          "help",
+          "insecure",
+          "no-cache",
+          "no-effects",
+          "output",
+          "profile",
+          "quiet",
+          "site",
+          "theme",
+          "timeout",
+          "verbose",
+          "version",
+          "yes"
+        ],
+        "default_action": false
+      }
+    ]
+  },
+  "unified": {
+    "commands": [
+      {
+        "path": [],
+        "children": [
+          "completion",
+          "network",
+          "protect"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "completion"
+        ],
+        "children": [
+          "bash",
+          "fish",
+          "powershell",
+          "zsh"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network"
+        ],
+        "children": [
+          "clients",
+          "devices",
+          "info",
+          "sites",
+          "vouchers"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect"
+        ],
+        "children": [
+          "alarm-manager",
+          "cameras",
+          "chimes",
+          "files",
+          "info",
+          "lights",
+          "liveviews",
+          "nvrs",
+          "sensors",
+          "subscribe",
+          "viewers"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "completion",
+          "bash"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "no-descriptions",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "completion",
+          "fish"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "no-descriptions",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "completion",
+          "powershell"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "no-descriptions",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "completion",
+          "zsh"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "no-descriptions",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "clients"
+        ],
+        "children": [
+          "action",
+          "details",
+          "list"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "devices"
+        ],
+        "children": [
+          "action",
+          "details",
+          "list",
+          "port-action",
+          "stats"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "info"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "sites"
+        ],
+        "children": [
+          "list"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "vouchers"
+        ],
+        "children": [
+          "delete",
+          "delete-filter",
+          "details",
+          "generate",
+          "list"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "alarm-manager"
+        ],
+        "children": [
+          "webhook"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras"
+        ],
+        "children": [
+          "details",
+          "disable-mic-permanently",
+          "list",
+          "patch",
+          "ptz",
+          "snapshot",
+          "stream-create",
+          "stream-delete",
+          "stream-get",
+          "talkback-session"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "chimes"
+        ],
+        "children": [
+          "details",
+          "list",
+          "patch"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "files"
+        ],
+        "children": [
+          "list",
+          "upload"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "info"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "lights"
+        ],
+        "children": [
+          "details",
+          "list",
+          "patch"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "liveviews"
+        ],
+        "children": [
+          "create",
+          "details",
+          "list",
+          "patch"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "nvrs"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "sensors"
+        ],
+        "children": [
+          "details",
+          "list",
+          "patch"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "subscribe"
+        ],
+        "children": [
+          "device-events",
+          "protect-events"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "viewers"
+        ],
+        "children": [
+          "details",
+          "list",
+          "settings"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "clients",
+          "action"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "clients",
+          "details"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "clients",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "filter",
+          "help",
+          "hide-page",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "page-limit",
+          "page-offset",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "devices",
+          "action"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "devices",
+          "details"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "devices",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "hide-page",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "page-limit",
+          "page-offset",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "devices",
+          "port-action"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "devices",
+          "stats"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "sites",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "filter",
+          "help",
+          "hide-page",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "page-limit",
+          "page-offset",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "vouchers",
+          "delete"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "vouchers",
+          "delete-filter"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "filter",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "vouchers",
+          "details"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "vouchers",
+          "generate"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "count",
+          "data-limit",
+          "debug",
+          "guest-limit",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "name",
+          "rx-limit",
+          "time-limit",
+          "trace",
+          "tx-limit"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "network",
+          "vouchers",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "filter",
+          "help",
+          "hide-page",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "page-limit",
+          "page-offset",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "alarm-manager",
+          "webhook"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "details"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "disable-mic-permanently"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "patch"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "ptz"
+        ],
+        "children": [
+          "goto-position",
+          "patrol-start",
+          "patrol-stop"
+        ],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "snapshot"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "jpeg-quality",
+          "keep-alive-interval",
+          "low-quality",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "stream-create"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "high",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "low",
+          "medium",
+          "package",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "stream-delete"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "high",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "low",
+          "medium",
+          "package",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "stream-get"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "talkback-session"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "chimes",
+          "details"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "chimes",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "chimes",
+          "patch"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "files",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "files",
+          "upload"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "lights",
+          "details"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "lights",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "lights",
+          "patch"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "liveviews",
+          "create"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "liveviews",
+          "details"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "liveviews",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "liveviews",
+          "patch"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "sensors",
+          "details"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "sensors",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "sensors",
+          "patch"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "subscribe",
+          "device-events"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "subscribe",
+          "protect-events"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "viewers",
+          "details"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "viewers",
+          "list"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "id-only",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "viewers",
+          "settings"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "liveview",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "ptz",
+          "goto-position"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "ptz",
+          "patrol-start"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      },
+      {
+        "path": [
+          "protect",
+          "cameras",
+          "ptz",
+          "patrol-stop"
+        ],
+        "children": [],
+        "flags": [
+          "config",
+          "debug",
+          "help",
+          "host",
+          "insecure",
+          "keep-alive-interval",
+          "trace"
+        ],
+        "default_action": false
+      }
+    ]
+  }
+}

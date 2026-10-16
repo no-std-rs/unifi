@@ -22,4 +22,8 @@ Available generated surfaces:
 
 `python3 tools/generate.py --check` verifies the checked-in generated modules. Use `--surface NAME` to generate a new surface explicitly.
 
+The Linux `unifi` CLI uses `rustix` and `argtokens` without Rust `std` or an allocator. Build with `cargo build -p unifi-cli`; `unifi --help` lists commands. HTTPS uses verified system OpenSSL by default, with an optional embedded TLS backend. Read connection settings from options, environment, `.env`, or profiles. See the [CLI inventory](docs/parity/README.md).
+
+Every non-GET operation requires `--allow-write`, including session login and read-like POST queries. Never test live writes without explicit authorization. CLI limits fail explicitly instead of truncating requests or responses.
+
 Run `python3 tools/ci-native.py` for the checks available in this checkout. CI also checks bare-metal default/serde builds on stable Rust 1.99.1 and MSRV 1.91.1. See [Runnerless setup](docs/runnerless.md) and [review stack](docs/stack.md).
