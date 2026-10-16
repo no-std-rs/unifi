@@ -29,6 +29,10 @@ def pascal(text):
 def quoted(value): return json.dumps(value, ensure_ascii=False)
 def doc(text): return '\n'.join('/// '+line for line in text.splitlines())+'\n'
 
+def allows_null(schema):
+    kind = schema.get('type')
+    return schema.get('nullable', False) or isinstance(kind, list) and 'null' in kind
+
 def wire_discriminator(schema):
     discriminator=schema.get('discriminator',{})
     mapping=discriminator.get('mapping',{})
@@ -155,7 +159,7 @@ def generate(surface, request_models=None, model_names=None):
             return f'crate::{module}::models::{target}::validate({expression})?;\n'
         out=['{\n'+('let value = '+expression+';\n' if expression!='value' else '')+'let _ = value;\n']
         kind=schema.get('type')
-        nullable=schema.get('nullable',False) or isinstance(kind,list) and 'null' in kind
+        nullable=allows_null(schema)
         if nullable: out.append('if !value.is_null() {\n')
         if isinstance(kind,list):
             kinds=[k for k in kind if k!='null']
@@ -263,9 +267,11 @@ def generate(surface, request_models=None, model_names=None):
     for key, schema in schemas.items():
         name=names[key]; props, required = flatten(schema)
         out.append(doc(key + '. ' + schema.get('description','')))
+        if allows_null(schema): out.append(doc('This view permits JSON null; check json().is_null() before reading object fields.'))
         out.append(f"#[derive(Clone, Copy, Debug)]\npub struct {name}<'a>(Json<'a>);\n")
         out.append(f"impl<'a> View<'a> for {name}<'a> {{ fn from_json(value: Json<'a>) -> Result<Self, JsonError> {{ ")
-        if props or schema.get('type')=='object': out.append('value.object()?; ')
+        if props or schema.get('type')=='object':
+            out.append('if !value.is_null() { value.object()?; } ' if allows_null(schema) else 'value.object()?; ')
         out.append('Ok(Self(value)) } }\n')
         out.append(f"impl<'a> {name}<'a> {{\npub fn from_json(value: Json<'a>) -> Result<Self, JsonError> {{ <Self as View>::from_json(value) }}\npub fn json(self) -> Json<'a> {{ self.0 }}\n")
         out.append(doc('Validate wire types, nested fields, variants, enum/range and container constraints. Format annotations are not validated.'))

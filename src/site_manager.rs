@@ -7489,11 +7489,14 @@ pub mod models {
         }
     }
     /// listDevices response 200 data value. Generic response data, specific schema depends on the endpoint
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct ListDevicesResponse200DataValue<'a>(Json<'a>);
     impl<'a> View<'a> for ListDevicesResponse200DataValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -7934,11 +7937,14 @@ pub mod models {
         }
     }
     /// getISPMetrics response 200 data value. Generic response data, specific schema depends on the endpoint
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct GetIspMetricsResponse200DataValue<'a>(Json<'a>);
     impl<'a> View<'a> for GetIspMetricsResponse200DataValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -8025,11 +8031,14 @@ pub mod models {
         }
     }
     /// queryISPMetrics response 200 data value. Generic response data, specific schema depends on the endpoint
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct QueryIspMetricsResponse200DataValue<'a>(Json<'a>);
     impl<'a> View<'a> for QueryIspMetricsResponse200DataValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -8107,11 +8116,14 @@ pub mod models {
         }
     }
     /// queryISPMetrics request sites value.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct QueryIspMetricsRequestSitesValue<'a>(Json<'a>);
     impl<'a> View<'a> for QueryIspMetricsRequestSitesValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -8272,11 +8284,14 @@ pub mod models {
         }
     }
     /// getSDWanConfigByID response 200 data value. Generic response data, specific schema depends on the endpoint
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct GetSdWanConfigByIdResponse200DataValue<'a>(Json<'a>);
     impl<'a> View<'a> for GetSdWanConfigByIdResponse200DataValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -8411,11 +8426,14 @@ pub mod models {
         }
     }
     /// getSDWanConfigStatus response 200 data value. Generic response data, specific schema depends on the endpoint
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct GetSdWanConfigStatusResponse200DataValue<'a>(Json<'a>);
     impl<'a> View<'a> for GetSdWanConfigStatusResponse200DataValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -8618,11 +8636,14 @@ pub mod models {
         }
     }
     /// listSites response 200 data value. Generic response data, specific schema depends on the endpoint
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct ListSitesResponse200DataValue<'a>(Json<'a>);
     impl<'a> View<'a> for ListSitesResponse200DataValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -8724,11 +8745,14 @@ pub mod models {
         }
     }
     /// listDevices response 200 data value devices value. Array of devices managed by this host
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct ListDevicesResponse200DataValueDevicesValue<'a>(Json<'a>);
     impl<'a> View<'a> for ListDevicesResponse200DataValueDevicesValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -9003,11 +9027,14 @@ pub mod models {
         }
     }
     /// getISPMetrics response 200 data value periods value.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct GetIspMetricsResponse200DataValuePeriodsValue<'a>(Json<'a>);
     impl<'a> View<'a> for GetIspMetricsResponse200DataValuePeriodsValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -9077,11 +9104,14 @@ pub mod models {
         }
     }
     /// queryISPMetrics response 200 data value metrics value.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct QueryIspMetricsResponse200DataValueMetricsValue<'a>(Json<'a>);
     impl<'a> View<'a> for QueryIspMetricsResponse200DataValueMetricsValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -10159,11 +10189,14 @@ pub mod models {
         }
     }
     /// queryISPMetrics response 200 data value metrics value periods value.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct QueryIspMetricsResponse200DataValueMetricsValuePeriodsValue<'a>(Json<'a>);
     impl<'a> View<'a> for QueryIspMetricsResponse200DataValueMetricsValuePeriodsValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -10239,6 +10272,7 @@ pub mod models {
         }
     }
     /// getSDWanConfigByID response 200 data value settings value spokeStandardSettingsValues value. Spoke standard settings
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct GetSdWanConfigByIdResponse200DataValueSettingsValueSpokeStandardSettingsValuesValue<'a>(
         Json<'a>,
@@ -10247,7 +10281,9 @@ pub mod models {
         for GetSdWanConfigByIdResponse200DataValueSettingsValueSpokeStandardSettingsValuesValue<'a>
     {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
