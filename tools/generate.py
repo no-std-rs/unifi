@@ -33,6 +33,24 @@ def allows_null(schema):
     kind = schema.get('type')
     return schema.get('nullable', False) or isinstance(kind, list) and 'null' in kind
 
+def network_documented_nullability(schema):
+    """Restore null allowances stated only in the pinned Network descriptions."""
+    description = schema.get('description', '')
+    if isinstance(description, str) and re.search(
+        r'\b(?:if|when) (?:this field is (?:omitted or )?)?null\b', description, re.I
+    ):
+        schema['nullable'] = True
+        if 'enum' in schema and None not in schema['enum']:
+            schema['enum'].append(None)
+    for child in schema.get('properties', {}).values():
+        network_documented_nullability(child)
+    for keyword in ('allOf', 'anyOf', 'oneOf'):
+        for child in schema.get(keyword, []):
+            network_documented_nullability(child)
+    for keyword in ('items', 'additionalProperties'):
+        if isinstance(schema.get(keyword), dict):
+            network_documented_nullability(schema[keyword])
+
 def wire_discriminator(schema):
     discriminator=schema.get('discriminator',{})
     mapping=discriminator.get('mapping',{})
@@ -53,6 +71,9 @@ def operation_id(path, method, operation):
 def generate(surface, request_models=None, model_names=None):
     spec = json.loads((ROOT/'schemas'/f'{surface}.json').read_text())
     schemas = dict(spec.get('components',{}).get('schemas',{}))
+    if surface == 'network':
+        for schema in schemas.values():
+            network_documented_nullability(schema)
     # Site Manager uses inline schemas; promote those to named response/request views.
     for path, methods in spec['paths'].items():
         for method, op in methods.items():
@@ -73,9 +94,15 @@ def generate(surface, request_models=None, model_names=None):
     def flatten(schema):
         out = {}; required = set()
         if '$ref' in schema: return flatten(schemas[schema['$ref'].rsplit('/',1)[1]])
+        def add(properties):
+            for field, child in properties.items():
+                # allOf intersects constraints: a repeated annotation-only
+                # property must not erase an earlier typed definition.
+                if field not in out or child.keys() - {'description', 'title', 'example', 'examples'}:
+                    out[field] = child
         for parent in schema.get('allOf',[]):
-            props, req = flatten(parent); out.update(props); required.update(req)
-        out.update(schema.get('properties',{})); required.update(schema.get('required',[]))
+            props, req = flatten(parent); add(props); required.update(req)
+        add(schema.get('properties',{})); required.update(schema.get('required',[]))
         return out, required
 
     # Promote nested inline objects to keep all declared fields typed.
@@ -156,7 +183,8 @@ def generate(surface, request_models=None, model_names=None):
         module = surface.replace('-','_')
         if '$ref' in schema:
             target = names[schema['$ref'].rsplit('/',1)[1]]
-            return f'crate::{module}::models::{target}::validate({expression})?;\n'
+            check = f'crate::{module}::models::{target}::validate({expression})?;\n'
+            return f'if !{expression}.is_null() {{\n{check}}}\n' if allows_null(schema) else check
         out=['{\n'+('let value = '+expression+';\n' if expression!='value' else '')+'let _ = value;\n']
         kind=schema.get('type')
         nullable=allows_null(schema)
@@ -287,7 +315,11 @@ def generate(surface, request_models=None, model_names=None):
             if 'enum' in value: description+=' Values: '+', '.join(str(x) for x in value['enum'])+'.'
             out.append(doc(description))
             if field in required:
-                out.append(f'pub fn {method}(self) -> Result<{ty}, JsonError> {{\nlet value = self.0.required({quoted(field)})?;\n{convert(ty,conv,"value")}\n}}\n')
+                nullable = allows_null(value) or '$ref' in value and allows_null(schemas[value['$ref'].rsplit('/',1)[1]])
+                result_type = f'Option<{ty}>' if nullable else ty
+                expression = convert(ty,conv,'value')
+                if nullable: expression = f'if value.is_null() {{ Ok(None) }} else {{ {expression}.map(Some) }}'
+                out.append(f'pub fn {method}(self) -> Result<{result_type}, JsonError> {{\nlet value = self.0.required({quoted(field)})?;\n{expression}\n}}\n')
             else:
                 if not conv:
                     expression=f'self.0.optional({quoted(field)})'
