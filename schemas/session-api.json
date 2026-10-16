@@ -1493,7 +1493,7 @@
     "/wss/s/{site}/events": {
       "get": {
         "operationId": "subscribeEvents",
-        "summary": "Network event WebSocket",
+        "summary": "Network event WebSocket (cookie session required; API keys unsupported)",
         "parameters": [
           {
             "in": "path",
@@ -1505,17 +1505,11 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Firmware-specific response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Envelope"
-                }
-              }
-            }
+          "101": {
+            "description": "WebSocket upgrade; subsequent event frames are read through the WebSocket API."
           }
-        }
+        },
+        "description": "Use websocket::connect with Authentication::Session. The Network event socket requires a controller cookie session even when HTTP endpoints accept API keys."
       }
     },
     "/v2/api/site/{site}/system-log/client-connection/{mac}": {
@@ -1544,7 +1538,10 @@
             "name": "mac",
             "schema": {
               "type": "string"
-            }
+            },
+            "required": true,
+            "description": "The MAC must also be supplied in the query.",
+            "x-value-from-path": "mac"
           },
           {
             "in": "query",
@@ -1563,11 +1560,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1599,11 +1596,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1627,11 +1624,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1653,11 +1650,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1702,16 +1699,19 @@
             "name": "networkId",
             "schema": {
               "type": "string"
-            }
+            },
+            "required": true,
+            "description": "Must match the serverId path parameter.",
+            "x-value-from-path": "serverId"
           }
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1735,11 +1735,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1763,11 +1763,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1792,17 +1792,19 @@
             "in": "query",
             "name": "service",
             "schema": {
-              "type": "string"
-            }
+              "type": "string",
+              "const": "openvpn"
+            },
+            "required": true
           }
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1826,11 +1828,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1854,11 +1856,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1933,11 +1935,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -1969,11 +1971,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -2014,11 +2016,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -2050,11 +2052,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -2095,11 +2097,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -2142,11 +2144,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -2189,11 +2191,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Firmware-specific response",
+            "description": "Firmware-specific bare JSON response (no legacy envelope)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope"
+                  "$ref": "#/components/schemas/BareResponse"
                 }
               }
             }
@@ -2361,6 +2363,9 @@
           "meta",
           "data"
         ]
+      },
+      "BareResponse": {
+        "description": "Firmware-specific v2 JSON returned without the legacy meta/data envelope. Inspect the borrowed json() value."
       }
     }
   }

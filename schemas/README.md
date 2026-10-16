@@ -13,3 +13,5 @@ Network also states some null allowances only in descriptions (for example, “W
 Protect operation names are derived from method/path because upstream omits operationId. Flattened inherited liveview fields remain permitted. Enum and const constraints apply independently of nullable type unions.
 
 `session-api.json` is an experimental community route inventory, not an official schema; firmware response shapes vary. Source: https://github.com/hyperb1iss/unifly/tree/v0.10.0/crates/unifly-api/src/session.
+
+Session v2 responses are bare JSON rather than the legacy `meta`/`data` envelope. The `x-value-from-path` parameter extension repeats path identifiers in required queries; fixed string `const` query values are also bound by constructors. Network event WebSockets require `Authentication::Session` with a controller cookie; API keys only cover the HTTP surface.

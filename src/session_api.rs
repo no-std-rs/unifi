@@ -58,6 +58,30 @@ pub mod models {
             builders::Envelope::new(buffer)
         }
     }
+    /// BareResponse. Firmware-specific v2 JSON returned without the legacy meta/data envelope. Inspect the borrowed json() value.
+    #[derive(Clone, Copy, Debug)]
+    pub struct BareResponse<'a>(Json<'a>);
+    impl<'a> View<'a> for BareResponse<'a> {
+        fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
+            Ok(Self(value))
+        }
+    }
+    impl<'a> BareResponse<'a> {
+        pub fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
+            <Self as View>::from_json(value)
+        }
+        pub fn json(self) -> Json<'a> {
+            self.0
+        }
+        /// Validate wire types, nested fields, variants, enum/range and container constraints. Format annotations are not validated.
+        pub fn validate(value: Json<'_>) -> Result<(), JsonError> {
+            let _ = value;
+            {
+                let _ = value;
+            }
+            Ok(())
+        }
+    }
     /// queryDevices request.
     #[derive(Clone, Copy, Debug)]
     pub struct QueryDevicesRequest<'a>(Json<'a>);
@@ -1714,14 +1738,13 @@ pub static SUBSCRIBE_EVENTS: Operation = Operation {
     id: "subscribeEvents",
     method: Method::GET,
     path: "/wss/s/{site}/events",
-    summary: "Network event WebSocket",
+    summary: "Network event WebSocket (cookie session required; API keys unsupported)",
     body_required: false,
     query: &[],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: None,
 };
-/// Network event WebSocket. GET /wss/s/{site}/events
-/// Response schema: models::Envelope.
+/// Network event WebSocket (cookie session required; API keys unsupported). GET /wss/s/{site}/events
 pub fn subscribe_events(site: &str) -> Result<Call, BuildError> {
     SUBSCRIBE_EVENTS.bind(&[("site", site)])
 }
@@ -1734,7 +1757,7 @@ pub static GET_CLIENT_ROAMS: Operation = Operation {
     query: &[
         QueryParameter {
             name: "mac",
-            required: false,
+            required: true,
         },
         QueryParameter {
             name: "separateConnectionSignalParam",
@@ -1746,12 +1769,14 @@ pub static GET_CLIENT_ROAMS: Operation = Operation {
         },
     ],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// getClientRoams. GET /v2/api/site/{site}/system-log/client-connection/{mac}
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn get_client_roams(site: &str, mac: &str) -> Result<Call, BuildError> {
-    GET_CLIENT_ROAMS.bind(&[("site", site), ("mac", mac)])
+    GET_CLIENT_ROAMS
+        .bind(&[("site", site), ("mac", mac)])?
+        .query("mac", mac)
 }
 pub static GET_CLIENT_WIFI_EXPERIENCE: Operation = Operation {
     id: "getClientWifiExperience",
@@ -1761,10 +1786,10 @@ pub static GET_CLIENT_WIFI_EXPERIENCE: Operation = Operation {
     body_required: false,
     query: &[],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// getClientWifiExperience. GET /v2/api/site/{site}/wifiman/{ip}/
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn get_client_wifi_experience(site: &str, ip: &str) -> Result<Call, BuildError> {
     GET_CLIENT_WIFI_EXPERIENCE.bind(&[("site", site), ("ip", ip)])
 }
@@ -1776,10 +1801,10 @@ pub static LIST_NAT_RULES: Operation = Operation {
     body_required: false,
     query: &[],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// listNatRules. GET /v2/api/site/{site}/nat
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn list_nat_rules(site: &str) -> Result<Call, BuildError> {
     LIST_NAT_RULES.bind(&[("site", site)])
 }
@@ -1791,11 +1816,11 @@ pub static CREATE_NAT_RULE: Operation = Operation {
     body_required: true,
     query: &[],
     request_schema: Some("createNatRule request"),
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// createNatRule. POST /v2/api/site/{site}/nat
 /// Request schema: models::CreateNatRuleRequest.
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn create_nat_rule(site: &str) -> Result<Call, BuildError> {
     CREATE_NAT_RULE.bind(&[("site", site)])
 }
@@ -1807,15 +1832,17 @@ pub static LIST_WIREGUARD_PEERS: Operation = Operation {
     body_required: false,
     query: &[QueryParameter {
         name: "networkId",
-        required: false,
+        required: true,
     }],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// listWireguardPeers. GET /v2/api/site/{site}/wireguard/{serverId}/users
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn list_wireguard_peers(site: &str, server_id: &str) -> Result<Call, BuildError> {
-    LIST_WIREGUARD_PEERS.bind(&[("site", site), ("serverId", server_id)])
+    LIST_WIREGUARD_PEERS
+        .bind(&[("site", site), ("serverId", server_id)])?
+        .query("networkId", server_id)
 }
 pub static LIST_ALL_WIREGUARD_PEERS: Operation = Operation {
     id: "listAllWireguardPeers",
@@ -1825,10 +1852,10 @@ pub static LIST_ALL_WIREGUARD_PEERS: Operation = Operation {
     body_required: false,
     query: &[],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// listAllWireguardPeers. GET /v2/api/site/{site}/wireguard/users
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn list_all_wireguard_peers(site: &str) -> Result<Call, BuildError> {
     LIST_ALL_WIREGUARD_PEERS.bind(&[("site", site)])
 }
@@ -1840,10 +1867,10 @@ pub static GET_WIREGUARD_SUBNETS: Operation = Operation {
     body_required: false,
     query: &[],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// getWireguardSubnets. GET /v2/api/site/{site}/wireguard/users/existing-subnets
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn get_wireguard_subnets(site: &str) -> Result<Call, BuildError> {
     GET_WIREGUARD_SUBNETS.bind(&[("site", site)])
 }
@@ -1855,15 +1882,17 @@ pub static SUGGEST_OPENVPN_PORTS: Operation = Operation {
     body_required: false,
     query: &[QueryParameter {
         name: "service",
-        required: false,
+        required: true,
     }],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// suggestOpenvpnPorts. GET /v2/api/site/{site}/network/port-suggest
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn suggest_openvpn_ports(site: &str) -> Result<Call, BuildError> {
-    SUGGEST_OPENVPN_PORTS.bind(&[("site", site)])
+    SUGGEST_OPENVPN_PORTS
+        .bind(&[("site", site)])?
+        .query("service", "openvpn")
 }
 pub static LIST_VPN_CONNECTIONS: Operation = Operation {
     id: "listVpnConnections",
@@ -1873,10 +1902,10 @@ pub static LIST_VPN_CONNECTIONS: Operation = Operation {
     body_required: false,
     query: &[],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// listVpnConnections. GET /v2/api/site/{site}/vpn/connections
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn list_vpn_connections(site: &str) -> Result<Call, BuildError> {
     LIST_VPN_CONNECTIONS.bind(&[("site", site)])
 }
@@ -1888,10 +1917,10 @@ pub static LIST_MAGIC_VPN_CONFIGS: Operation = Operation {
     body_required: false,
     query: &[],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// listMagicVpnConfigs. GET /v2/api/site/{site}/magicsitetositevpn/configs
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn list_magic_vpn_configs(site: &str) -> Result<Call, BuildError> {
     LIST_MAGIC_VPN_CONFIGS.bind(&[("site", site)])
 }
@@ -1926,10 +1955,10 @@ pub static GET_TRAFFIC_FLOW_STATISTICS: Operation = Operation {
         },
     ],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// getTrafficFlowStatistics. GET /v2/api/site/{site}/traffic-flow-latest-statistics
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn get_traffic_flow_statistics(site: &str) -> Result<Call, BuildError> {
     GET_TRAFFIC_FLOW_STATISTICS.bind(&[("site", site)])
 }
@@ -1941,11 +1970,11 @@ pub static UPDATE_NAT_RULE: Operation = Operation {
     body_required: true,
     query: &[],
     request_schema: Some("updateNatRule request"),
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// updateNatRule. PUT /v2/api/site/{site}/nat/{id}
 /// Request schema: models::UpdateNatRuleRequest.
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn update_nat_rule(site: &str, id: &str) -> Result<Call, BuildError> {
     UPDATE_NAT_RULE.bind(&[("site", site), ("id", id)])
 }
@@ -1957,10 +1986,10 @@ pub static DELETE_NAT_RULE: Operation = Operation {
     body_required: false,
     query: &[],
     request_schema: None,
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// deleteNatRule. DELETE /v2/api/site/{site}/nat/{id}
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn delete_nat_rule(site: &str, id: &str) -> Result<Call, BuildError> {
     DELETE_NAT_RULE.bind(&[("site", site), ("id", id)])
 }
@@ -1972,11 +2001,11 @@ pub static CREATE_WIREGUARD_PEERS: Operation = Operation {
     body_required: true,
     query: &[],
     request_schema: Some("createWireguardPeers request"),
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// createWireguardPeers. POST /v2/api/site/{site}/wireguard/{serverId}/users/batch
 /// Request schema: models::CreateWireguardPeersRequest.
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn create_wireguard_peers(site: &str, server_id: &str) -> Result<Call, BuildError> {
     CREATE_WIREGUARD_PEERS.bind(&[("site", site), ("serverId", server_id)])
 }
@@ -1988,11 +2017,11 @@ pub static UPDATE_WIREGUARD_PEERS: Operation = Operation {
     body_required: true,
     query: &[],
     request_schema: Some("updateWireguardPeers request"),
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// updateWireguardPeers. PUT /v2/api/site/{site}/wireguard/{serverId}/users/batch
 /// Request schema: models::UpdateWireguardPeersRequest.
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn update_wireguard_peers(site: &str, server_id: &str) -> Result<Call, BuildError> {
     UPDATE_WIREGUARD_PEERS.bind(&[("site", site), ("serverId", server_id)])
 }
@@ -2004,11 +2033,11 @@ pub static DELETE_WIREGUARD_PEERS: Operation = Operation {
     body_required: true,
     query: &[],
     request_schema: Some("deleteWireguardPeers request"),
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// deleteWireguardPeers. POST /v2/api/site/{site}/wireguard/{serverId}/users/batch_delete
 /// Request schema: models::DeleteWireguardPeersRequest.
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn delete_wireguard_peers(site: &str, server_id: &str) -> Result<Call, BuildError> {
     DELETE_WIREGUARD_PEERS.bind(&[("site", site), ("serverId", server_id)])
 }
@@ -2020,11 +2049,11 @@ pub static RESTART_VPN_CONNECTION: Operation = Operation {
     body_required: true,
     query: &[],
     request_schema: Some("restartVpnConnection request"),
-    response_schema: Some("Envelope"),
+    response_schema: Some("BareResponse"),
 };
 /// restartVpnConnection. POST /v2/api/site/{site}/vpn/{id}/restart
 /// Request schema: models::RestartVpnConnectionRequest.
-/// Response schema: models::Envelope.
+/// Response schema: models::BareResponse.
 pub fn restart_vpn_connection(site: &str, id: &str) -> Result<Call, BuildError> {
     RESTART_VPN_CONNECTION.bind(&[("site", site), ("id", id)])
 }
