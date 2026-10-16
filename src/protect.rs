@@ -552,14 +552,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -668,6 +676,7 @@ pub mod models {
         }
     }
     /// deviceType. The device model name.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct DeviceType<'a>(Json<'a>);
     impl<'a> View<'a> for DeviceType<'a> {
@@ -696,6 +705,7 @@ pub mod models {
         }
     }
     /// deviceGuid. Stable identifier for the device model.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct DeviceGuid<'a>(Json<'a>);
     impl<'a> View<'a> for DeviceGuid<'a> {
@@ -1328,9 +1338,13 @@ pub mod models {
             NvrType::from_json(value)
         }
         /// guid
-        pub fn guid(self) -> Result<NvrGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<NvrGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            NvrGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                NvrGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -1433,6 +1447,7 @@ pub mod models {
         }
     }
     /// nvrGuid. GUID of the NVR
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct NvrGuid<'a>(Json<'a>);
     impl<'a> View<'a> for NvrGuid<'a> {
@@ -1710,24 +1725,40 @@ pub mod models {
             value.string()
         }
         /// armProfileId
-        pub fn arm_profile_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn arm_profile_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("armProfileId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// armedAt
-        pub fn armed_at(self) -> Result<Json<'a>, JsonError> {
+        pub fn armed_at(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("armedAt")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// willBeArmedAt
-        pub fn will_be_armed_at(self) -> Result<Json<'a>, JsonError> {
+        pub fn will_be_armed_at(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("willBeArmedAt")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// breachDetectedAt
-        pub fn breach_detected_at(self) -> Result<Json<'a>, JsonError> {
+        pub fn breach_detected_at(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("breachDetectedAt")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// breachEventCount
         pub fn breach_event_count(self) -> Result<f64, JsonError> {
@@ -1735,14 +1766,22 @@ pub mod models {
             value.number()
         }
         /// breachTriggerEventId
-        pub fn breach_trigger_event_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn breach_trigger_event_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("breachTriggerEventId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// breachEventId
-        pub fn breach_event_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn breach_event_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("breachEventId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         pub fn builder(buffer: &'a mut [u8]) -> Result<builders::NvrArmMode<'a>, JsonError> {
             builders::NvrArmMode::new(buffer)
@@ -1944,14 +1983,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -3198,14 +3245,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -3585,14 +3640,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -3625,9 +3688,13 @@ pub mod models {
             IsLightForceEnabled::from_json(value)
         }
         /// lastMotion
-        pub fn last_motion(self) -> Result<LastMotion<'a>, JsonError> {
+        pub fn last_motion(self) -> Result<Option<LastMotion<'a>>, JsonError> {
             let value = self.0.required("lastMotion")?;
-            LastMotion::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                LastMotion::from_json(value).map(Some)
+            }
         }
         /// isPirMotionDetected
         pub fn is_pir_motion_detected(self) -> Result<IsPirMotionDetected<'a>, JsonError> {
@@ -4077,6 +4144,7 @@ pub mod models {
         }
     }
     /// lastMotion. Unix timestamp of the last time the PIR motion-detection was triggered.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct LastMotion<'a>(Json<'a>);
     impl<'a> View<'a> for LastMotion<'a> {
@@ -4268,14 +4336,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -4761,14 +4837,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -4776,9 +4860,13 @@ pub mod models {
             Mac::from_json(value)
         }
         /// platform
-        pub fn platform(self) -> Result<BridgePlatform<'a>, JsonError> {
+        pub fn platform(self) -> Result<Option<BridgePlatform<'a>>, JsonError> {
             let value = self.0.required("platform")?;
-            BridgePlatform::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                BridgePlatform::from_json(value).map(Some)
+            }
         }
         /// clients
         pub fn clients(self) -> Result<BridgeClients<'a>, JsonError> {
@@ -4850,6 +4938,7 @@ pub mod models {
         }
     }
     /// bridgePlatform. The bridge platform
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct BridgePlatform<'a>(Json<'a>);
     impl<'a> View<'a> for BridgePlatform<'a> {
@@ -5165,14 +5254,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -5217,14 +5314,24 @@ pub mod models {
             TemperatureSettings::from_json(value)
         }
         /// isOpened
-        pub fn is_opened(self) -> Result<SensorIsOpened<'a>, JsonError> {
+        pub fn is_opened(self) -> Result<Option<SensorIsOpened<'a>>, JsonError> {
             let value = self.0.required("isOpened")?;
-            SensorIsOpened::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SensorIsOpened::from_json(value).map(Some)
+            }
         }
         /// openStatusChangedAt
-        pub fn open_status_changed_at(self) -> Result<SensorOpenStatusChangedAt<'a>, JsonError> {
+        pub fn open_status_changed_at(
+            self,
+        ) -> Result<Option<SensorOpenStatusChangedAt<'a>>, JsonError> {
             let value = self.0.required("openStatusChangedAt")?;
-            SensorOpenStatusChangedAt::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SensorOpenStatusChangedAt::from_json(value).map(Some)
+            }
         }
         /// isMotionDetected
         pub fn is_motion_detected(self) -> Result<SensorIsMotionDetected<'a>, JsonError> {
@@ -5232,9 +5339,13 @@ pub mod models {
             SensorIsMotionDetected::from_json(value)
         }
         /// motionDetectedAt
-        pub fn motion_detected_at(self) -> Result<SensorMotionDetectedAt<'a>, JsonError> {
+        pub fn motion_detected_at(self) -> Result<Option<SensorMotionDetectedAt<'a>>, JsonError> {
             let value = self.0.required("motionDetectedAt")?;
-            SensorMotionDetectedAt::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SensorMotionDetectedAt::from_json(value).map(Some)
+            }
         }
         /// motionSettings
         pub fn motion_settings(self) -> Result<MotionSettings<'a>, JsonError> {
@@ -5252,9 +5363,13 @@ pub mod models {
             SensorScheduleMode::from_json(value)
         }
         /// armProfileIds
-        pub fn arm_profile_ids(self) -> Result<SensorArmProfileIds<'a>, JsonError> {
+        pub fn arm_profile_ids(self) -> Result<Option<SensorArmProfileIds<'a>>, JsonError> {
             let value = self.0.required("armProfileIds")?;
-            SensorArmProfileIds::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SensorArmProfileIds::from_json(value).map(Some)
+            }
         }
         /// hasCustomSensitivityWhenArmed
         pub fn has_custom_sensitivity_when_armed(
@@ -5264,9 +5379,13 @@ pub mod models {
             SensorHasCustomSensitivityWhenArmed::from_json(value)
         }
         /// alarmTriggeredAt
-        pub fn alarm_triggered_at(self) -> Result<SensorAlarmTriggeredAt<'a>, JsonError> {
+        pub fn alarm_triggered_at(self) -> Result<Option<SensorAlarmTriggeredAt<'a>>, JsonError> {
             let value = self.0.required("alarmTriggeredAt")?;
-            SensorAlarmTriggeredAt::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SensorAlarmTriggeredAt::from_json(value).map(Some)
+            }
         }
         /// alarmSettings
         pub fn alarm_settings(self) -> Result<AlarmSettings<'a>, JsonError> {
@@ -5274,16 +5393,24 @@ pub mod models {
             AlarmSettings::from_json(value)
         }
         /// leakDetectedAt
-        pub fn leak_detected_at(self) -> Result<SensorLeakDetectedAt<'a>, JsonError> {
+        pub fn leak_detected_at(self) -> Result<Option<SensorLeakDetectedAt<'a>>, JsonError> {
             let value = self.0.required("leakDetectedAt")?;
-            SensorLeakDetectedAt::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SensorLeakDetectedAt::from_json(value).map(Some)
+            }
         }
         /// externalLeakDetectedAt
         pub fn external_leak_detected_at(
             self,
-        ) -> Result<SensorExternalLeakDetectedAt<'a>, JsonError> {
+        ) -> Result<Option<SensorExternalLeakDetectedAt<'a>>, JsonError> {
             let value = self.0.required("externalLeakDetectedAt")?;
-            SensorExternalLeakDetectedAt::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SensorExternalLeakDetectedAt::from_json(value).map(Some)
+            }
         }
         /// leakSettings
         pub fn leak_settings(self) -> Result<LeakSettings<'a>, JsonError> {
@@ -5291,9 +5418,13 @@ pub mod models {
             LeakSettings::from_json(value)
         }
         /// tamperingDetectedAt
-        pub fn tampering_detected_at(self) -> Result<TamperingDetectedAt<'a>, JsonError> {
+        pub fn tampering_detected_at(self) -> Result<Option<TamperingDetectedAt<'a>>, JsonError> {
             let value = self.0.required("tamperingDetectedAt")?;
-            TamperingDetectedAt::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                TamperingDetectedAt::from_json(value).map(Some)
+            }
         }
         /// wirelessConnectionState
         pub fn wireless_connection_state(self) -> Result<WirelessConnectionState<'a>, JsonError> {
@@ -6058,6 +6189,7 @@ pub mod models {
         }
     }
     /// sensorIsOpened. Whether the door/window/garage is opened.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SensorIsOpened<'a>(Json<'a>);
     impl<'a> View<'a> for SensorIsOpened<'a> {
@@ -6085,6 +6217,7 @@ pub mod models {
         }
     }
     /// sensorOpenStatusChangedAt. Unix timestamp when the door/window/garage was last opened or closed, nullable.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SensorOpenStatusChangedAt<'a>(Json<'a>);
     impl<'a> View<'a> for SensorOpenStatusChangedAt<'a> {
@@ -6141,6 +6274,7 @@ pub mod models {
         }
     }
     /// sensorMotionDetectedAt. Unix timestamp when the last motion was detected.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SensorMotionDetectedAt<'a>(Json<'a>);
     impl<'a> View<'a> for SensorMotionDetectedAt<'a> {
@@ -6387,6 +6521,7 @@ pub mod models {
         }
     }
     /// sensorArmProfileIds. When `scheduleMode` is `when_armed`, restricts armed-mode detection to these arm profile ids. Empty or null = all profiles.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SensorArmProfileIds<'a>(Json<'a>);
     impl<'a> View<'a> for SensorArmProfileIds<'a> {
@@ -6454,6 +6589,7 @@ pub mod models {
         }
     }
     /// sensorAlarmTriggeredAt. Unix timestamp when the smoke or carbon monoxide alarm was triggered, nullable.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SensorAlarmTriggeredAt<'a>(Json<'a>);
     impl<'a> View<'a> for SensorAlarmTriggeredAt<'a> {
@@ -6526,6 +6662,7 @@ pub mod models {
         }
     }
     /// sensorLeakDetectedAt. Unix timestamp when the sensor detected a water leak, nullable.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SensorLeakDetectedAt<'a>(Json<'a>);
     impl<'a> View<'a> for SensorLeakDetectedAt<'a> {
@@ -6557,6 +6694,7 @@ pub mod models {
         }
     }
     /// sensorExternalLeakDetectedAt. Unix timestamp when the sensor detected an external water leak, nullable.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SensorExternalLeakDetectedAt<'a>(Json<'a>);
     impl<'a> View<'a> for SensorExternalLeakDetectedAt<'a> {
@@ -6647,6 +6785,7 @@ pub mod models {
         }
     }
     /// tamperingDetectedAt. Unix timestamp when the sensor detected tampering, nullable.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct TamperingDetectedAt<'a>(Json<'a>);
     impl<'a> View<'a> for TamperingDetectedAt<'a> {
@@ -6774,20 +6913,29 @@ pub mod models {
             Ok(())
         }
         /// signalQuality
-        pub fn signal_quality(self) -> Result<SignalQuality<'a>, JsonError> {
+        pub fn signal_quality(self) -> Result<Option<SignalQuality<'a>>, JsonError> {
             let value = self.0.required("signalQuality")?;
-            SignalQuality::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SignalQuality::from_json(value).map(Some)
+            }
         }
         /// signalStrength
-        pub fn signal_strength(self) -> Result<SignalStrength<'a>, JsonError> {
+        pub fn signal_strength(self) -> Result<Option<SignalStrength<'a>>, JsonError> {
             let value = self.0.required("signalStrength")?;
-            SignalStrength::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SignalStrength::from_json(value).map(Some)
+            }
         }
         pub fn builder(buffer: &'a mut [u8]) -> Result<builders::SignalState<'a>, JsonError> {
             builders::SignalState::new(buffer)
         }
     }
     /// signalQuality. Percent representation of Bluetooth signal strength.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SignalQuality<'a>(Json<'a>);
     impl<'a> View<'a> for SignalQuality<'a> {
@@ -6819,6 +6967,7 @@ pub mod models {
         }
     }
     /// signalStrength. dBm value of Bluetooth signal strength.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SignalStrength<'a>(Json<'a>);
     impl<'a> View<'a> for SignalStrength<'a> {
@@ -6885,9 +7034,13 @@ pub mod models {
             Ok(())
         }
         /// percentage
-        pub fn percentage(self) -> Result<WirelessBatteryPercentage<'a>, JsonError> {
+        pub fn percentage(self) -> Result<Option<WirelessBatteryPercentage<'a>>, JsonError> {
             let value = self.0.required("percentage")?;
-            WirelessBatteryPercentage::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                WirelessBatteryPercentage::from_json(value).map(Some)
+            }
         }
         /// isLow
         pub fn is_low(self) -> Result<WirelessBatteryIsLow<'a>, JsonError> {
@@ -6901,6 +7054,7 @@ pub mod models {
         }
     }
     /// wirelessBatteryPercentage. Battery charge level from 0 to 100 (%).
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct WirelessBatteryPercentage<'a>(Json<'a>);
     impl<'a> View<'a> for WirelessBatteryPercentage<'a> {
@@ -7143,14 +7297,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -7385,9 +7547,13 @@ pub mod models {
             SirenStatusIsActive::from_json(value)
         }
         /// activatedAt
-        pub fn activated_at(self) -> Result<SirenStatusActivatedAt<'a>, JsonError> {
+        pub fn activated_at(self) -> Result<Option<SirenStatusActivatedAt<'a>>, JsonError> {
             let value = self.0.required("activatedAt")?;
-            SirenStatusActivatedAt::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                SirenStatusActivatedAt::from_json(value).map(Some)
+            }
         }
         /// duration
         pub fn duration(self) -> Result<SirenStatusDuration<'a>, JsonError> {
@@ -7424,6 +7590,7 @@ pub mod models {
         }
     }
     /// sirenStatusActivatedAt. Timestamp when the siren was activated.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct SirenStatusActivatedAt<'a>(Json<'a>);
     impl<'a> View<'a> for SirenStatusActivatedAt<'a> {
@@ -7781,14 +7948,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -8119,14 +8294,22 @@ pub mod models {
             value.boolean()
         }
         /// External arm profile armed by the Arm button, and disarmed by the Disarm button.
-        pub fn arm_profile_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn arm_profile_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("armProfileId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// External arm profile armed by the Night button, and disarmed by the Disarm button.
-        pub fn night_profile_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn night_profile_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("nightProfileId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         pub fn builder(
             buffer: &'a mut [u8],
@@ -8329,14 +8512,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -8581,29 +8772,49 @@ pub mod models {
             RelayOutputId::from_json(value)
         }
         /// name
-        pub fn name(self) -> Result<RelayOutputName<'a>, JsonError> {
+        pub fn name(self) -> Result<Option<RelayOutputName<'a>>, JsonError> {
             let value = self.0.required("name")?;
-            RelayOutputName::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayOutputName::from_json(value).map(Some)
+            }
         }
         /// type
-        pub fn r#type(self) -> Result<RelayOutputType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<RelayOutputType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            RelayOutputType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayOutputType::from_json(value).map(Some)
+            }
         }
         /// delay
-        pub fn delay(self) -> Result<RelayOutputDelay<'a>, JsonError> {
+        pub fn delay(self) -> Result<Option<RelayOutputDelay<'a>>, JsonError> {
             let value = self.0.required("delay")?;
-            RelayOutputDelay::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayOutputDelay::from_json(value).map(Some)
+            }
         }
         /// pulseDuration
-        pub fn pulse_duration(self) -> Result<RelayOutputPulseDuration<'a>, JsonError> {
+        pub fn pulse_duration(self) -> Result<Option<RelayOutputPulseDuration<'a>>, JsonError> {
             let value = self.0.required("pulseDuration")?;
-            RelayOutputPulseDuration::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayOutputPulseDuration::from_json(value).map(Some)
+            }
         }
         /// state
-        pub fn state(self) -> Result<RelayOutputState<'a>, JsonError> {
+        pub fn state(self) -> Result<Option<RelayOutputState<'a>>, JsonError> {
             let value = self.0.required("state")?;
-            RelayOutputState::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayOutputState::from_json(value).map(Some)
+            }
         }
         /// rebootState
         pub fn reboot_state(self) -> Result<RelayOutputRebootState<'a>, JsonError> {
@@ -8644,6 +8855,7 @@ pub mod models {
         }
     }
     /// relayOutputName. User-friendly name for this relay output.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayOutputName<'a>(Json<'a>);
     impl<'a> View<'a> for RelayOutputName<'a> {
@@ -8672,6 +8884,7 @@ pub mod models {
         }
     }
     /// relayOutputType. The type of device connected to this relay output.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayOutputType<'a>(Json<'a>);
     impl<'a> View<'a> for RelayOutputType<'a> {
@@ -8708,6 +8921,7 @@ pub mod models {
         }
     }
     /// relayOutputDelay. Server-side delay in milliseconds before activation (0 = no delay, null = use default).
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayOutputDelay<'a>(Json<'a>);
     impl<'a> View<'a> for RelayOutputDelay<'a> {
@@ -8739,6 +8953,7 @@ pub mod models {
         }
     }
     /// relayOutputPulseDuration. Auto-off duration in milliseconds (0 = permanent on until manually turned off, null = use default).
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayOutputPulseDuration<'a>(Json<'a>);
     impl<'a> View<'a> for RelayOutputPulseDuration<'a> {
@@ -8770,6 +8985,7 @@ pub mod models {
         }
     }
     /// relayOutputState. The current state of the relay output.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayOutputState<'a>(Json<'a>);
     impl<'a> View<'a> for RelayOutputState<'a> {
@@ -8925,29 +9141,49 @@ pub mod models {
             RelayInputId::from_json(value)
         }
         /// name
-        pub fn name(self) -> Result<RelayInputName<'a>, JsonError> {
+        pub fn name(self) -> Result<Option<RelayInputName<'a>>, JsonError> {
             let value = self.0.required("name")?;
-            RelayInputName::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayInputName::from_json(value).map(Some)
+            }
         }
         /// state
-        pub fn state(self) -> Result<RelayInputState<'a>, JsonError> {
+        pub fn state(self) -> Result<Option<RelayInputState<'a>>, JsonError> {
             let value = self.0.required("state")?;
-            RelayInputState::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayInputState::from_json(value).map(Some)
+            }
         }
         /// actionTrigger
-        pub fn action_trigger(self) -> Result<RelayInputActionTrigger<'a>, JsonError> {
+        pub fn action_trigger(self) -> Result<Option<RelayInputActionTrigger<'a>>, JsonError> {
             let value = self.0.required("actionTrigger")?;
-            RelayInputActionTrigger::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayInputActionTrigger::from_json(value).map(Some)
+            }
         }
         /// actionType
-        pub fn action_type(self) -> Result<RelayInputActionType<'a>, JsonError> {
+        pub fn action_type(self) -> Result<Option<RelayInputActionType<'a>>, JsonError> {
             let value = self.0.required("actionType")?;
-            RelayInputActionType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayInputActionType::from_json(value).map(Some)
+            }
         }
         /// actionOutputId
-        pub fn action_output_id(self) -> Result<RelayInputActionOutputId<'a>, JsonError> {
+        pub fn action_output_id(self) -> Result<Option<RelayInputActionOutputId<'a>>, JsonError> {
             let value = self.0.required("actionOutputId")?;
-            RelayInputActionOutputId::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                RelayInputActionOutputId::from_json(value).map(Some)
+            }
         }
         pub fn builder(buffer: &'a mut [u8]) -> Result<builders::RelayInput<'a>, JsonError> {
             builders::RelayInput::new(buffer)
@@ -8983,6 +9219,7 @@ pub mod models {
         }
     }
     /// relayInputName. User-friendly name for this relay input.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayInputName<'a>(Json<'a>);
     impl<'a> View<'a> for RelayInputName<'a> {
@@ -9011,6 +9248,7 @@ pub mod models {
         }
     }
     /// relayInputState. The current state of the relay input.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayInputState<'a>(Json<'a>);
     impl<'a> View<'a> for RelayInputState<'a> {
@@ -9044,6 +9282,7 @@ pub mod models {
         }
     }
     /// relayInputActionTrigger. The trigger event that activates the action.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayInputActionTrigger<'a>(Json<'a>);
     impl<'a> View<'a> for RelayInputActionTrigger<'a> {
@@ -9077,6 +9316,7 @@ pub mod models {
         }
     }
     /// relayInputActionType. The type of action to perform when triggered.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayInputActionType<'a>(Json<'a>);
     impl<'a> View<'a> for RelayInputActionType<'a> {
@@ -9112,6 +9352,7 @@ pub mod models {
         }
     }
     /// relayInputActionOutputId. The index of the output to control when triggered.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct RelayInputActionOutputId<'a>(Json<'a>);
     impl<'a> View<'a> for RelayInputActionOutputId<'a> {
@@ -9253,14 +9494,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -9437,14 +9686,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -9619,14 +9876,22 @@ pub mod models {
             Ok(value)
         }
         /// type
-        pub fn r#type(self) -> Result<DeviceType<'a>, JsonError> {
+        pub fn r#type(self) -> Result<Option<DeviceType<'a>>, JsonError> {
             let value = self.0.required("type")?;
-            DeviceType::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceType::from_json(value).map(Some)
+            }
         }
         /// guid
-        pub fn guid(self) -> Result<DeviceGuid<'a>, JsonError> {
+        pub fn guid(self) -> Result<Option<DeviceGuid<'a>>, JsonError> {
             let value = self.0.required("guid")?;
-            DeviceGuid::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                DeviceGuid::from_json(value).map(Some)
+            }
         }
         /// mac
         pub fn mac(self) -> Result<Mac<'a>, JsonError> {
@@ -9644,9 +9909,13 @@ pub mod models {
             LinkStationLedSettings::from_json(value)
         }
         /// lastEvent
-        pub fn last_event(self) -> Result<LinkStationLastEvent<'a>, JsonError> {
+        pub fn last_event(self) -> Result<Option<LinkStationLastEvent<'a>>, JsonError> {
             let value = self.0.required("lastEvent")?;
-            LinkStationLastEvent::from_json(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                LinkStationLastEvent::from_json(value).map(Some)
+            }
         }
         /// alarmHub
         pub fn alarm_hub(self) -> Result<Option<AlarmHubStatus<'a>>, JsonError> {
@@ -9811,6 +10080,7 @@ pub mod models {
         }
     }
     /// linkStationLastEvent. Timestamp when any last event was detected.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct LinkStationLastEvent<'a>(Json<'a>);
     impl<'a> View<'a> for LinkStationLastEvent<'a> {
@@ -11541,29 +11811,49 @@ pub mod models {
             value.string()
         }
         /// role Values: disabled, detached, child, router, leader.
-        pub fn role(self) -> Result<Json<'a>, JsonError> {
+        pub fn role(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("role")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// networkName
-        pub fn network_name(self) -> Result<Json<'a>, JsonError> {
+        pub fn network_name(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("networkName")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// channel
-        pub fn channel(self) -> Result<Json<'a>, JsonError> {
+        pub fn channel(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("channel")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// panId
-        pub fn pan_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn pan_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("panId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// extendedPanId
-        pub fn extended_pan_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn extended_pan_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("extendedPanId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// joinedDeviceCount
         pub fn joined_device_count(self) -> Result<i64, JsonError> {
@@ -11571,9 +11861,13 @@ pub mod models {
             value.integer()
         }
         /// errorReason
-        pub fn error_reason(self) -> Result<Json<'a>, JsonError> {
+        pub fn error_reason(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("errorReason")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// Wall-clock unix-epoch milliseconds when the gateway last refreshed this status.
         pub fn last_updated_at(self) -> Result<f64, JsonError> {
@@ -22898,9 +23192,13 @@ pub mod models {
             DeviceId::from_json(value)
         }
         /// smartDetectTypes
-        pub fn smart_detect_types(self) -> Result<Json<'a>, JsonError> {
+        pub fn smart_detect_types(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("smartDetectTypes")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         pub fn builder(
             buffer: &'a mut [u8],
@@ -23065,9 +23363,13 @@ pub mod models {
             DeviceId::from_json(value)
         }
         /// smartDetectTypes
-        pub fn smart_detect_types(self) -> Result<Json<'a>, JsonError> {
+        pub fn smart_detect_types(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("smartDetectTypes")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         pub fn builder(
             buffer: &'a mut [u8],
@@ -23232,9 +23534,13 @@ pub mod models {
             DeviceId::from_json(value)
         }
         /// smartDetectTypes
-        pub fn smart_detect_types(self) -> Result<Json<'a>, JsonError> {
+        pub fn smart_detect_types(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("smartDetectTypes")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         pub fn builder(
             buffer: &'a mut [u8],
@@ -23399,9 +23705,13 @@ pub mod models {
             DeviceId::from_json(value)
         }
         /// smartDetectTypes
-        pub fn smart_detect_types(self) -> Result<Json<'a>, JsonError> {
+        pub fn smart_detect_types(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("smartDetectTypes")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         pub fn builder(
             buffer: &'a mut [u8],
@@ -27360,24 +27670,40 @@ pub mod models {
             value.string()
         }
         /// The user first-name.
-        pub fn first_name(self) -> Result<Json<'a>, JsonError> {
+        pub fn first_name(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("firstName")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// The user last-name.
-        pub fn last_name(self) -> Result<Json<'a>, JsonError> {
+        pub fn last_name(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("lastName")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// The user email.
-        pub fn email(self) -> Result<Json<'a>, JsonError> {
+        pub fn email(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("email")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// The unique id of the UniFi Identity user. Matches the id field of the corresponding UlpUser.
-        pub fn ucore_user_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn ucore_user_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("ucoreUserId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         /// modelKey
         pub fn model_key(self) -> Result<UserModelKey<'a>, JsonError> {
@@ -31640,11 +31966,14 @@ pub mod models {
         }
     }
     /// alarmHubStatus emergencyTerminalStatus value.
+    /// This view permits JSON null; check json().is_null() before reading object fields.
     #[derive(Clone, Copy, Debug)]
     pub struct AlarmHubStatusEmergencyTerminalStatusValue<'a>(Json<'a>);
     impl<'a> View<'a> for AlarmHubStatusEmergencyTerminalStatusValue<'a> {
         fn from_json(value: Json<'a>) -> Result<Self, JsonError> {
-            value.object()?;
+            if !value.is_null() {
+                value.object()?;
+            }
             Ok(Self(value))
         }
     }
@@ -33051,9 +33380,13 @@ pub mod models {
             Ok(())
         }
         /// The unique id of the UniFi Identity user. Matches the id field of the corresponding UlpUser. Matches the ucoreUserId field of the corresponding Protect User. Null if the credential was not recognized.
-        pub fn ulp_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn ulp_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("ulpId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         pub fn builder(
             buffer: &'a mut [u8],
@@ -33099,9 +33432,13 @@ pub mod models {
             Ok(())
         }
         /// The unique id of the UniFi Identity user. Matches the id field of the corresponding UlpUser. Matches the ucoreUserId field of the corresponding Protect User. Null if the credential was not recognized.
-        pub fn ulp_id(self) -> Result<Json<'a>, JsonError> {
+        pub fn ulp_id(self) -> Result<Option<Json<'a>>, JsonError> {
             let value = self.0.required("ulpId")?;
-            Ok(value)
+            if value.is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(value))
+            }
         }
         pub fn builder(
             buffer: &'a mut [u8],
