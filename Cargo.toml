@@ -1,6 +1,7 @@
 [workspace]
 members = ["cli"]
 default-members = ["."]
+exclude = ["examples/esp32c3-unifi-display"]
 resolver = "2"
 
 [package]

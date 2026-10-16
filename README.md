@@ -236,6 +236,14 @@ cargo run --example wifi_status
 
 `wifi_status` follows pagination for cloud hosts and Network resources, uses the generated model views, and prints a filtered Wi-Fi report. Its shared host TLS adapter permits GET requests only. Passwords, API keys and device identifiers are omitted from the report.
 
+## ESP32-C3 display
+
+The [round UniFi display gadget](examples/esp32c3-unifi-display/README.md) uses the
+same GUITION ESP32-2424S012 board as the ubus-zero display. It shows device uplink
+rates, health, radios, site totals, and device details using the embedded async
+SDK over certificate-pinned HTTPS. Install the credential-free public firmware
+and configure it locally over USB at <https://no-std-rs.github.io/unifi/>.
+
 ## Local tests and mock
 
 No official hosted sandbox was identified in the reviewed Ubiquiti docs or the linked GitHub schema projects. The checked-in schema mock serves synthetic responses, validates request bodies (including the top-level discriminator), and never connects to a controller. It is a contract mock, not a stateful UniFi emulator. Writes can be exercised here without touching a live system.
