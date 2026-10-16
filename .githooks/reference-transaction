@@ -1,0 +1,7 @@
+#!/bin/sh
+# Only act after the transaction commits. Local main updates cannot recurse.
+[ "$1" = committed ] || exit 0
+script="$(dirname "$0")/../tools/git-sync.py"
+if [ -f "$script" ]; then
+    python3 "$script" --hook
+fi
