@@ -229,3 +229,154 @@ fn restored_session_pairs_rotate_transactionally_and_reject_header_injection() {
     }
     assert!(Session::<32, 16>::from_cookie("TOKEN=x", Some("csrf\n")).is_err());
 }
+
+#[test]
+fn object_equality_uses_the_last_value_for_each_decoded_key() {
+    use unifi::validation::{equivalent, unique};
+    for (left, right, expected) in [
+        (r#"{"x":0,"x":0}"#, r#"{"x":0,"x":1}"#, false),
+        (r#"{"x":0,"x":1}"#, r#"{"x":1}"#, true),
+        (r#"{"x":0,"\u0078":1}"#, r#"{"x":1}"#, true),
+        (r#"{"x":1,"y":2}"#, r#"{"y":2,"x":1}"#, true),
+        (r#"{"x":1,"y":2}"#, r#"{"x":1}"#, false),
+    ] {
+        let a = Json::parse(left.as_bytes()).unwrap();
+        let b = Json::parse(right.as_bytes()).unwrap();
+        assert_eq!(equivalent(a, b), expected, "{left} versus {right}");
+        assert_eq!(equivalent(b, a), expected, "{right} versus {left}");
+        for array in [format!("[{left},{right}]"), format!("[{right},{left}]")] {
+            assert_eq!(
+                unique(Json::parse(array.as_bytes()).unwrap()).is_err(),
+                expected
+            );
+        }
+    }
+}
+
+#[test]
+fn identical_numbers_outside_f64_range_are_duplicates() {
+    use unifi::validation::{equivalent, unique};
+    let value = Json::parse(b"1e400").unwrap();
+    assert!(equivalent(value, value));
+    assert!(unique(Json::parse(b"[1e400,1e400]").unwrap()).is_err());
+    assert!(!equivalent(value, Json::parse(b"1e401").unwrap()));
+    assert!(unique(Json::parse(b"[1e400,1e401]").unwrap()).is_ok());
+}
+
+fn websocket_mock(frames: &[u8]) -> Mock {
+    let mut wire = b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n".to_vec();
+    wire.extend_from_slice(frames);
+    Mock::new(&wire)
+}
+
+#[test]
+fn websocket_close_waits_for_the_peer_and_answers_pings_once() {
+    use unifi::websocket::{self, Error, Message};
+    let mut mock = websocket_mock(&[0x89, 1, b'x', 0x88, 2, 3, 232]);
+    let client = Client::new("h", "", "k").unwrap();
+    let call = unifi::Call::raw(unifi::Method::GET, "/events").unwrap();
+    let mut headers = [0; 512];
+    {
+        let mut socket = run(websocket::connect(
+            &client,
+            &mut mock,
+            &call,
+            *b"the sample nonce",
+            &mut headers,
+        ))
+        .unwrap();
+        run(socket.close(1000, "", [1, 2, 3, 4])).unwrap();
+        assert!(matches!(
+            run(socket.text("late", [0; 4])),
+            Err(Error::Closed)
+        ));
+        let mut masks_used = 0;
+        let mut masks = || {
+            masks_used += 1;
+            Ok([5, 6, 7, 8])
+        };
+        let mut output = [0; 16];
+        assert!(matches!(
+            run(socket.receive(&mut output, &mut masks)).unwrap(),
+            Message::Close {
+                code: Some(1000),
+                ..
+            }
+        ));
+        assert!(matches!(
+            run(socket.receive(&mut output, &mut masks)),
+            Err(Error::Closed)
+        ));
+        assert_eq!(masks_used, 1, "only the pong needs a new masking key");
+    }
+    let start = mock
+        .output
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .unwrap()
+        + 4;
+    assert_eq!(
+        &mock.output[start..],
+        &[
+            0x88,
+            0x82,
+            1,
+            2,
+            3,
+            4,
+            2,
+            234,
+            0x8a,
+            0x81,
+            5,
+            6,
+            7,
+            8,
+            b'x' ^ 5
+        ]
+    );
+}
+
+#[test]
+fn websocket_peer_close_receives_a_single_reply() {
+    use unifi::websocket::{self, Error, Message};
+    let mut mock = websocket_mock(&[0x88, 2, 3, 232]);
+    let client = Client::new("h", "", "k").unwrap();
+    let call = unifi::Call::raw(unifi::Method::GET, "/events").unwrap();
+    let mut headers = [0; 512];
+    {
+        let mut socket = run(websocket::connect(
+            &client,
+            &mut mock,
+            &call,
+            *b"the sample nonce",
+            &mut headers,
+        ))
+        .unwrap();
+        let mut masks_used = 0;
+        let mut masks = || {
+            masks_used += 1;
+            Ok([1, 2, 3, 4])
+        };
+        let mut output = [0; 16];
+        assert!(matches!(
+            run(socket.receive(&mut output, &mut masks)).unwrap(),
+            Message::Close {
+                code: Some(1000),
+                ..
+            }
+        ));
+        assert!(matches!(
+            run(socket.text("late", [0; 4])),
+            Err(Error::Closed)
+        ));
+        assert_eq!(masks_used, 1);
+    }
+    let start = mock
+        .output
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .unwrap()
+        + 4;
+    assert_eq!(&mock.output[start..], &[0x88, 0x82, 1, 2, 3, 4, 2, 234]);
+}

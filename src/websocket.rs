@@ -52,6 +52,7 @@ pub enum Message<'a> {
 }
 pub struct WebSocket<IO> {
     io: IO,
+    close_sent: bool,
     closed: bool,
     failed: bool,
 }
@@ -137,6 +138,7 @@ pub async fn connect<IO: Read + Write>(
     }
     Ok(WebSocket {
         io,
+        close_sent: false,
         closed: false,
         failed: false,
     })
@@ -163,6 +165,8 @@ impl<IO: Read + Write> WebSocket<IO> {
     pub async fn ping(&mut self, bytes: &[u8], mask: [u8; 4]) -> Result<(), Error> {
         self.send(9, bytes, mask).await
     }
+    /// Start the closing handshake. Keep calling `receive` until the peer's Close arrives.
+    /// Further data sends are rejected while control frames can still be received.
     pub async fn close(&mut self, code: u16, reason: &str, mask: [u8; 4]) -> Result<(), Error> {
         if !close_code(code) || reason.len() > 123 {
             return Err(Error::Protocol);
@@ -171,11 +175,11 @@ impl<IO: Read + Write> WebSocket<IO> {
         payload.extend_from_slice(&code.to_be_bytes()).unwrap();
         payload.extend_from_slice(reason.as_bytes()).unwrap();
         self.send(8, &payload, mask).await?;
-        self.closed = true;
+        self.close_sent = true;
         Ok(())
     }
     async fn send(&mut self, opcode: u8, bytes: &[u8], mask: [u8; 4]) -> Result<(), Error> {
-        if self.closed || self.failed {
+        if self.closed || self.failed || (self.close_sent && opcode != 10) {
             return Err(Error::Closed);
         }
         if opcode >= 8 && bytes.len() > 125 {
@@ -291,7 +295,10 @@ impl<IO: Read + Write> WebSocket<IO> {
                         core::str::from_utf8(&payload[if length >= 2 { 2 } else { 0 }..length])
                             .map_err(|_| Error::Protocol)?;
                     let reason = String::try_from(text).map_err(|_| Error::Capacity)?;
-                    self.send(8, &payload[..length], masks()?).await?;
+                    if !self.close_sent {
+                        self.send(8, &payload[..length], masks()?).await?;
+                        self.close_sent = true;
+                    }
                     self.closed = true;
                     return Ok(Message::Close { code, reason });
                 }
