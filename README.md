@@ -1,9 +1,16 @@
 # unifi
 
-Allocation-free, `no_std` Rust access to UniFi APIs.
+Allocation-free `#![no_std]` Rust access to UniFi over caller-provided embedded I/O streams. The library uses `reqwless` and `heapless`; optional serde also works without `std` or `alloc`.
 
-Implementation and CI are developed in pull requests.
+The core supports bounded JSON, typed operation metadata, percent-encoded paths and queries, explicit pagination, status/error preservation, binary/multipart bodies, session cookie/CSRF state, and WebSockets. Requests use caller-owned buffers. Provide verified TLS and reconnect for each request; the core does not retry or log in automatically.
 
-Run `python3 tools/ci-native.py` for checks available in this checkout. [Review order](docs/stack.md).
+```rust
+use unifi::{Call, Json, Method};
+let call = Call::raw(Method::GET, "/v1/info").unwrap();
+assert_eq!(call.path(), "/v1/info");
+assert!(Json::parse(br#"{"ready":true}"#).unwrap().required("ready").unwrap().boolean().unwrap());
+```
 
-`python3 tools/install-git-hooks.py` enables pruning and safe fast-forwarding of unchecked-out main; divergence and other worktrees are preserved.
+Only send a request when you intend to perform its operation. Model constructors and body builders do not send network traffic.
+
+Run `python3 tools/ci-native.py` for the checks available in this checkout. CI also checks bare-metal default/serde builds on stable Rust 1.99.1 and MSRV 1.91.1. See [Runnerless setup](docs/runnerless.md) and [review stack](docs/stack.md).
