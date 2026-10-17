@@ -31,6 +31,13 @@ impl Navigation {
         self.locked
     }
 
+    /// Resume the same page and lock after USB setup; discard interrupted gestures.
+    pub fn resume(&mut self, now_ms: u64) {
+        self.page_since = now_ms;
+        self.down_since = None;
+        self.taps = 0;
+    }
+
     /// A failed touch read is `None`, preserving the previous finger state.
     /// Wait for the gesture window before applying one/two taps, so triple-tap
     /// locks the page that was visible when the gesture began.
@@ -104,6 +111,17 @@ mod tests {
         assert!(!n.update(69439, None));
         assert!(n.update(69440, None));
         assert_eq!(n.page(), 2);
+    }
+    #[test]
+    fn resume_discards_gestures_and_keeps_the_page() {
+        let mut n = Navigation::new(0);
+        n.update(8000, None);
+        tap(&mut n, 8100);
+        n.resume(100000);
+        n.update(100001, Some(false));
+        assert_eq!(n.page(), 1);
+        assert!(!n.update(107999, None));
+        assert!(n.update(108000, None));
     }
     #[test]
     fn single_and_double_tap_wait_for_the_gesture_window() {

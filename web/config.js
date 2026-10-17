@@ -4,6 +4,12 @@ export const SECTOR_SIZE = 4096;
 const encoder = new TextEncoder();
 const fields = ["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"];
 const length = value => encoder.encode(value).length;
+export function validateWifi(ssid, password) {
+  if (typeof ssid !== "string" || typeof password !== "string" || ssid.includes("\0") || password.includes("\0")) throw new Error("Enter a valid Wi-Fi name and password.");
+  if (length(ssid) < 1 || length(ssid) > 32) throw new Error("The Wi-Fi name must be 1–32 UTF-8 bytes.");
+  if (password !== "" && !(length(password) >= 8 && length(password) <= 63) && !/^[\da-fA-F]{64}$/.test(password)) throw new Error("Use an 8–63 byte Wi-Fi password, or leave it empty for an open network.");
+}
+
 export function isLocalIPv4(value) {
   const parts = value.split(".");
   if (parts.length !== 4 || parts.some(p => !/^(0|[1-9]\d{0,2})$/.test(p) || Number(p) > 255)) return false;
@@ -13,9 +19,7 @@ export function isLocalIPv4(value) {
 }
 export function validateConfig(config) {
   if (Object.keys(config).length !== fields.length || fields.some(k => typeof config[k] !== "string" || config[k].includes("\0"))) throw new Error("Complete the Wi-Fi and UniFi settings.");
-  if (length(config.wifi_ssid) < 1 || length(config.wifi_ssid) > 32) throw new Error("The Wi-Fi name must be 1–32 UTF-8 bytes.");
-  const password = config.wifi_password;
-  if (password !== "" && !(length(password) >= 8 && length(password) <= 63) && !/^[\da-fA-F]{64}$/.test(password)) throw new Error("Use an 8–63 byte Wi-Fi password, or leave it empty for an open network.");
+  validateWifi(config.wifi_ssid, config.wifi_password);
   const match = /^https:\/\/([^/]+)(.*)$/.exec(config.controller_url);
   const authority = match?.[1] || "";
   const parts = authority.split(":");

@@ -45,6 +45,30 @@ console sign-in, then fills the installer automatically. See [installer setup](.
 Cloud discovery requires UniFi OS 5.0.3 or newer and appropriate console access.
 The display itself does not need internet access and has no cloud fallback.
 
+The installer also supports **live USB setup**. For a fresh board, choose
+**Install firmware first**, close the flasher, then **Connect display**. Firmware
+with no settings keeps USB setup available without a Wi-Fi connection. Existing
+boards can connect directly after updating to firmware that supports APP MODE.
+
+While connected, the screen shows **APP MODE**. **Scan Wi-Fi** uses the C3's
+2.4 GHz radio; choose a discovered SSID or enter a hidden network manually.
+**Test Wi-Fi on display** actually associates using the draft password and waits
+for DHCP. It then restores the saved radio configuration without writing flash;
+disconnect APP MODE to resume its saved connection. A successful test verifies
+Wi-Fi and DHCP, not the controller's API key or TLS certificate. Guided setup
+above verifies those separately.
+
+**Read saved device settings** fills the form from USB (including credentials).
+**Save settings and restart** validates and verifies a write to the settings
+partition, then reboots into the local dashboard without reflashing. The previous
+valid sector is retained as a recovery copy if a write is interrupted. Both copies
+contain unencrypted credentials. New USB sessions require a fresh nonce handshake;
+heartbeat loss leaves APP MODE within 10 seconds. Radio operations have bounded
+timeouts and finish restoring the saved configuration before normal reconnects.
+If radio cleanup fails, the display restarts using its saved settings.
+Disconnect returns to the previous page and lock; reboot resets the page lock.
+No cloud key is part of the device protocol or saved configuration.
+
 Prepare the installation, then use the USB dialog. The public factory image has
 no credentials. The page verifies its advertised size and SHA-256, then creates
 local Blob images for the firmware and settings. Cloud discovery sends only the cloud key to `api.ui.com`; the local Network key
@@ -116,7 +140,7 @@ The factory image uses DIO / 80 MHz / 4 MB, a factory app at `0x10000` of length
 Only its first 4 KiB sector is written by the installer. Settings contain the
 `UNIFICF1` magic, little-endian JSON length and CRC-32, then at most 2048 bytes of
 JSON. Firmware validates the partition, sector, and fields before starting Wi-Fi.
-Missing or corrupt settings display a USB setup prompt. There is no compile-time
+Missing or corrupt settings display a USB setup prompt while the USB service remains running. There is no compile-time
 credential configuration.
 
 ## Build and verify

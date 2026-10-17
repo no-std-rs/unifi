@@ -109,14 +109,24 @@ fn uptime(n: Option<u64>) -> String {
         .unwrap_or_else(|| "--".into())
 }
 
+/// USB setup temporarily replaces the dashboard without changing its page lock.
+pub fn app_mode<D: DrawTarget<Color = Rgb565>>(d: &mut D, status: &str) -> Result<(), D::Error> {
+    d.clear(BACKGROUND)?;
+    center(d, "UNIFI / USB", 54, MUTED)?;
+    large(d, "APP MODE", 94, ACCENT)?;
+    center(d, status, 122, WHITE)?;
+    center(d, "Configure on your computer", 153, MUTED)?;
+    center(d, "Disconnect to return", 179, MUTED)
+}
+
 pub fn setup<D: DrawTarget<Color = Rgb565>>(d: &mut D) -> Result<(), D::Error> {
     d.clear(BACKGROUND)?;
     center(d, "UNIFI", 55, ACCENT)?;
     center(d, "SETUP REQUIRED", 92, WHITE)?;
-    center(d, "Open the USB flasher", 119, MUTED)?;
+    center(d, "Open the USB installer", 119, MUTED)?;
     center(d, "on your computer.", 136, MUTED)?;
-    center(d, "Enter Wi-Fi and UniFi", 162, WHITE)?;
-    center(d, "settings, then install.", 179, WHITE)
+    center(d, "Choose Connect display", 162, WHITE)?;
+    center(d, "to configure over USB.", 179, WHITE)
 }
 
 pub fn draw<D: DrawTarget<Color = Rgb565>>(
