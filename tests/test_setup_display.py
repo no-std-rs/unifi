@@ -44,6 +44,7 @@ class SetupTests(unittest.TestCase):
     def setUp(self):
         self.calls, self.creations, self.fail_stats, self.require_mfa = [], 0, False, False
         self.legacy_mfa = False
+        self.accepted_keys = {LOCAL}
         owner = self
         class Gateway(BaseHTTPRequestHandler):
             def log_message(self, *_args):
@@ -91,7 +92,7 @@ class SetupTests(unittest.TestCase):
                         owner.creations += 1
                         response = {'code': 0, 'data': {'full_api_key': LOCAL}}
                 elif self.path.startswith('/proxy/network/integration/'):
-                    if self.headers.get('X-API-Key') != LOCAL:
+                    if self.headers.get('X-API-Key') not in owner.accepted_keys:
                         status = 401
                     elif owner.fail_stats and self.path.endswith('/statistics/latest'):
                         status = 503
@@ -123,7 +124,8 @@ class SetupTests(unittest.TestCase):
 
     def cloud(self, path):
         if path == '/v1/hosts':
-            return {'data': [{'id': 'fixture-console', 'type': 'console', 'reportedState': {
+            return {'data': [{'id': 'null-state', 'type': 'ucore', 'reportedState': None},
+                {'id': 'fixture-console', 'type': 'console', 'reportedState': {
                 'state': 'connected', 'name': 'Gateway', 'directConnectDomain': HOST,
                 'mac': 'aa:bb:cc:dd:ee:ff', 'ipAddrs': ['203.0.113.1', '192.168.6.1']}}]}
         if '/devices?' in path:
@@ -161,6 +163,21 @@ class SetupTests(unittest.TestCase):
         self.fail_stats = False
         self.assertEqual(self.wizard.provision(self.payload())['state'], 'verified')
         self.assertEqual(self.creations, 1)
+
+    def test_generated_key_can_be_explicitly_replaced_after_verification_failure(self):
+        self.login()
+        self.fail_stats = True
+        with self.assertRaisesRegex(setup.SetupError, 'HTTP 503'):
+            self.wizard.provision(self.payload())
+        self.fail_stats = False
+        replacement = 'fixture-replacement-key'
+        self.accepted_keys = {replacement}
+        result = self.wizard.provision(self.payload(local_key=replacement))
+        self.assertEqual(result['config']['api_key'], replacement)
+        self.assertEqual(self.creations, 1)
+
+    def test_discovery_ignores_null_reported_states(self):
+        self.assertEqual(list(self.wizard.hosts), ['fixture-console'])
 
     def test_existing_key_can_be_corrected_without_console_login(self):
         with self.assertRaisesRegex(setup.SetupError, 'HTTP 401'):

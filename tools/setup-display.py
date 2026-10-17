@@ -134,7 +134,7 @@ class Wizard:
         else:
             raise SetupError('Cloud pagination exceeded its limit.')
         self.hosts = {h['id']: h for h in hosts if h.get('type') in ('console', 'ucore')
-                      and h.get('reportedState', {}).get('state') == 'connected'}
+                      and (h.get('reportedState') or {}).get('state') == 'connected'}
         return {'consoles': [{'id': h['id'], 'name': h['reportedState'].get('name') or h['id'],
                              'addresses': list(dict.fromkeys(a for a in h['reportedState'].get('ipAddrs', []) if local_ipv4(a)))}
                             for h in self.hosts.values()]}
@@ -274,26 +274,24 @@ class Wizard:
         device = payload.get('device_id')
         if not isinstance(device, str) or not re.fullmatch(r'[0-9a-fA-F-]{36}', device):
             raise SetupError('Choose a device to display.')
-        if payload.get('local_key') and not self.created_key:
+        if payload.get('local_key'):
             self.local_key = api_key(payload['local_key'])
+            self.created_key = False
         if not self.local_key:
-            if payload.get('local_key'):
-                self.local_key = api_key(payload['local_key'])
-            else:
-                if not self.authenticated:
-                    raise SetupError('Sign in to your console before creating the local display key.')
-                if self.creation_attempted:
-                    raise SetupError('Key creation was already attempted. Check Console → Integrations before restarting setup.')
-                # Refresh the CSRF token using the same console session, then create exactly once.
-                status, _ = self.local('GET', '/api/users/self')
-                success(status, 'Console session check')
-                self.creation_attempted = True
-                status, data = self.local('POST', '/proxy/users/api/v2/user/self/keys', {'name': 'UniFi ESP32 Display'})
-                success(status, 'Local key creation')
-                if data.get('code', 0) != 0 or not data.get('data', {}).get('full_api_key'):
-                    raise SetupError('The console did not return a new key. Check Console → Integrations before retrying.')
-                self.local_key = api_key(data['data']['full_api_key'])
-                self.created_key = True
+            if not self.authenticated:
+                raise SetupError('Sign in to your console before creating the local display key.')
+            if self.creation_attempted:
+                raise SetupError('Key creation was already attempted. Check Console → Integrations before restarting setup.')
+            # Refresh the CSRF token using the same console session, then create exactly once.
+            status, _ = self.local('GET', '/api/users/self')
+            success(status, 'Console session check')
+            self.creation_attempted = True
+            status, data = self.local('POST', '/proxy/users/api/v2/user/self/keys', {'name': 'UniFi ESP32 Display'})
+            success(status, 'Local key creation')
+            if data.get('code', 0) != 0 or not data.get('data', {}).get('full_api_key'):
+                raise SetupError('The console did not return a new key. Check Console → Integrations before retrying.')
+            self.local_key = api_key(data['data']['full_api_key'])
+            self.created_key = True
         # Match the display’s four sample reads. Keep a newly created key in memory on failure,
         # so Retry verification never creates another key.
         for suffix in [f'/devices/{device}', f'/devices/{device}/statistics/latest', '/devices?limit=1', '/clients?limit=1']:
@@ -341,9 +339,11 @@ async function api(route, data = {}) {
 }
 async function run(action) {
   if (busy) return;
-  busy = true; document.querySelectorAll("button").forEach(b => { b.disabled = true; });
+  busy = true;
+  const controls = [...document.querySelectorAll("button,input,select")].map(control => [control, control.disabled]);
+  controls.forEach(([control]) => { control.disabled = true; });
   try { await action(); } catch (error) { note(error.message, true); }
-  finally { busy = false; document.querySelectorAll("button").forEach(b => { b.disabled = false; }); }
+  finally { busy = false; controls.forEach(([control, disabled]) => { control.disabled = disabled; }); }
 }
 function options(id, rows, preferred = "") {
   $(id).replaceChildren(new Option("Choose…", ""), ...rows.map(row => new Option(row.name || row.id, row.id)));
@@ -376,6 +376,7 @@ async function provision(localKey = "") {
   note("Creating local access and verifying the four display API reads…");
   $("retry").hidden = false;
   const data = await api("provision", { site_id: $("site").value, device_id: $("device").value, local_key: localKey });
+  clearTimeout(pollTimer);
   result = data.config;
   $("password").value = ""; $("otp").value = ""; $("local-key").value = "";
   $("account").hidden = true; $("complete").hidden = false;
@@ -395,6 +396,7 @@ $("inspect-form").onsubmit = event => { event.preventDefault(); run(async () => 
 $("site").onchange = () => run(devices);
 $("login-form").onsubmit = event => { event.preventDefault(); run(async () => {
   if (!$("site").value || !$("device").value) throw new Error("Choose a site and device first.");
+  clearTimeout(pollTimer);
   note("Signing in to the verified local gateway…");
   const data = await api("login", { username: $("username").value, password: $("password").value, token: $("otp").value });
   if (data.state === "mfa") {
@@ -404,22 +406,26 @@ $("login-form").onsubmit = event => { event.preventDefault(); run(async () => {
   } else await provision();
 }); };
 $("send-mfa").onclick = () => run(async () => {
+  clearTimeout(pollTimer);
   await api("mfa", { id: $("method").value });
   const push = $("method").selectedOptions[0]?.textContent === "push";
   note(push ? "Approve the sign-in on your device…" : "Code sent. Enter it above and sign in again.");
   if (push) {
     const deadline = Date.now() + 600000;
-    const poll = () => run(async () => {
-      const data = await api("poll");
-      if (data.state === "authenticated") await provision();
-      else if (Date.now() < deadline) pollTimer = setTimeout(poll, 1500);
-      else note("Approval expired. Sign in again.", true);
-    });
+    const poll = () => {
+      if (Date.now() >= deadline) { note("Approval expired. Sign in again.", true); return; }
+      if (busy) { pollTimer = setTimeout(poll, 1500); return; }
+      run(async () => {
+        const data = await api("poll");
+        if (data.state === "authenticated") await provision();
+        else pollTimer = setTimeout(poll, 1500);
+      });
+    };
     pollTimer = setTimeout(poll, 1500);
   }
 });
 $("reuse-form").onsubmit = event => { event.preventDefault(); run(() => provision($("local-key").value)); };
-$("retry").onclick = () => run(() => provision($("local-key").value));
+$("retry").onclick = () => run(() => provision());
 $("return").onclick = () => {
   if (window.opener && allowed.includes(parentOrigin) && channel && result) {
     window.opener.postMessage({ type: "unifi-setup-result", channel, config: result }, parentOrigin);

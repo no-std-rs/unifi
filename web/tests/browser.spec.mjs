@@ -414,3 +414,68 @@ test("guided setup requires explicit console, LAN, site and unmatched device cho
   await popup.getByRole("button", { name: "Sign in and create display key" }).click();
   await expect(popup.locator("#complete")).toBeVisible();
 });
+
+test("site and device choices stay fixed while a device request is pending", async ({ page, context }) => {
+  const calls = [];
+  await mockWizard(context, calls);
+  await context.route("http://127.0.0.1:4177/api/inspect", route => route.fulfill({ json: {
+    selection: "fixture-selection", hostname: "console.id.ui.direct", address: "192.168.6.1",
+    sites: [{ id: site, name: "First site" }, { id: otherDevice, name: "Second site" }],
+  } }));
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  await context.route("http://127.0.0.1:4177/api/devices", async route => {
+    const first = route.request().postDataJSON().site_id === site;
+    if (first) await pending;
+    const id = first ? device : otherDevice;
+    await route.fulfill({ json: { devices: [{ id, name: first ? "First site gateway" : "Second site gateway" }], gateway: id } });
+  });
+  await page.goto("/"); await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "Open guided setup", exact: true }).click();
+  const popup = await popupPromise;
+  await popup.getByRole("button", { name: "Verify gateway certificate" }).click();
+  await popup.getByLabel("Site", { exact: true }).selectOption(site);
+  await expect(popup.getByLabel("Site", { exact: true })).toBeDisabled();
+  await expect(popup.getByLabel("Device to display")).toBeDisabled();
+  release();
+  await expect(popup.getByLabel("Site", { exact: true })).toBeEnabled();
+  await expect(popup.getByLabel("Device to display")).toHaveValue(device);
+  await popup.getByLabel("Site", { exact: true }).selectOption(otherDevice);
+  await expect(popup.getByLabel("Device to display")).toHaveValue(otherDevice);
+});
+
+test("push approval continues after another setup request occupies the polling interval", async ({ page, context }) => {
+  const calls = [];
+  await mockWizard(context, calls);
+  await context.route("http://127.0.0.1:4177/api/inspect", route => route.fulfill({ json: {
+    selection: "fixture-selection", hostname: "console.id.ui.direct", address: "192.168.6.1",
+    sites: [{ id: site, name: "First site" }, { id: otherDevice, name: "Second site" }],
+  } }));
+  await context.route("http://127.0.0.1:4177/api/login", route => route.fulfill({ json: { state: "mfa", methods: [{ id: "push", type: "push" }] } }));
+  await context.route("http://127.0.0.1:4177/api/mfa", route => route.fulfill({ json: { state: "sent" } }));
+  await context.route("http://127.0.0.1:4177/api/poll", route => route.fulfill({ json: { state: "authenticated" } }));
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  await context.route("http://127.0.0.1:4177/api/devices", async route => {
+    if (route.request().postDataJSON().site_id === otherDevice) await pending;
+    await route.fulfill({ json: { devices: [{ id: device, name: "Gateway" }], gateway: device } });
+  });
+  await page.goto("/"); await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "Open guided setup", exact: true }).click();
+  const popup = await popupPromise;
+  await popup.getByRole("button", { name: "Verify gateway certificate" }).click();
+  await popup.getByLabel("Site", { exact: true }).selectOption(site);
+  await expect(popup.getByLabel("Device to display")).toHaveValue(device);
+  await popup.getByLabel("Console username or email").fill("fixture-user");
+  await popup.getByLabel("Console password", { exact: true }).fill("fixture-password");
+  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
+  await popup.getByRole("button", { name: "Send code / approval" }).click();
+  await popup.getByLabel("Site", { exact: true }).selectOption(otherDevice);
+  await expect(popup.getByLabel("Site", { exact: true })).toBeDisabled();
+  // Let the first polling timer run while device discovery is still pending.
+  await popup.waitForTimeout(1800);
+  release();
+  await expect(popup.locator("#complete")).toBeVisible();
+});
