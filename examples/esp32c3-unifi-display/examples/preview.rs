@@ -12,8 +12,11 @@ use unifi_display::{
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let output = std::env::args()
-        .nth(1)
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    let locked = args.iter().any(|arg| arg == "--locked");
+    let output = args
+        .into_iter()
+        .find(|arg| arg != "--locked")
         .unwrap_or_else(|| "preview.ppm".into());
     let mut snapshot = Dashboard {
         device: Device {
@@ -58,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut pixels = [Rgb565::BLACK; WIDTH * TILE_ROWS];
     for page in 0..render::PAGE_COUNT {
         for y in (0..240u16).step_by(TILE_ROWS) {
-            let result: Result<(), Infallible> = render::draw(
+            let result: Result<(), Infallible> = render::draw_with_lock(
                 &mut Tile {
                     y,
                     pixels: &mut pixels,
@@ -66,6 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &snapshot,
                 page,
                 1000,
+                locked,
             );
             result.unwrap();
             for (i, pixel) in pixels.iter().enumerate() {

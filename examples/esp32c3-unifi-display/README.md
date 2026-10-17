@@ -33,21 +33,25 @@ cable, and fill in:
   it never chooses the first device arbitrarily. IDs are UUIDs, not MAC addresses
   or names.
 
-Alternatively, choose **UniFi cloud Connector** in the installer. Enter a cloud
-key created in **Site Manager → Settings → API Keys**, discover your console,
-site and device, then choose **Verify cloud access**. The installer checks the
-dashboard's four read endpoints and supplies the cloud URL, explicit UUIDs and
-a CA/hostname-verified cloud certificate fingerprint from the site build. No
-local Network API key is needed. Cloud access requires internet connectivity,
-UniFi OS 5.0.3 or newer, and console ownership for personal keys (or organization
-access for organization keys). See [cloud setup](../../web/README.md).
+Alternatively, choose **Discover with cloud · device stays local** in the installer.
+A Site Manager API key discovers the console's LAN address and site/device UUIDs,
+and prefers the root gateway when its MAC matches the console. Cloud verification
+checks the data paths using that cloud key, which stays in the browser.
+**The display always uses LAN access**: supply a separate local Network integration
+key and trusted local controller certificate fingerprint. Cloud discovery cannot
+provide these local credentials. See [installer setup](../../web/README.md).
+Cloud discovery requires UniFi OS 5.0.3 or newer and appropriate console access.
+The display itself does not need internet access and has no cloud fallback.
 
 Prepare the installation, then use the USB dialog. The public factory image has
 no credentials. The page verifies its advertised size and SHA-256, then creates
-local Blob images for the firmware and settings. Cloud discovery sends the API
-key only to `api.ui.com`; Wi-Fi credentials only go to the device over USB.
-Settings are never sent to a site backend, logged, saved in browser storage,
-or embedded in the published binary. Settings
+local Blob images for the firmware and settings. Cloud discovery sends only the cloud key to `api.ui.com`; the local Network key
+and Wi-Fi credentials only go to the device over USB.
+Settings are remembered in this browser by default for your next visit. Turn off
+**Remember settings in this browser** or choose **Forget saved settings** to
+remove stored credentials. Browser storage is unencrypted; use a trusted browser
+profile. Settings are never sent to a site backend, logged, or embedded in the
+published binary. Settings
 remain **unencrypted in device flash**. Reinstalling replaces firmware/settings;
 back up anything else on the board first. Hardware flashing is not part of CI.
 
@@ -57,11 +61,17 @@ SHA-256/384/512). A matching certificate alone cannot bypass proof of its privat
 key. This trust model does not validate a CA chain, hostname, or certificate
 expiration and needs no wall clock. Replace the pin through USB when the trusted
 controller certificate rotates. Servers must offer a compatible TLS 1.3 cipher
-suite and signature algorithm. There is no plaintext or skip-verification mode.
+suite and signature algorithm. There is no plaintext or skip-verification mode. Cloud Connector URLs and public
+IPv4 destinations are rejected, including after DNS resolution.
 
 ## Dashboard and polling
 
-Tap to advance among five pages; automatic advance is every eight seconds:
+Tap to advance among five pages; automatic advance is every eight seconds.
+**Triple-tap within 650 ms to lock/unlock the current page.** A small closed gold
+padlock means both tap navigation and automatic rotation are stopped; data keeps
+updating. Triple-tap again to unlock. One/two taps wait for that gesture window
+before advancing. The lock starts unlocked after reboot and does not write flash:
+
 
 1. Selected-device uplink RX/TX in Mb/s and a 60-sample history.
 2. Device CPU, memory, load averages, and uptime.

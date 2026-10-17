@@ -4,8 +4,6 @@
 """Check the deployed Pages artifact anonymously from an unrelated origin."""
 import hashlib
 import json
-from datetime import datetime, timezone
-import re
 import sys
 import time
 from urllib.request import Request, urlopen
@@ -32,11 +30,6 @@ def verify(base_url, revision):
     binary = download(base_url + 'unifi-display.bin', 4 * 1024 * 1024)
     if len(binary) != metadata['size'] or hashlib.sha256(binary).hexdigest() != metadata['sha256']:
         raise ValueError('the deployed firmware does not match its size and SHA-256')
-    cloud = json.loads(download(base_url + 'cloud.json', 8192))
-    if (cloud['origin'] != 'https://api.ui.com'
-            or not re.fullmatch(r'[a-f0-9]{64}', cloud['certificate_sha256'])
-            or datetime.fromisoformat(cloud['not_after']) <= datetime.now(timezone.utc)):
-        raise ValueError('the deployed cloud certificate metadata is invalid or expired')
     print(f'Anonymous GET and CORS * verified: {base_url}unifi-display.bin')
     print(f'{revision}: {len(binary)} bytes; SHA-256 {metadata["sha256"]}')
 

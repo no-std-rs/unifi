@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CLOUD_ORIGIN, cloudBase, cloudClient, cloudTrust } from "../cloud.js";
+import { CLOUD_ORIGIN, cloudBase, cloudClient, consoleLanUrl, rootGateway } from "../cloud.js";
 
 const site = "11111111-1111-4111-8111-111111111111";
 const device = "22222222-2222-4222-8222-222222222222";
@@ -46,11 +46,10 @@ test("stalled pages and invalid identifiers fail before making unintended reques
   await assert.rejects(api.verify(cloudBase("console"), "../site", device), /UUID/);
   assert.throws(() => cloudClient("key with spaces", signal()));
 });
-test("certificate metadata must identify the cloud and be verified and unexpired", () => {
-  const now = Date.now();
-  const metadata = { origin: CLOUD_ORIGIN, certificate_sha256: "ab".repeat(32), verified_at: new Date(now).toISOString(), not_after: new Date(now + 86400000).toISOString() };
-  assert.equal(cloudTrust(metadata, now), metadata.certificate_sha256);
-  for (const patch of [{ origin: "https://other.example" }, { certificate_sha256: "bad" }, { not_after: new Date(now - 1).toISOString() }, { verified_at: "invalid" }, { verified_at: new Date(now + 600000).toISOString() }]) {
-    assert.throws(() => cloudTrust({ ...metadata, ...patch }, now));
-  }
+test("LAN discovery ignores the WAN address and identifies the root gateway by console MAC", () => {
+  const host = { reportedState: { mac: "AA:BB:CC:DD:EE:FF", ipAddrs: ["203.0.113.9", "fe80::1", "192.168.6.1"] } };
+  assert.equal(consoleLanUrl(host), "https://192.168.6.1/proxy/network/integration");
+  assert.equal(rootGateway(host, [{ id: "ap", macAddress: "11:22:33:44:55:66" }, { id: "root", macAddress: "aa-bb-cc-dd-ee-ff" }]), "root");
+  assert.equal(rootGateway({}, [{ id: "first" }, { id: "second" }]), "");
+  assert.equal(consoleLanUrl({ reportedState: { ipAddrs: ["10.0.0.1", "192.168.6.1"] } }), "");
 });
