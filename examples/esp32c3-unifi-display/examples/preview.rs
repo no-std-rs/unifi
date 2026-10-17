@@ -12,9 +12,11 @@ use unifi_display::{
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let locked = std::env::args().any(|arg| arg == "--locked");
-    let output = std::env::args()
-        .nth(1)
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    let locked = args.iter().any(|arg| arg == "--locked");
+    let output = args
+        .into_iter()
+        .find(|arg| arg != "--locked")
         .unwrap_or_else(|| "preview.ppm".into());
     let mut snapshot = Dashboard {
         device: Device {

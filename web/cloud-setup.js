@@ -49,7 +49,7 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
     const url = consoleLanUrl(consoles.find(row => row.id === consoleSelect.value));
     if (previousConsole !== consoleSelect.value) {
       if (previousConsole || !$("api_key").value) {
-        if (url !== $("controller_url").value) {
+        if (previousConsole || url !== $("controller_url").value) {
           $("api_key").value = "";
           $("certificate_sha256").value = "";
         }

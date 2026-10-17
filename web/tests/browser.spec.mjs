@@ -254,3 +254,24 @@ test("unavailable browser storage still permits a local installation", async ({ 
   await page.getByRole("button", { name: "Prepare installation" }).click();
   await expect(page.getByRole("button", { name: "Install on display" })).toBeVisible();
 });
+
+test("switching consoles clears local credentials even when both use the same LAN address", async ({ page }) => {
+  await serial(page); await mockCloud(page, []);
+  await page.route("https://api.ui.com/v1/hosts", route => route.fulfill({ json: { data: ["first:1", "second:2"].map(id => ({ id, type: "console", reportedState: { state: "connected", name: id, mac: "aa:bb:cc:dd:ee:ff", ipAddrs: ["192.168.6.1"] } })) } }));
+  await page.goto("/"); await wifi(page);
+  await page.getByLabel("Cloud discovery API key").fill("private-cloud-key");
+  await page.getByRole("button", { name: "Discover consoles" }).click();
+  await expect(page.getByLabel("Console", { exact: true })).toBeEnabled();
+  await page.getByLabel("Console", { exact: true }).selectOption("first:1");
+  await expect(page.getByLabel("Device to display")).toHaveValue(device);
+  await localCredentials(page);
+  await page.getByRole("button", { name: "Verify cloud access" }).click();
+  await expect(page.locator("#cloud_status")).toContainText("Cloud reads verified");
+  await page.getByRole("button", { name: "Prepare installation" }).click();
+  await expect(page.getByRole("button", { name: "Install on display" })).toBeVisible();
+  await page.getByLabel("Console", { exact: true }).selectOption("second:2");
+  await expect(page.getByLabel("Local controller integration URL")).toHaveValue("https://192.168.6.1/proxy/network/integration");
+  await expect(page.getByLabel("Local Network API key")).toHaveValue("");
+  await expect(page.getByLabel("Certificate SHA-256 fingerprint")).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Install on display" })).toBeHidden();
+});
