@@ -23,7 +23,7 @@ function fixture(handle = () => null) {
     } }),
     open: async () => {}, close: async () => { closed++; },
   };
-  return { serial: { requestPort: async () => port }, commands, response, unplug: () => input.close(), get closed() { return closed; } };
+  return { serial: { requestPort: async () => port }, commands, response, raw: text => input.enqueue(encoder.encode(text)), unplug: () => input.close(), get closed() { return closed; } };
 }
 
 test("handshake, noise, split lines, session binding and parallel heartbeat", async () => {
@@ -37,6 +37,7 @@ test("handshake, noise, split lines, session binding and parallel heartbeat", as
   });
   const client = new DisplaySerial(); await client.connect(f.serial);
   assert.equal(client.connected, true);
+  f.raw("UNIFI_APP {bad json}\n" + "x".repeat(9000) + "\n");
   const pending = client.command({ name: "status" });
   assert.equal(await client.command({ name: "ping" }), null);
   assert.equal(await pending, "current");
@@ -59,4 +60,16 @@ test("timeouts, device errors and physical unplug reject requests and release th
   f.unplug(); await rejected;
   await new Promise(resolve => setTimeout(resolve, 20));
   assert.equal(f.closed, 1); assert.equal(disconnects, 1);
+});
+
+
+test("an unplug between open and stream acquisition closes the port and permits retry", async () => {
+  let closed=0;
+  const client=new DisplaySerial();
+  await assert.rejects(client.connect({requestPort:async()=>({open:async()=>{},writable:null,close:async()=>{closed++;}})}));
+  assert.equal(closed,1);
+  const f=fixture();
+  await client.connect(f.serial);
+  assert.equal(client.connected,true);
+  await client.disconnect();
 });

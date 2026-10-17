@@ -65,6 +65,7 @@ valid sector is retained as a recovery copy if a write is interrupted. Both copi
 contain unencrypted credentials. New USB sessions require a fresh nonce handshake;
 heartbeat loss leaves APP MODE within 10 seconds. Radio operations have bounded
 timeouts and finish restoring the saved configuration before normal reconnects.
+If radio cleanup fails, the display restarts using its saved settings.
 Disconnect returns to the previous page and lock; reboot resets the page lock.
 No cloud key is part of the device protocol or saved configuration.
 

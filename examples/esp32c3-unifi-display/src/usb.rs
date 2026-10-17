@@ -226,12 +226,22 @@ async fn disconnect(
     Ok(())
 }
 
+enum RadioError {
+    Operation(&'static str),
+    Restore,
+}
+impl From<&'static str> for RadioError {
+    fn from(message: &'static str) -> Self {
+        Self::Operation(message)
+    }
+}
+
 async fn radio_command(
     command: Command,
     wifi: &'static Wifi,
     stack: Stack<'static>,
     saved: Option<&'static DeviceConfig>,
-) -> Result<Value, &'static str> {
+) -> Result<Value, RadioError> {
     let mut controller = wifi.lock().await;
     match command {
         Command::ScanWifi {} => {
@@ -279,11 +289,12 @@ async fn radio_command(
             let restored = controller
                 .set_config(&restore)
                 .map_err(|_| "Cannot restore Wi-Fi; restart display");
-            cleanup?;
-            restored?;
-            result
+            if cleanup.is_err() || restored.is_err() {
+                return Err(RadioError::Restore);
+            }
+            result.map_err(RadioError::Operation)
         }
-        _ => Err("Unsupported radio command"),
+        _ => Err(RadioError::Operation("Unsupported radio command")),
     }
 }
 
@@ -312,7 +323,15 @@ pub async fn work(
                 restart = result.is_ok();
                 result
             }
-            command => radio_command(command, wifi, stack, saved).await,
+            command => match radio_command(command, wifi, stack, saved).await {
+                Ok(value) => Ok(value),
+                Err(RadioError::Operation(message)) => Err(message),
+                Err(RadioError::Restore) => {
+                    // A timed-out driver may still be associating. Reboot reloads only saved settings.
+                    restart = true;
+                    Err("Could not restore saved Wi-Fi; restarting display")
+                }
+            },
         };
         set_label("Connected to website");
         // A disconnected/replaced session must not receive another session's secrets.

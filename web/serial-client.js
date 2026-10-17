@@ -17,13 +17,15 @@ export class DisplaySerial {
     await port.open({ baudRate: 115200, bufferSize: 16384 });
     this.port = port;
     this.session = 0;
-    this.writer = port.writable.getWriter();
-    this.reader = port.readable.getReader();
+    this.writer = undefined;
+    this.reader = undefined;
     this.tail = Promise.resolve();
-    this.reading = this.readLoop(this.reader).catch(() => {}).finally(() => {
-      if (this.port === port) void this.disconnect(false);
-    });
     try {
+      this.writer = port.writable.getWriter();
+      this.reader = port.readable.getReader();
+      this.reading = this.readLoop(this.reader).catch(() => {}).finally(() => {
+        if (this.port === port) void this.disconnect(false);
+      });
       const nonce = [...crypto.getRandomValues(new Uint8Array(16))].map(n => n.toString(16).padStart(2, "0")).join("");
       const hello = await this.request({ name: "hello", nonce }, 8000, false);
       if (hello.result?.nonce !== nonce || hello.result?.protocol !== 1 || hello.result?.board !== "ESP32-2424S012"
