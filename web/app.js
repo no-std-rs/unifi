@@ -1,4 +1,5 @@
 import { encodeConfig, manifestWithSettings } from "./config.js";
+import { setupCloud } from "./cloud-setup.js";
 
 const $ = id => document.getElementById(id);
 const form = $("settings");
@@ -21,6 +22,8 @@ function forgetSettings() {
   for (const url of objectUrls.splice(0)) URL.revokeObjectURL(url);
 }
 
+const cloud = setupCloud(forgetSettings);
+
 form.addEventListener("input", () => {
   forgetSettings();
   if (release) message("Your settings stay here. Prepare when you're ready.");
@@ -30,7 +33,8 @@ form.addEventListener("submit", event => {
   forgetSettings();
   try {
     if (!release || !firmwareUrl) throw new Error("Wait for the latest firmware to finish loading.");
-    const config = Object.fromEntries(new FormData(form));
+    const fields = ["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"];
+    const config = { ...Object.fromEntries(fields.map(name => [name, $(name).value])), ...cloud.config() };
     const sector = encodeConfig(config);
     const settingsUrl = URL.createObjectURL(new Blob([sector], { type: "application/octet-stream" }));
     objectUrls.push(settingsUrl);
@@ -53,6 +57,7 @@ window.addEventListener("pagehide", () => {
   $("download").removeAttribute("href");
   $("prepare").disabled = true;
   form.reset();
+  cloud.reset();
 });
 window.addEventListener("pageshow", event => {
   if (event.persisted) loadRelease().catch(error => message(error.message, true));

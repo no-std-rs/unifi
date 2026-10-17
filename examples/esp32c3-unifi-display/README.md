@@ -33,10 +33,21 @@ cable, and fill in:
   it never chooses the first device arbitrarily. IDs are UUIDs, not MAC addresses
   or names.
 
+Alternatively, choose **UniFi cloud Connector** in the installer. Enter a cloud
+key created in **Site Manager → Settings → API Keys**, discover your console,
+site and device, then choose **Verify cloud access**. The installer checks the
+dashboard's four read endpoints and supplies the cloud URL, explicit UUIDs and
+a CA/hostname-verified cloud certificate fingerprint from the site build. No
+local Network API key is needed. Cloud access requires internet connectivity,
+UniFi OS 5.0.3 or newer, and console ownership for personal keys (or organization
+access for organization keys). See [cloud setup](../../web/README.md).
+
 Prepare the installation, then use the USB dialog. The public factory image has
 no credentials. The page verifies its advertised size and SHA-256, then creates
-local Blob images for the firmware and settings. Form values are never uploaded,
-logged, saved in browser storage, or embedded in the published binary. Settings
+local Blob images for the firmware and settings. Cloud discovery sends the API
+key only to `api.ui.com`; Wi-Fi credentials only go to the device over USB.
+Settings are never sent to a site backend, logged, saved in browser storage,
+or embedded in the published binary. Settings
 remain **unencrypted in device flash**. Reinstalling replaces firmware/settings;
 back up anything else on the board first. Hardware flashing is not part of CI.
 
