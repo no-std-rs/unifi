@@ -68,8 +68,11 @@ const wizard = setupWizard(config => {
   message("Local connection filled in. Add your Wi-Fi details, then prepare installation.");
 });
 
+const readForm = () => Object.fromEntries(["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"].map(name => [name, $(name).value]));
+const readSaveConfig = () => ({ ...readForm(), ...cloud.config() });
 const device = setupDevice({
-  readForm: () => Object.fromEntries(["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"].map(name => [name, $(name).value])),
+  readForm,
+  readSaveConfig,
   applyConfig: config => {
     wizard.cancel(); forgetSettings(); $("connection_mode").value = "local"; cloud.reset();
     for (const [name, value] of Object.entries(config)) $(name).value = value;
@@ -104,8 +107,7 @@ form.addEventListener("submit", event => {
   saveSettings();
   try {
     if (!release || !firmwareUrl) throw new Error("Wait for the latest firmware to finish loading.");
-    const fields = ["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"];
-    const config = { ...Object.fromEntries(fields.map(name => [name, $(name).value])), ...cloud.config() };
+    const config = readSaveConfig();
     const sector = encodeConfig(config);
     const settingsUrl = URL.createObjectURL(new Blob([sector], { type: "application/octet-stream" }));
     objectUrls.push(settingsUrl);

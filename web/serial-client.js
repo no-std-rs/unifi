@@ -94,6 +94,7 @@ export class DisplaySerial {
     try { await this.closing; } finally { this.closing = undefined; }
   }
   async close(sendBye) {
+    const notify = this.connected;
     clearInterval(this.heartbeat);
     if (sendBye && this.connected) { try { await this.request({ name: "bye" }, 500); } catch { /* Session also expires without a heartbeat. */ } }
     const port = this.port;
@@ -106,6 +107,6 @@ export class DisplaySerial {
     try { await this.writer?.abort(); } catch { /* Physical unplug. */ }
     try { this.writer?.releaseLock(); } catch { /* Already closed. */ }
     try { await port.close(); } catch { /* Already disconnected. */ }
-    this.onDisconnect();
+    if (notify) this.onDisconnect();
   }
 }

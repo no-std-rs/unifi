@@ -22,6 +22,7 @@ async function device(page, options = {}) {
           const command = request.command;
           let result = null, error = null;
           if (command.name === "hello") { mode = true; window.appMode = mode; result = { nonce: command.nonce, protocol: 1, board: "ESP32-2424S012", capabilities: ["scan_wifi", "test_wifi", "save_config"] }; }
+          if (command.name === "hello" && options.oldFirmware) result.capabilities = [];
           if (command.name === "status") result = { configured: !options.blank, ip: "192.168.6.20", app_mode: mode };
           if (command.name === "get_config") result = { config: options.blank ? null : config };
           if (command.name === "scan_wifi") result = { networks: [{ ssid: "scanned-network", rssi: -40, channel: 6, secure: true }, { ssid: "scanned-network", rssi: -80, channel: 6, secure: true }, { ssid: "<script>noise</script>", rssi: -60, channel: 1, secure: false }] };
@@ -100,4 +101,67 @@ test("disconnect during a pending read cannot refill the form and leaves control
   await expect(page.getByLabel("Local Network API key")).toBeEnabled();
   await expect(page.getByLabel("Local Network API key")).toHaveValue("");
   await expect(page.getByRole("button", { name: "Connect display", exact: true })).toBeEnabled();
+});
+
+
+test("unsupported firmware keeps its actionable handshake error after cleanup", async ({ page }) => {
+  await device(page,{oldFirmware:true}); await page.goto("/");
+  await page.getByRole("button",{name:"Connect display",exact:true}).click();
+  await expect(page.locator("#usb_status")).toContainText("Install the latest firmware first");
+  await expect(page.getByRole("button",{name:"Connect display",exact:true})).toBeEnabled();
+});
+
+test("a slow Wi-Fi test remains pending beyond 65 seconds and accepts the device result", async ({ page }) => {
+  await device(page,{delay:"test_wifi"});
+  await page.clock.install();
+  await page.goto("/");
+  await page.getByRole("button",{name:"Connect display",exact:true}).click();
+  await expect(page.locator("#usb_status")).toContainText("APP MODE connected");
+  await page.getByLabel("Wi-Fi name").fill("draft-network");
+  await page.getByLabel("Wi-Fi password",{exact:true}).fill("draft-password");
+  await page.getByRole("button",{name:"Test Wi-Fi on display"}).click();
+  await expect.poll(()=>page.evaluate(()=>typeof window.completeUsbOperation)).toBe("function");
+  await page.clock.runFor(68000);
+  await expect(page.locator("#usb_status")).toContainText("testing this Wi-Fi password");
+  await page.evaluate(()=>window.completeUsbOperation());
+  await expect(page.locator("#usb_status")).toContainText("IP 192.168.6.42");
+  await page.getByRole("button",{name:"Disconnect display",exact:true}).click();
+});
+
+test("USB save enforces verified cloud selections while Wi-Fi-only tests need no cloud verification", async ({ page }) => {
+  const site="11111111-1111-4111-8111-111111111111";
+  const first="22222222-2222-4222-8222-222222222222", second="33333333-3333-4333-8333-333333333333";
+  await device(page);
+  await page.route("https://api.ui.com/**",async route=>{
+    const path=new URL(route.request().url()).pathname;
+    let body={};
+    if(path==="/v1/hosts") body={data:[{id:"console:1",type:"console",reportedState:{state:"connected",name:"Gateway",mac:"aa:bb:cc:dd:ee:ff",ipAddrs:["192.168.6.1"]}}]};
+    else if(path.endsWith("/sites")) body={data:[{id:site,name:"Home"}],totalCount:1};
+    else if(path.endsWith("/devices")) body={data:[{id:first,name:"First",macAddress:"aa:bb:cc:dd:ee:ff"},{id:second,name:"Second"}],totalCount:2};
+    else if(path.endsWith("/clients")) body={data:[],totalCount:0};
+    await route.fulfill({json:body});
+  });
+  await page.goto("/");
+  await page.getByRole("button",{name:"Connect display",exact:true}).click();
+  await expect(page.locator("#usb_status")).toContainText("APP MODE connected");
+  await page.getByLabel("Wi-Fi name").fill("draft-network");
+  await page.getByLabel("Wi-Fi password",{exact:true}).fill("draft-password");
+  await page.getByLabel("Cloud discovery API key").fill("fixture-cloud-key");
+  await page.getByRole("button",{name:"Discover consoles"}).click();
+  await expect(page.getByLabel("Device to display")).toHaveValue(first);
+  await page.getByLabel("Local Network API key").fill("fixture-local-key");
+  await page.getByLabel("Certificate SHA-256 fingerprint").fill("ab".repeat(32));
+  await page.getByRole("button",{name:"Verify cloud access"}).click();
+  await expect(page.locator("#cloud_status")).toContainText("Cloud reads verified");
+  await page.getByLabel("Device to display").selectOption(second);
+  await page.getByRole("button",{name:"Save settings and restart"}).click();
+  await expect(page.locator("#usb_status")).toContainText("Verify cloud access");
+  expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="save_config"))).toBe(false);
+  await page.getByRole("button",{name:"Test Wi-Fi on display"}).click();
+  await expect(page.locator("#usb_status")).toContainText("IP 192.168.6.42");
+  await page.getByRole("button",{name:"Verify cloud access"}).click();
+  await expect(page.locator("#cloud_status")).toContainText("Cloud reads verified");
+  await page.getByRole("button",{name:"Save settings and restart"}).click();
+  await expect(page.locator("#usb_status")).toContainText("restarting into its local dashboard");
+  expect(await page.evaluate(()=>window.usbRequests.find(r=>r.command.name==="save_config").command.config.device_id)).toBe(second);
 });

@@ -1,7 +1,7 @@
 import { DisplaySerial } from "./serial-client.js";
 import { validateConfig, validateWifi } from "./config.js";
 
-export function setupDevice({ readForm, applyConfig, beforeConnect }) {
+export function setupDevice({ readForm, readSaveConfig, applyConfig, beforeConnect }) {
   const $ = id => document.getElementById(id);
   const status = $("usb_status");
   const controls = ["usb_read", "usb_scan", "usb_test", "usb_save", "usb_status_read"];
@@ -70,7 +70,8 @@ export function setupDevice({ readForm, applyConfig, beforeConnect }) {
     const { wifi_ssid: ssid, wifi_password: password } = readForm();
     validateWifi(ssid, password);
     message("The display is testing this Wi-Fi password and requesting an IP address…");
-    const result = await client.command({ name: "test_wifi", ssid, password }, 65000);
+    // Firmware maximum: 20s mutex wait + 6s disconnect + 20s association + 15s DHCP + 6s cleanup + 2s reply.
+    const result = await client.command({ name: "test_wifi", ssid, password }, 80000);
     if (current()) message(`Wi-Fi verified by the display: ${result.ssid}, IP ${result.ip}. The test did not save settings. Disconnect APP MODE to reconnect the saved network.`);
   }));
   $("usb_status_read").addEventListener("click", () => run(async current => {
@@ -78,7 +79,7 @@ export function setupDevice({ readForm, applyConfig, beforeConnect }) {
     if (current()) message(`APP MODE · ${result.configured ? "settings saved" : "setup required"} · ${result.ip ? `IP ${result.ip}` : "no active DHCP address"}`);
   }));
   $("usb_save").addEventListener("click", () => run(async current => {
-    const config = validateConfig(readForm());
+    const config = validateConfig(readSaveConfig());
     message("Saving local settings on the display…");
     await client.command({ name: "save_config", config }, 10000);
     if (current()) message("Settings saved and verified. The display is restarting into its local dashboard.");
