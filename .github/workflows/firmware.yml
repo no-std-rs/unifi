@@ -64,7 +64,9 @@ jobs:
           npm run build
           npm test
       - name: Assemble the same firmware into the Pages site
-        run: python3 tools/assemble-flasher.py dist/firmware dist/flasher
+        run: |
+          python3 tools/assemble-flasher.py dist/firmware dist/flasher
+          python3 tools/cloud-certificate.py dist/flasher/cloud.json
       - name: Test the installer in Chromium
         working-directory: web
         run: |

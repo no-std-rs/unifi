@@ -249,5 +249,15 @@ mod tests {
             (e.host, e.port, e.base),
             ("192.168.1.1", 8443, "/proxy/network/integration")
         );
+        let e = Endpoint::parse(
+            "https://api.ui.com/v1/connector/consoles/fixture%3A123/proxy/network/integration",
+        )
+        .unwrap();
+        assert!(unifi::Client::new(e.authority, e.base, "fixture-key").is_ok());
+        assert_eq!(e.host, "api.ui.com");
+        assert_eq!(
+            e.base,
+            "/v1/connector/consoles/fixture%3A123/proxy/network/integration"
+        );
     }
 }
