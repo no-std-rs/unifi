@@ -242,7 +242,7 @@ The [round UniFi display gadget](examples/esp32c3-unifi-display/README.md) uses 
 same GUITION ESP32-2424S012 board as the ubus-zero display. It shows device uplink
 rates, health, radios, site totals, and device details using the embedded async
 SDK over certificate-pinned HTTPS. Install the credential-free public firmware
-and configure it locally over USB at <https://no-std-rs.github.io/unifi/>.
+and configure it locally over USB at <https://no-std-rs.github.io/unifi/>. The installer can enter live APP MODE to scan 2.4 GHz Wi-Fi, test a password and DHCP on the display, read saved settings, and save changes without reflashing. Device code and the shared USB protocol remain `no_std` Rust.
 
 ## Local tests and mock
 

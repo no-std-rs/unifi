@@ -39,17 +39,8 @@ pub enum ConfigError {
 
 impl DeviceConfig {
     pub fn validate(&self) -> Result<(), ConfigError> {
+        validate_wifi(&self.wifi_ssid, &self.wifi_password)?;
         let bounded = |s: &str, min, max| s.len() >= min && s.len() <= max && !s.contains('\0');
-        if !bounded(&self.wifi_ssid, 1, 32) {
-            return Err(ConfigError::Invalid("Wi-Fi name"));
-        }
-        let password = &self.wifi_password;
-        if !(password.is_empty()
-            || bounded(password, 8, 63)
-            || password.len() == 64 && password.bytes().all(|b| b.is_ascii_hexdigit()))
-        {
-            return Err(ConfigError::Invalid("Wi-Fi password"));
-        }
         Endpoint::parse(&self.controller_url)?;
         if !bounded(&self.api_key, 1, 512) || !self.api_key.bytes().all(|b| b.is_ascii_graphic()) {
             return Err(ConfigError::Invalid("API key"));
@@ -69,6 +60,35 @@ impl DeviceConfig {
         }
         Ok(())
     }
+}
+
+/// Shared by saved settings and temporary, device-side network tests.
+pub fn validate_wifi(ssid: &str, password: &str) -> Result<(), ConfigError> {
+    if ssid.is_empty() || ssid.len() > 32 || ssid.contains('\0') {
+        return Err(ConfigError::Invalid("Wi-Fi name"));
+    }
+    if password.contains('\0')
+        || !(password.is_empty()
+            || (8..=63).contains(&password.len())
+            || password.len() == 64 && password.bytes().all(|b| b.is_ascii_hexdigit()))
+    {
+        return Err(ConfigError::Invalid("Wi-Fi password"));
+    }
+    Ok(())
+}
+
+pub fn encode_sector(config: &DeviceConfig) -> Result<[u8; SECTOR_SIZE], ConfigError> {
+    config.validate()?;
+    let json = serde_json::to_vec(config).map_err(|_| ConfigError::Corrupt)?;
+    if json.len() > MAX_JSON {
+        return Err(ConfigError::Invalid("Settings too large"));
+    }
+    let mut sector = [0xff; SECTOR_SIZE];
+    sector[..8].copy_from_slice(MAGIC);
+    sector[8..12].copy_from_slice(&(json.len() as u32).to_le_bytes());
+    sector[12..16].copy_from_slice(&crc32(&json).to_le_bytes());
+    sector[16..16 + json.len()].copy_from_slice(&json);
+    Ok(sector)
 }
 
 /// CRC-32/ISO-HDLC, also implemented by the browser config writer.

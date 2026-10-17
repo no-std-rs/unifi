@@ -3,6 +3,7 @@
 #![no_main]
 
 extern crate alloc;
+mod usb;
 
 use embassy_executor::Spawner;
 use embassy_net::{Runner, Stack, StackResources};
@@ -21,10 +22,8 @@ use esp_hal::{
     time::Rate,
     timer::timg::TimerGroup,
 };
-use esp_radio::wifi::{
-    sta::StationConfig, AuthenticationMethod, Config as WifiConfig, Interface, WifiController,
-};
-use log::{info, warn};
+use esp_radio::wifi::Interface;
+use log::warn;
 use static_cell::StaticCell;
 use unifi_display::{
     api::{self, Client, Error},
@@ -34,28 +33,12 @@ use unifi_display::{
     stats::Dashboard,
 };
 
-fn flash_settings(peripheral: esp_hal::peripherals::FLASH<'static>) -> Option<DeviceConfig> {
-    use embedded_storage::ReadStorage;
-    use esp_bootloader_esp_idf::partitions::{read_partition_table, PARTITION_TABLE_MAX_LEN};
-    let mut flash = esp_storage::FlashStorage::new(peripheral);
-    let mut table = [0; PARTITION_TABLE_MAX_LEN];
-    let table = read_partition_table(&mut flash, &mut table).ok()?;
-    let partition = table.iter().find(|p| {
-        p.label().starts_with(b"dashboard\0")
-            && p.raw_type() == 1
-            && p.raw_subtype() == 0x06
-            && p.offset() == config::FLASH_OFFSET
-            && p.len() >= config::SECTOR_SIZE as u32
-    })?;
-    let mut sector = [0; config::SECTOR_SIZE];
-    flash.read(partition.offset(), &mut sector).ok()?;
-    config::decode_sector(&sector).ok()
-}
-
 type Shared = Mutex<CriticalSectionRawMutex, Dashboard>;
 static STATE: StaticCell<Shared> = StaticCell::new();
 static NET: StaticCell<StackResources<4>> = StaticCell::new();
 static PIXELS: StaticCell<[Rgb565; panel::WIDTH * panel::TILE_ROWS]> = StaticCell::new();
+static WIFI: StaticCell<usb::Wifi> = StaticCell::new();
+static USB_TX: StaticCell<usb::Tx> = StaticCell::new();
 static CONFIG: StaticCell<DeviceConfig> = StaticCell::new();
 
 esp_bootloader_esp_idf::esp_app_desc!();
@@ -197,7 +180,7 @@ impl api::Http for Http {
 
 #[esp_rtos::main]
 async fn main(spawner: Spawner) -> ! {
-    esp_println::logger::init_logger_from_env();
+    // USB carries framed setup commands; keep ordinary logging off this transport.
     let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
     esp_alloc::heap_allocator!(size: 128 * 1024);
     let timers = TimerGroup::new(p.TIMG0);
@@ -235,18 +218,12 @@ async fn main(spawner: Spawner) -> ! {
     let _ = touch.write(0x15, &[0xFE, 1]); // Keep scanning while idle.
 
     let pixels = PIXELS.init([Rgb565::BLACK; panel::WIDTH * panel::TILE_ROWS]);
-    let Some(config) = flash_settings(p.FLASH) else {
-        info!("Setup required: use the public USB flasher to configure this device");
-        for y in (0..240).step_by(panel::TILE_ROWS) {
-            render::setup(&mut panel::Tile { y, pixels }).unwrap();
-            panel.write_tile(y, pixels).unwrap();
-        }
-        loop {
-            Timer::after(Duration::from_secs(60)).await;
-        }
-    };
-    let config = &*CONFIG.init(config);
-
+    let mut store = usb::Store::new(p.FLASH);
+    let config = unifi_display::settings::load(&mut store).map(|c| &*CONFIG.init(c));
+    let (usb_rx, usb_tx) = esp_hal::usb_serial_jtag::UsbSerialJtag::new(p.USB_DEVICE)
+        .into_async()
+        .split();
+    let usb_tx = USB_TX.init(Mutex::new(usb_tx));
     let state = STATE.init(Mutex::new(Dashboard::default()));
     let (controller, interfaces) = esp_radio::wifi::new(p.WIFI, Default::default()).unwrap();
     let mut seed = [0u8; 8];
@@ -257,12 +234,24 @@ async fn main(spawner: Spawner) -> ! {
         NET.init(StackResources::new()),
         u64::from_le_bytes(seed),
     );
-    spawner.spawn(wifi_connection(controller, config).unwrap());
+    let mut controller = controller;
+    let baseline = match config {
+        Some(c) => usb::wifi_config(&c.wifi_ssid, &c.wifi_password),
+        None => usb::wifi_config("", ""),
+    };
+    controller.set_config(&baseline).unwrap();
+    let wifi = WIFI.init(Mutex::new(controller));
+    spawner.spawn(wifi_connection(wifi, config).unwrap());
+    spawner.spawn(usb::receive(usb_rx, usb_tx).unwrap());
+    spawner.spawn(usb::work(usb_tx, wifi, stack, config, store).unwrap());
     spawner.spawn(network(runner).unwrap());
-    spawner.spawn(poll_router(stack, state, config).unwrap());
+    if let Some(config) = config {
+        spawner.spawn(poll_router(stack, state, config).unwrap());
+    }
 
     let mut navigation = Navigation::new(Instant::now().as_millis());
     let mut frame_at = Instant::now();
+    let mut was_app = false;
     loop {
         let now = Instant::now();
         let mut fingers = [0];
@@ -270,18 +259,30 @@ async fn main(spawner: Spawner) -> ! {
             .write_read(0x15, &[0x02], &mut fingers)
             .ok()
             .map(|_| fingers[0] & 0x0F != 0);
-        let changed = navigation.update(now.as_millis(), touching);
+        let app_mode = usb::active();
+        if was_app && !app_mode {
+            navigation.resume(now.as_millis());
+        }
+        was_app = app_mode;
+        let changed = !app_mode && navigation.update(now.as_millis(), touching);
         if changed || now >= frame_at {
             let snapshot = state.lock().await.clone();
             for y in (0..240).step_by(panel::TILE_ROWS) {
-                render::draw_with_lock(
-                    &mut panel::Tile { y, pixels },
-                    &snapshot,
-                    navigation.page(),
-                    now.as_millis(),
-                    navigation.locked(),
-                )
-                .unwrap();
+                let mut tile = panel::Tile { y, pixels };
+                if app_mode {
+                    render::app_mode(&mut tile, usb::label()).unwrap();
+                } else if config.is_none() {
+                    render::setup(&mut tile).unwrap();
+                } else {
+                    render::draw_with_lock(
+                        &mut tile,
+                        &snapshot,
+                        navigation.page(),
+                        now.as_millis(),
+                        navigation.locked(),
+                    )
+                    .unwrap();
+                }
                 panel.write_tile(y, pixels).unwrap();
                 embassy_futures::yield_now().await;
             }
@@ -292,32 +293,15 @@ async fn main(spawner: Spawner) -> ! {
 }
 
 #[embassy_executor::task]
-async fn wifi_connection(
-    mut controller: WifiController<'static>,
-    config: &'static DeviceConfig,
-) -> ! {
-    controller
-        .set_config(&WifiConfig::Station(
-            StationConfig::default()
-                .with_ssid(config.wifi_ssid.as_str())
-                .with_auth_method(if config.wifi_password.is_empty() {
-                    AuthenticationMethod::None
-                } else {
-                    AuthenticationMethod::Wpa2Personal
-                })
-                .with_password(config.wifi_password.clone()),
-        ))
-        .unwrap();
+async fn wifi_connection(wifi: &'static usb::Wifi, config: Option<&'static DeviceConfig>) -> ! {
     loop {
-        match controller.connect_async().await {
-            Ok(_) => {
-                info!("Wi-Fi associated; waiting for DHCP");
-                let _ = controller.wait_for_disconnect_async().await;
-                warn!("Wi-Fi disconnected; reconnecting");
+        if config.is_some() && !usb::active() {
+            let mut controller = wifi.lock().await;
+            if !usb::active() && !controller.is_connected() {
+                let _ = with_timeout(Duration::from_secs(20), controller.connect_async()).await;
             }
-            Err(e) => warn!("Wi-Fi association failed: {e:?}"),
         }
-        Timer::after(Duration::from_secs(3)).await;
+        Timer::after(Duration::from_secs(1)).await;
     }
 }
 
@@ -335,12 +319,19 @@ async fn poll_router(
     let mut client = Client::new(Http::new(stack, config), &config.site_id, &config.device_id);
     let mut state = Dashboard::default();
     loop {
+        if usb::active() {
+            Timer::after_millis(250).await;
+            continue;
+        }
         if !stack.is_config_up() && state.last_sample_ms.is_some() {
             state.error = Some(Error::Transport);
             state.push_rate(None);
             *shared.lock().await = state.clone();
         }
         stack.wait_config_up().await;
+        if usb::active() {
+            continue;
+        }
         let started = Instant::now();
         let result = client
             .sample(&mut state, || Instant::now().as_millis())
