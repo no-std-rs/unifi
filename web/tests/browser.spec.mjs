@@ -4,6 +4,11 @@ import { readFile } from "node:fs/promises";
 const site = "11111111-1111-4111-8111-111111111111";
 const device = "22222222-2222-4222-8222-222222222222";
 const otherDevice = "33333333-3333-4333-8333-333333333333";
+async function offline(page) {
+  if (!await page.getByRole("button", { name: "Prepare settings without a device" }).isVisible()) await page.locator("#device_tools > summary").click();
+  await page.getByRole("button", { name: "Prepare settings without a device" }).click();
+  if (!await page.getByLabel("Remember settings in this browser").isVisible()) await page.locator(".saved-settings > summary").click();
+}
 async function serial(page) {
   await page.addInitScript(() => { Object.defineProperty(navigator, "serial", { value: { getPorts: async () => [] } }); });
 }
@@ -42,7 +47,7 @@ test("public firmware verifies and settings stay in browser-created USB blobs", 
   const requests = [];
   page.on("request", request => requests.push({ url: request.url(), body: request.postData() }));
   await page.addInitScript(() => { Object.defineProperty(navigator, "serial", { value: { getPorts: async () => [] } }); });
-  await page.goto("/");
+  await page.goto("/"); await offline(page);
   await expect(page.getByRole("button", { name: "Prepare installation" })).toBeEnabled();
   await page.getByLabel("Setup method", { exact: true }).selectOption("local");
   await page.getByLabel("Wi-Fi name").fill("browser-test-network");
@@ -74,7 +79,7 @@ test("cloud discovery selects the root gateway, while the USB settings contain o
   const requests = [];
   await page.setViewportSize({ width: 390, height: 844 });
   await serial(page); await mockCloud(page, requests);
-  await page.goto("/"); await wifi(page);
+  await page.goto("/"); await offline(page); await wifi(page);
   await page.getByLabel("Cloud discovery API key").fill("private-cloud-key");
   await page.getByRole("button", { name: "Discover consoles" }).click();
   await expect(page.getByLabel("Device to display")).toBeEnabled();
@@ -106,7 +111,7 @@ test("cloud discovery selects the root gateway, while the USB settings contain o
 test("a rejected cloud key is explained and cannot prepare installation", async ({ page }) => {
   await serial(page);
   await page.route("https://api.ui.com/**", route => route.fulfill({ status: 401, json: { message: "unauthorized" } }));
-  await page.goto("/"); await wifi(page);
+  await page.goto("/"); await offline(page); await wifi(page);
   await page.getByLabel("Cloud discovery API key").fill("invalid-test-key");
   await localCredentials(page);
   await page.getByRole("button", { name: "Discover consoles" }).click();
@@ -125,7 +130,7 @@ test("changing the key cancels old discovery and requires new verification", asy
     started(); await pending;
     await route.fulfill({ json: { data: [{ id: "old", type: "console", reportedState: { state: "connected", name: "Old console" } }] } });
   });
-  await page.goto("/");
+  await page.goto("/"); await offline(page);
   await page.getByLabel("Cloud discovery API key").fill("old-test-key");
   await page.getByRole("button", { name: "Discover consoles" }).click();
   await ready;
@@ -138,7 +143,7 @@ test("changing the key cancels old discovery and requires new verification", asy
 
 test("corrupt firmware cannot be prepared or flashed", async ({ page }) => {
   await page.route("**/unifi-display.bin", route => route.fulfill({ body: Buffer.alloc(32), contentType: "application/octet-stream" }));
-  await page.goto("/");
+  await page.goto("/"); await offline(page);
   await expect(page.getByRole("alert")).toContainText("download size changed");
   await expect(page.getByRole("button", { name: "Prepare installation" })).toBeDisabled();
 });
@@ -147,14 +152,15 @@ test("a same-size firmware change fails SHA-256 verification", async ({ page }) 
   const binary = await readFile(new URL("../../dist/flasher/unifi-display.bin", import.meta.url));
   binary[binary.length - 1] ^= 1;
   await page.route("**/unifi-display.bin", route => route.fulfill({ body: binary, contentType: "application/octet-stream" }));
-  await page.goto("/");
+  await page.goto("/"); await offline(page);
   await expect(page.getByRole("alert")).toContainText("checksum did not match");
   await expect(page.getByRole("button", { name: "Prepare installation" })).toBeDisabled();
 });
 
 test("downloads the verified bytes even after the published binary changes", async ({ page }) => {
   const binary = await readFile(new URL("../../dist/flasher/unifi-display.bin", import.meta.url));
-  await page.goto("/");
+  await page.goto("/"); await offline(page);
+  await page.locator(".build > summary").click();
   const link = page.getByRole("link", { name: "Download binary" });
   await expect(link).toBeVisible();
   await page.route("**/unifi-display.bin", route => route.fulfill({ body: Buffer.alloc(binary.length), contentType: "application/octet-stream" }));
@@ -166,20 +172,21 @@ test("downloads the verified bytes even after the published binary changes", asy
 test("mobile layout remains usable and unsupported browsers can download", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => { Object.defineProperty(navigator, "serial", { value: undefined }); });
-  await page.goto("/");
+  await page.goto("/"); await offline(page);
+  await page.locator(".build > summary").click();
   await expect(page.getByRole("link", { name: "Download binary" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Prepare installation" })).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test("local credentials autofill in a new tab and can be forgotten without clearing other apps", async ({ page, context }) => {
-  await serial(page); await page.goto("/");
+  await serial(page); await page.goto("/"); await offline(page);
   await page.getByLabel("Setup method", { exact: true }).selectOption("local");
   await wifi(page); await localCredentials(page);
   await page.evaluate(() => localStorage.setItem("other-app", "keep"));
   await page.close();
   const reopened = await context.newPage();
-  await serial(reopened); await reopened.goto("/");
+  await serial(reopened); await reopened.goto("/"); await offline(reopened);
   await expect(reopened.getByLabel("Wi-Fi name")).toHaveValue("browser-test-network");
   await expect(reopened.getByLabel("Wi-Fi password", { exact: true })).toHaveValue("private-wifi-password");
   await expect(reopened.getByLabel("Local Network API key")).toHaveValue("private-local-key");
@@ -199,7 +206,7 @@ test("local credentials autofill in a new tab and can be forgotten without clear
 test("restored cloud choices require rediscovery and verification while both keys stay separate", async ({ page }) => {
   const requests = [];
   await serial(page); await mockCloud(page, requests);
-  await page.goto("/"); await wifi(page);
+  await page.goto("/"); await offline(page); await wifi(page);
   await page.getByLabel("Cloud discovery API key").fill("private-cloud-key");
   await page.getByRole("button", { name: "Discover consoles" }).click();
   await expect(page.getByLabel("Device to display")).toBeEnabled();
@@ -207,7 +214,7 @@ test("restored cloud choices require rediscovery and verification while both key
   await page.getByLabel("Device to display").selectOption(otherDevice);
   await page.getByRole("button", { name: "Verify cloud access" }).click();
   await expect(page.locator("#cloud_status")).toContainText("Cloud reads verified");
-  await page.reload();
+  await page.reload(); await offline(page);
   await expect(page.getByLabel("Cloud discovery API key")).toHaveValue("private-cloud-key");
   await expect(page.getByLabel("Local Network API key")).toHaveValue("private-local-key");
   await page.getByRole("button", { name: "Prepare installation" }).click();
@@ -222,6 +229,7 @@ test("restored cloud choices require rediscovery and verification while both key
   await expect(page.getByRole("button", { name: "Install on display" })).toBeVisible();
   expect(await usbSettings(page)).toMatchObject({ device_id: otherDevice, api_key: "private-local-key", controller_url: "https://192.168.6.1/proxy/network/integration" });
   await page.getByRole("button", { name: "Forget saved settings" }).click();
+  await offline(page);
   await mockCloud(page, requests, "different-console:456");
   await page.getByLabel("Cloud discovery API key").fill("new-cloud-key");
   await localCredentials(page);
@@ -233,7 +241,7 @@ test("restored cloud choices require rediscovery and verification while both key
 });
 
 test("opting out removes credentials and stays off on reopening", async ({ page }) => {
-  await page.goto("/"); await wifi(page);
+  await page.goto("/"); await offline(page); await wifi(page);
   await page.getByLabel("Remember settings in this browser").uncheck();
   await page.getByLabel("Local Network API key").fill("session-only-key");
   const stored = await page.evaluate(() => localStorage.getItem("unifi-display.settings.v1"));
@@ -247,7 +255,7 @@ test("opting out removes credentials and stays off on reopening", async ({ page 
 test("unavailable browser storage still permits a local installation", async ({ page }) => {
   await serial(page);
   await page.addInitScript(() => Object.defineProperty(window, "localStorage", { get() { throw new DOMException("Disabled", "SecurityError"); } }));
-  await page.goto("/");
+  await page.goto("/"); await offline(page);
   await page.getByLabel("Setup method", { exact: true }).selectOption("local");
   await wifi(page); await localCredentials(page);
   await expect(page.locator("#saved_status")).toContainText("cannot save");
@@ -258,7 +266,7 @@ test("unavailable browser storage still permits a local installation", async ({ 
 test("switching consoles clears local credentials even when both use the same LAN address", async ({ page }) => {
   await serial(page); await mockCloud(page, []);
   await page.route("https://api.ui.com/v1/hosts", route => route.fulfill({ json: { data: ["first:1", "second:2"].map(id => ({ id, type: "console", reportedState: { state: "connected", name: id, mac: "aa:bb:cc:dd:ee:ff", ipAddrs: ["192.168.6.1"] } })) } }));
-  await page.goto("/"); await wifi(page);
+  await page.goto("/"); await offline(page); await wifi(page);
   await page.getByLabel("Cloud discovery API key").fill("private-cloud-key");
   await page.getByRole("button", { name: "Discover consoles" }).click();
   await expect(page.getByLabel("Console", { exact: true })).toBeEnabled();
@@ -274,208 +282,4 @@ test("switching consoles clears local credentials even when both use the same LA
   await expect(page.getByLabel("Local Network API key")).toHaveValue("");
   await expect(page.getByLabel("Certificate SHA-256 fingerprint")).toHaveValue("");
   await expect(page.getByRole("button", { name: "Install on display" })).toBeHidden();
-});
-
-async function mockWizard(context, calls, mfa = false) {
-  await context.route("http://127.0.0.1:4177/api/**", async route => {
-    const request = route.request();
-    const path = new URL(request.url()).pathname;
-    const body = request.postDataJSON();
-    calls.push({ path, body, headers: request.headers() });
-    let response;
-    if (path === "/api/discover") response = { consoles: [{ id: "fixture-console", name: "Home gateway", addresses: ["192.168.6.1"] }] };
-    else if (path === "/api/inspect") response = { selection: "fixture-selection", hostname: "console.id.ui.direct", address: "192.168.6.1", certificate_sha256: "ab".repeat(32), sites: [{ id: site, name: "Home" }] };
-    else if (path === "/api/devices") response = { devices: [{ id: otherDevice, name: "Access point" }, { id: device, name: "Root gateway" }], gateway: device };
-    else if (path === "/api/login") response = mfa && !body.token ? { state: "mfa", methods: [{ id: "totp", type: "totp" }] } : { state: "authenticated" };
-    else if (path === "/api/provision") response = { state: "verified", config: { controller_url: "https://console.id.ui.direct/proxy/network/integration", api_key: "wizard-local-key", certificate_sha256: "ab".repeat(32), site_id: site, device_id: device } };
-    else throw new Error(`Unexpected helper request: ${path}`);
-    await route.fulfill({ json: response });
-  });
-}
-
-async function openWizard(page) {
-  const popupPromise = page.waitForEvent("popup");
-  await page.getByRole("button", { name: "Open guided setup", exact: true }).click();
-  const popup = await popupPromise;
-  await expect(popup.getByLabel("Console", { exact: true })).toHaveValue("fixture-console");
-  await popup.getByRole("button", { name: "Verify gateway certificate" }).click();
-  await expect(popup.getByLabel("Device to display")).toHaveValue(device);
-  return popup;
-}
-
-test("guided setup handles MFA, fills verified local settings and flashes without cloud credentials", async ({ page, context }) => {
-  const calls = [], errors = [];
-  page.on("pageerror", error => errors.push(error.message));
-  await mockWizard(context, calls, true);
-  await serial(page); await page.goto("/"); await wifi(page);
-  await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
-  const popup = await openWizard(page);
-  await popup.getByLabel("Console username or email").fill("fixture-user");
-  await popup.getByLabel("Console password", { exact: true }).fill("fixture-password");
-  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
-  await expect(popup.getByLabel("Two-factor method")).toBeVisible();
-  await popup.getByLabel("Two-factor or backup code").fill("123456");
-  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
-  await expect(popup.getByRole("heading", { name: "4 · Ready for USB installation" })).toBeVisible();
-  await expect(popup.locator("#password")).toHaveValue("");
-  await popup.getByRole("button", { name: "Use these settings in the installer" }).click();
-  await expect(page.getByLabel("Local Network API key")).toHaveValue("wizard-local-key");
-  await expect(page.getByLabel("Setup method", { exact: true })).toHaveValue("local");
-  await page.getByRole("button", { name: "Prepare installation" }).click();
-  await expect(page.getByRole("button", { name: "Install on display" })).toBeVisible();
-  const settings = await usbSettings(page);
-  expect(settings).toMatchObject({ api_key: "wizard-local-key", device_id: device, controller_url: "https://console.id.ui.direct/proxy/network/integration" });
-  expect(JSON.stringify(settings)).not.toContain("wizard-cloud-key");
-  expect(JSON.stringify(settings)).not.toContain("fixture-password");
-  expect(calls.filter(call => call.path === "/api/provision")).toHaveLength(1);
-  for (const call of calls) {
-    expect(call.headers["x-setup-token"]).toBeTruthy();
-    if (call.path !== "/api/login") expect(JSON.stringify(call.body)).not.toContain("fixture-password");
-    if (call.path !== "/api/discover") expect(JSON.stringify(call.body)).not.toContain("wizard-cloud-key");
-  }
-  expect(errors).toEqual([]);
-});
-
-test("forgetting settings cancels a pending wizard handoff and local JSON import needs no cloud key", async ({ page, context }) => {
-  const calls = [];
-  await mockWizard(context, calls);
-  await serial(page); await page.goto("/"); await wifi(page);
-  await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
-  const popup = await openWizard(page);
-  await popup.getByLabel("Console username or email").fill("fixture-user");
-  await popup.getByLabel("Console password", { exact: true }).fill("fixture-password");
-  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
-  await expect(popup.locator("#complete")).toBeVisible();
-  await page.getByRole("button", { name: "Forget saved settings" }).click();
-  await popup.getByRole("button", { name: "Use these settings in the installer" }).click();
-  await expect(page.getByLabel("Local Network API key")).toHaveValue("");
-  const downloadPromise = popup.waitForEvent("download");
-  await popup.getByRole("button", { name: "Download local settings" }).click();
-  const download = await downloadPromise;
-  await page.locator("#import_setup").setInputFiles(await download.path());
-  await expect(page.getByLabel("Local Network API key")).toHaveValue("wizard-local-key");
-  await expect(page.getByLabel("Cloud discovery API key")).toHaveValue("");
-  await wifi(page);
-  await page.getByRole("button", { name: "Prepare installation" }).click();
-  await expect(page.getByRole("button", { name: "Install on display" })).toBeVisible();
-});
-
-test("forgetting while an imported settings file is loading keeps credentials cleared", async ({ page }) => {
-  await page.addInitScript(() => {
-    const text = File.prototype.text;
-    File.prototype.text = async function() {
-      await new Promise(resolve => { window.releaseSetupImport = resolve; });
-      return text.call(this);
-    };
-  });
-  await page.goto("/");
-  const config = { controller_url: "https://192.168.6.1/proxy/network/integration", api_key: "late-local-key", certificate_sha256: "ab".repeat(32), site_id: site, device_id: device };
-  await page.locator("#import_setup").setInputFiles({ name: "settings.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(config)) });
-  await page.getByRole("button", { name: "Forget saved settings" }).click();
-  await page.evaluate(() => window.releaseSetupImport());
-  await expect(page.getByLabel("Local Network API key")).toHaveValue("");
-  await expect(page.getByLabel("Remember settings in this browser")).not.toBeChecked();
-});
-
-test("guided setup requires explicit console, LAN, site and unmatched device choices", async ({ page, context }) => {
-  const calls = [];
-  await mockWizard(context, calls);
-  await context.route("http://127.0.0.1:4177/api/discover", route => route.fulfill({ json: { consoles: [
-    { id: "first-console", name: "First console", addresses: ["192.168.1.1"] },
-    { id: "fixture-console", name: "Chosen console", addresses: ["192.168.6.1", "192.168.6.2"] },
-  ] } }));
-  await context.route("http://127.0.0.1:4177/api/inspect", route => route.fulfill({ json: {
-    selection: "fixture-selection", hostname: "console.id.ui.direct", address: "192.168.6.1",
-    sites: [{ id: site, name: "First site" }, { id: otherDevice, name: "Second site" }],
-  } }));
-  await context.route("http://127.0.0.1:4177/api/devices", route => route.fulfill({ json: {
-    devices: [{ id: device, name: "First device" }, { id: otherDevice, name: "Second device" }], gateway: "",
-  } }));
-  await page.goto("/"); await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
-  const popupPromise = page.waitForEvent("popup");
-  await page.getByRole("button", { name: "Open guided setup", exact: true }).click();
-  const popup = await popupPromise;
-  await expect(popup.getByLabel("Console", { exact: true })).toBeVisible();
-  await expect(popup.getByLabel("Console", { exact: true })).toHaveValue("");
-  await popup.getByLabel("Console", { exact: true }).selectOption("fixture-console");
-  await expect(popup.getByLabel("Gateway LAN address")).toHaveValue("");
-  await popup.getByLabel("Gateway LAN address").selectOption("192.168.6.1");
-  await popup.getByRole("button", { name: "Verify gateway certificate" }).click();
-  await expect(popup.getByLabel("Site", { exact: true })).toBeVisible();
-  await expect(popup.getByLabel("Site", { exact: true })).toHaveValue("");
-  await popup.getByLabel("Site", { exact: true }).selectOption(site);
-  await expect(popup.getByLabel("Device to display")).toHaveValue("");
-  await popup.getByLabel("Console username or email").fill("fixture-user");
-  await popup.getByLabel("Console password", { exact: true }).fill("fixture-password");
-  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
-  await expect(popup.locator("#status")).toContainText("Choose a site and device first");
-  expect(calls.filter(call => call.path === "/api/login")).toHaveLength(0);
-  await popup.getByLabel("Device to display").selectOption(device);
-  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
-  await expect(popup.locator("#complete")).toBeVisible();
-});
-
-test("site and device choices stay fixed while a device request is pending", async ({ page, context }) => {
-  const calls = [];
-  await mockWizard(context, calls);
-  await context.route("http://127.0.0.1:4177/api/inspect", route => route.fulfill({ json: {
-    selection: "fixture-selection", hostname: "console.id.ui.direct", address: "192.168.6.1",
-    sites: [{ id: site, name: "First site" }, { id: otherDevice, name: "Second site" }],
-  } }));
-  let release;
-  const pending = new Promise(resolve => { release = resolve; });
-  await context.route("http://127.0.0.1:4177/api/devices", async route => {
-    const first = route.request().postDataJSON().site_id === site;
-    if (first) await pending;
-    const id = first ? device : otherDevice;
-    await route.fulfill({ json: { devices: [{ id, name: first ? "First site gateway" : "Second site gateway" }], gateway: id } });
-  });
-  await page.goto("/"); await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
-  const popupPromise = page.waitForEvent("popup");
-  await page.getByRole("button", { name: "Open guided setup", exact: true }).click();
-  const popup = await popupPromise;
-  await popup.getByRole("button", { name: "Verify gateway certificate" }).click();
-  await popup.getByLabel("Site", { exact: true }).selectOption(site);
-  await expect(popup.getByLabel("Site", { exact: true })).toBeDisabled();
-  await expect(popup.getByLabel("Device to display")).toBeDisabled();
-  release();
-  await expect(popup.getByLabel("Site", { exact: true })).toBeEnabled();
-  await expect(popup.getByLabel("Device to display")).toHaveValue(device);
-  await popup.getByLabel("Site", { exact: true }).selectOption(otherDevice);
-  await expect(popup.getByLabel("Device to display")).toHaveValue(otherDevice);
-});
-
-test("push approval continues after another setup request occupies the polling interval", async ({ page, context }) => {
-  const calls = [];
-  await mockWizard(context, calls);
-  await context.route("http://127.0.0.1:4177/api/inspect", route => route.fulfill({ json: {
-    selection: "fixture-selection", hostname: "console.id.ui.direct", address: "192.168.6.1",
-    sites: [{ id: site, name: "First site" }, { id: otherDevice, name: "Second site" }],
-  } }));
-  await context.route("http://127.0.0.1:4177/api/login", route => route.fulfill({ json: { state: "mfa", methods: [{ id: "push", type: "push" }] } }));
-  await context.route("http://127.0.0.1:4177/api/mfa", route => route.fulfill({ json: { state: "sent" } }));
-  await context.route("http://127.0.0.1:4177/api/poll", route => route.fulfill({ json: { state: "authenticated" } }));
-  let release;
-  const pending = new Promise(resolve => { release = resolve; });
-  await context.route("http://127.0.0.1:4177/api/devices", async route => {
-    if (route.request().postDataJSON().site_id === otherDevice) await pending;
-    await route.fulfill({ json: { devices: [{ id: device, name: "Gateway" }], gateway: device } });
-  });
-  await page.goto("/"); await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
-  const popupPromise = page.waitForEvent("popup");
-  await page.getByRole("button", { name: "Open guided setup", exact: true }).click();
-  const popup = await popupPromise;
-  await popup.getByRole("button", { name: "Verify gateway certificate" }).click();
-  await popup.getByLabel("Site", { exact: true }).selectOption(site);
-  await expect(popup.getByLabel("Device to display")).toHaveValue(device);
-  await popup.getByLabel("Console username or email").fill("fixture-user");
-  await popup.getByLabel("Console password", { exact: true }).fill("fixture-password");
-  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
-  await popup.getByRole("button", { name: "Send code / approval" }).click();
-  await popup.getByLabel("Site", { exact: true }).selectOption(otherDevice);
-  await expect(popup.getByLabel("Site", { exact: true })).toBeDisabled();
-  // Let the first polling timer run while device discovery is still pending.
-  await popup.waitForTimeout(1800);
-  release();
-  await expect(popup.locator("#complete")).toBeVisible();
 });

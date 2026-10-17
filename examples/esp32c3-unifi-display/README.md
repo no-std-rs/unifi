@@ -39,9 +39,9 @@ and prefers the root gateway when its MAC matches the console. Cloud verificatio
 checks the data paths using that cloud key, which stays in the browser.
 **The display always uses LAN access**: supply a separate local Network integration
 key and trusted local controller certificate fingerprint. Cloud discovery cannot
-provide these local credentials by itself. **Open guided setup** uses a small local
-Python helper to verify the gateway certificate and create the local key after one
-console sign-in, then fills the installer automatically. See [installer setup](../../web/README.md).
+provide these local credentials by itself. The static installer reuses local
+credentials from the device or selected network's browser profile, or accepts
+them inline. It has no localhost-service dependency. See [installer setup](../../web/README.md).
 Cloud discovery requires UniFi OS 5.0.3 or newer and appropriate console access.
 The display itself does not need internet access and has no cloud fallback.
 
@@ -50,16 +50,17 @@ The installer also supports **live USB setup**. For a fresh board, choose
 with no settings keeps USB setup available without a Wi-Fi connection. Existing
 boards can connect directly after updating to firmware that supports APP MODE.
 
-While connected, the screen shows **APP MODE**. **Scan Wi-Fi** uses the C3's
-2.4 GHz radio; choose a discovered SSID or enter a hidden network manually.
-**Test Wi-Fi on display** actually associates using the draft password and waits
+While connected, the screen shows **APP MODE**. Setup reads device settings and
+scans the C3's 2.4 GHz radio automatically. Choose a discovered SSID or **Other
+network…**. A saved password is tested automatically; new networks ask for one
+inline. **Change password** and **Try again** stay beside that network. The test
+actually associates using the draft password and waits
 for DHCP. It then restores the saved radio configuration without writing flash;
 disconnect APP MODE to resume its saved connection. A successful test verifies
-Wi-Fi and DHCP, not the controller's API key or TLS certificate. Guided setup
-above verifies those separately.
+Wi-Fi and DHCP, not the controller's API key or TLS certificate.
 
-**Read saved device settings** fills the form from USB (including credentials).
-**Save settings and restart** validates and verifies a write to the settings
+The form reads saved settings from USB automatically (including credentials).
+**Save and restart display** validates and verifies a write to the settings
 partition, then reboots into the local dashboard without reflashing. The previous
 valid sector is retained as a recovery copy if a write is interrupted. Both copies
 contain unencrypted credentials. New USB sessions require a fresh nonce handshake;
