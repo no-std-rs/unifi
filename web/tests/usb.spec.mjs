@@ -117,3 +117,46 @@ test("forget during a pending local file import keeps secrets cleared",async({pa
  await page.locator(".saved-settings > summary").click();await page.getByRole("button",{name:"Forget saved settings"}).click();await page.evaluate(()=>window.releaseImport());
  expect(await page.evaluate(()=>document.getElementById("api_key").value)).toBe("");expect(await page.evaluate(()=>localStorage.getItem("unifi-display.networks.v1"))).toBeNull();
 });
+
+test("legacy cloud drafts retain their key but require verification before USB save",async({page})=>{
+ await page.addInitScript(({config})=>{
+  const names=["wifi_ssid","wifi_password","api_key","cloud_api_key","controller_url","certificate_sha256","site_id","device_id","connection_mode","cloud_console","cloud_site","cloud_device"];
+  const values=Object.fromEntries(names.map(k=>[k,""]));
+  Object.assign(values,config,{connection_mode:"cloud",cloud_api_key:"legacy-cloud-key",cloud_console:"console:1",cloud_site:"11111111-1111-4111-8111-111111111111",cloud_device:"33333333-3333-4333-8333-333333333333",site_id:"11111111-1111-4111-8111-111111111111",device_id:"22222222-2222-4222-8222-222222222222"});
+  localStorage.setItem("unifi-display.settings.v1",JSON.stringify({version:1,remember:true,values}));
+ },{config});
+ await connect(page,{blank:true});await verified(page);
+ await expect(page.getByLabel("Setup method",{exact:true})).toHaveValue("cloud");
+ await expect(page.getByLabel("Local Network API key")).toHaveValue(config.api_key);
+ await page.getByRole("button",{name:"Save and restart display"}).click();
+ await expect(page.locator("#unifi_status")).toContainText("Verify cloud access");
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="save_config"))).toBe(false);
+});
+
+test("connecting a blank display preserves a matching manual draft",async({page})=>{
+ await device(page,{blank:true});await page.goto("/");
+ await page.locator("#device_tools > summary").click();await page.getByRole("button",{name:"Prepare settings without a device"}).click();
+ await page.getByLabel("Wi-Fi name").fill("scanned-network");await password(page,"manual-draft-password");await local(page);
+ await page.getByRole("button",{name:"Connect display",exact:true}).click();await verified(page);
+ await expect(page.getByLabel("Local Network API key")).toHaveValue(config.api_key);
+ await expect(page.getByLabel("Certificate SHA-256 fingerprint")).toHaveValue(config.certificate_sha256);
+ expect(await page.evaluate(()=>window.usbRequests.find(r=>r.command.name==="test_wifi").command.password)).toBe("manual-draft-password");
+});
+
+test("offline preparation restores the verified profile password instead of a failed global draft",async({page})=>{
+ await page.addInitScript(({config})=>{
+  const names=["wifi_ssid","wifi_password","api_key","cloud_api_key","controller_url","certificate_sha256","site_id","device_id","connection_mode","cloud_console","cloud_site","cloud_device"];
+  const values=Object.fromEntries(names.map(k=>[k,""]));Object.assign(values,config,{connection_mode:"local",wifi_password:"wrong-password"});
+  localStorage.setItem("unifi-display.settings.v1",JSON.stringify({version:1,remember:true,values}));
+  localStorage.setItem("unifi-display.networks.v1",JSON.stringify({version:1,networks:[{ssid:config.wifi_ssid,password:config.wifi_password,config:Object.fromEntries(Object.entries(config).filter(([k])=>!k.startsWith("wifi_")))}]}));
+ },{config});
+ await device(page,{blank:true});await page.goto("/");
+ await page.locator("#device_tools > summary").click();await page.getByRole("button",{name:"Prepare settings without a device"}).click();
+ await expect(page.getByLabel("Wi-Fi password",{exact:true})).toHaveValue(config.wifi_password);
+ await expect(page.getByRole("button",{name:"Prepare installation"})).toBeEnabled();await page.getByRole("button",{name:"Prepare installation"}).click();
+ const saved=await page.evaluate(async()=>{
+  const manifest=await(await fetch(document.getElementById("installer").manifest)).json();
+  const bytes=new Uint8Array(await(await fetch(manifest.builds[0].parts[1].path)).arrayBuffer());
+  return JSON.parse(new TextDecoder().decode(bytes.slice(16,16+new DataView(bytes.buffer).getUint32(8,true))));
+ });expect(saved.wifi_password).toBe(config.wifi_password);
+});

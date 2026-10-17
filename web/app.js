@@ -47,9 +47,14 @@ function restoreSettings() {
       }
       storageAction(storage => { networks = readNetworks(storage); });
       const values = saved.values;
-      if (values.wifi_ssid && !networks.has(values.wifi_ssid)) {
-        try { networks.set(values.wifi_ssid, profile(values.wifi_ssid, values.wifi_password, localConfig(Object.fromEntries(localFields.map(name => [name, values[name]]))))); }
-        catch { try { networks.set(values.wifi_ssid, profile(values.wifi_ssid, values.wifi_password)); } catch { /* Invalid old draft. */ } }
+      const known = networks.get(values.wifi_ssid);
+      if (known) $("wifi_password").value = known.password;
+      if (values.wifi_ssid && (!known || !known.config && values.connection_mode === "local")) {
+        let config = null;
+        if (values.connection_mode === "local") {
+          try { config = localConfig(Object.fromEntries(localFields.map(name => [name, values[name]]))); } catch { /* Incomplete draft. */ }
+        }
+        try { networks.set(values.wifi_ssid, profile(values.wifi_ssid, known?.password ?? values.wifi_password, config)); } catch { /* Invalid old Wi-Fi draft. */ }
       }
       $("saved_status").textContent = "Saved settings restored from this browser." + (saved.values.connection_mode === "cloud" ? " Discover consoles and verify cloud access again before installing." : "");
     }
@@ -66,6 +71,7 @@ function saveSettings() {
 }
 
 const restored = restoreSettings();
+let connectionDraft;
 const cloud = setupCloud(forgetSettings, restored, saveSettings);
 const readForm = () => Object.fromEntries(["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"].map(name => [name, $(name).value]));
 const readSaveConfig = () => ({ ...readForm(), ...cloud.config() });
@@ -73,11 +79,15 @@ const device = setupDevice({
   readForm,
   readSaveConfig,
   applyConfig: config => {
+    connectionDraft = undefined;
     importGeneration++; forgetSettings(); $("connection_mode").value = "local"; cloud.reset();
     for (const [name, value] of Object.entries(config)) $(name).value = value;
     saveSettings();
   },
-  lookupNetwork: ssid => networks.get(ssid),
+  lookupNetwork: ssid => {
+    if (connectionDraft?.wifi_ssid === ssid) return { password: connectionDraft.wifi_password, config: null };
+    return networks.get(ssid);
+  },
   rememberNetwork: (ssid, password, config) => {
     const previous = networks.get(ssid);
     networks.delete(ssid); networks.set(ssid, profile(ssid, password, config || previous?.config));
@@ -86,16 +96,24 @@ const device = setupDevice({
   },
   applyLocal: config => {
     importGeneration++; forgetSettings();
-    $("connection_mode").value = config ? "local" : "cloud"; cloud.reset();
-    for (const name of localFields) $(name).value = config?.[name] || (name === "controller_url" ? "https://unifi.local/proxy/network/integration" : "");
+    const draft = connectionDraft?.wifi_ssid === $("wifi_ssid").value ? connectionDraft : null;
+    const sameCloud = draft?.connection_mode === "cloud" && $("connection_mode").value === "cloud"
+      && ["cloud_console", "cloud_site", "cloud_device"].every(name => cloud.selection()[name] === draft[name]);
+    $("connection_mode").value = draft?.connection_mode || (config ? "local" : "cloud");
+    if (!sameCloud) cloud.reset(draft || {});
+    for (const name of localFields) $(name).value = (draft ? draft[name] : config?.[name]) ?? (name === "controller_url" ? "https://unifi.local/proxy/network/integration" : "");
     saveSettings();
   },
-  beforeConnect: () => { importGeneration++; forgetSettings(); },
+  beforeConnect: () => {
+    importGeneration++; forgetSettings();
+    connectionDraft = { ...readForm(), connection_mode: $("connection_mode").value, ...cloud.selection() };
+  },
 });
 
 $("forget_saved").addEventListener("click", () => {
   importGeneration++;
   networks.clear();
+  connectionDraft = undefined;
   device.reset();
   form.reset();
   $("remember_settings").checked = false;
@@ -116,6 +134,7 @@ $("import_setup").addEventListener("change", async event => {
     if (file.size > 16384) throw new Error("The settings file is too large.");
     const config = localConfig(JSON.parse(await file.text()));
     if (generation !== importGeneration) return;
+    connectionDraft = undefined;
     forgetSettings(); $("connection_mode").value = "local"; cloud.reset();
     for (const [name, value] of Object.entries(config)) $(name).value = value;
     saveSettings(); device.localChanged();
@@ -164,12 +183,13 @@ window.addEventListener("pagehide", () => {
   device.firmwareReady(false);
   $("blank_installer").removeAttribute("manifest");
   $("blank_install_area").hidden = true;
-  importGeneration++; networks.clear(); form.reset();
+  importGeneration++; networks.clear(); connectionDraft = undefined; form.reset();
   cloud.reset();
 });
 window.addEventListener("pageshow", event => {
   if (event.persisted) {
-    device.reset(); cloud.reset(restoreSettings());
+    device.reset(); const values = restoreSettings();
+    connectionDraft = undefined; cloud.reset(values);
     loadRelease().catch(error => message(error.message, true));
   }
 });
