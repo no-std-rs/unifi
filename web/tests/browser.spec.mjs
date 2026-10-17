@@ -275,3 +275,104 @@ test("switching consoles clears local credentials even when both use the same LA
   await expect(page.getByLabel("Certificate SHA-256 fingerprint")).toHaveValue("");
   await expect(page.getByRole("button", { name: "Install on display" })).toBeHidden();
 });
+
+async function mockWizard(context, calls, mfa = false) {
+  await context.route("http://127.0.0.1:4177/api/**", async route => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    const body = request.postDataJSON();
+    calls.push({ path, body, headers: request.headers() });
+    let response;
+    if (path === "/api/discover") response = { consoles: [{ id: "fixture-console", name: "Home gateway", addresses: ["192.168.6.1"] }] };
+    else if (path === "/api/inspect") response = { selection: "fixture-selection", hostname: "console.id.ui.direct", address: "192.168.6.1", certificate_sha256: "ab".repeat(32), sites: [{ id: site, name: "Home" }] };
+    else if (path === "/api/devices") response = { devices: [{ id: otherDevice, name: "Access point" }, { id: device, name: "Root gateway" }], gateway: device };
+    else if (path === "/api/login") response = mfa && !body.token ? { state: "mfa", methods: [{ id: "totp", type: "totp" }] } : { state: "authenticated" };
+    else if (path === "/api/provision") response = { state: "verified", config: { controller_url: "https://console.id.ui.direct/proxy/network/integration", api_key: "wizard-local-key", certificate_sha256: "ab".repeat(32), site_id: site, device_id: device } };
+    else throw new Error(`Unexpected helper request: ${path}`);
+    await route.fulfill({ json: response });
+  });
+}
+
+async function openWizard(page) {
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "Open guided setup", exact: true }).click();
+  const popup = await popupPromise;
+  await expect(popup.getByLabel("Console", { exact: true })).toHaveValue("fixture-console");
+  await popup.getByRole("button", { name: "Verify gateway certificate" }).click();
+  await expect(popup.getByLabel("Device to display")).toHaveValue(device);
+  return popup;
+}
+
+test("guided setup handles MFA, fills verified local settings and flashes without cloud credentials", async ({ page, context }) => {
+  const calls = [], errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await mockWizard(context, calls, true);
+  await serial(page); await page.goto("/"); await wifi(page);
+  await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
+  const popup = await openWizard(page);
+  await popup.getByLabel("Console username or email").fill("fixture-user");
+  await popup.getByLabel("Console password", { exact: true }).fill("fixture-password");
+  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
+  await expect(popup.getByLabel("Two-factor method")).toBeVisible();
+  await popup.getByLabel("Two-factor or backup code").fill("123456");
+  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
+  await expect(popup.getByRole("heading", { name: "4 · Ready for USB installation" })).toBeVisible();
+  await expect(popup.locator("#password")).toHaveValue("");
+  await popup.getByRole("button", { name: "Use these settings in the installer" }).click();
+  await expect(page.getByLabel("Local Network API key")).toHaveValue("wizard-local-key");
+  await expect(page.getByLabel("Setup method", { exact: true })).toHaveValue("local");
+  await page.getByRole("button", { name: "Prepare installation" }).click();
+  await expect(page.getByRole("button", { name: "Install on display" })).toBeVisible();
+  const settings = await usbSettings(page);
+  expect(settings).toMatchObject({ api_key: "wizard-local-key", device_id: device, controller_url: "https://console.id.ui.direct/proxy/network/integration" });
+  expect(JSON.stringify(settings)).not.toContain("wizard-cloud-key");
+  expect(JSON.stringify(settings)).not.toContain("fixture-password");
+  expect(calls.filter(call => call.path === "/api/provision")).toHaveLength(1);
+  for (const call of calls) {
+    expect(call.headers["x-setup-token"]).toBeTruthy();
+    if (call.path !== "/api/login") expect(JSON.stringify(call.body)).not.toContain("fixture-password");
+    if (call.path !== "/api/discover") expect(JSON.stringify(call.body)).not.toContain("wizard-cloud-key");
+  }
+  expect(errors).toEqual([]);
+});
+
+test("forgetting settings cancels a pending wizard handoff and local JSON import needs no cloud key", async ({ page, context }) => {
+  const calls = [];
+  await mockWizard(context, calls);
+  await serial(page); await page.goto("/"); await wifi(page);
+  await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
+  const popup = await openWizard(page);
+  await popup.getByLabel("Console username or email").fill("fixture-user");
+  await popup.getByLabel("Console password", { exact: true }).fill("fixture-password");
+  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
+  await expect(popup.locator("#complete")).toBeVisible();
+  await page.getByRole("button", { name: "Forget saved settings" }).click();
+  await popup.getByRole("button", { name: "Use these settings in the installer" }).click();
+  await expect(page.getByLabel("Local Network API key")).toHaveValue("");
+  const downloadPromise = popup.waitForEvent("download");
+  await popup.getByRole("button", { name: "Download local settings" }).click();
+  const download = await downloadPromise;
+  await page.locator("#import_setup").setInputFiles(await download.path());
+  await expect(page.getByLabel("Local Network API key")).toHaveValue("wizard-local-key");
+  await expect(page.getByLabel("Cloud discovery API key")).toHaveValue("");
+  await wifi(page);
+  await page.getByRole("button", { name: "Prepare installation" }).click();
+  await expect(page.getByRole("button", { name: "Install on display" })).toBeVisible();
+});
+
+test("forgetting while an imported settings file is loading keeps credentials cleared", async ({ page }) => {
+  await page.addInitScript(() => {
+    const text = File.prototype.text;
+    File.prototype.text = async function() {
+      await new Promise(resolve => { window.releaseSetupImport = resolve; });
+      return text.call(this);
+    };
+  });
+  await page.goto("/");
+  const config = { controller_url: "https://192.168.6.1/proxy/network/integration", api_key: "late-local-key", certificate_sha256: "ab".repeat(32), site_id: site, device_id: device };
+  await page.locator("#import_setup").setInputFiles({ name: "settings.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(config)) });
+  await page.getByRole("button", { name: "Forget saved settings" }).click();
+  await page.evaluate(() => window.releaseSetupImport());
+  await expect(page.getByLabel("Local Network API key")).toHaveValue("");
+  await expect(page.getByLabel("Remember settings in this browser")).not.toBeChecked();
+});

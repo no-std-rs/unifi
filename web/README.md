@@ -3,8 +3,8 @@
 The static site at <https://no-std-rs.github.io/unifi/> installs the
 [UniFi ESP32-C3 dashboard](../examples/esp32c3-unifi-display/README.md) on the
 4 MB GUITION ESP32-2424S012-V1.0. It bundles pinned ESP Web Tools 10.4.0 and
-uses Web Serial; no third-party runtime scripts, analytics, or application server
-are involved. Other browsers can download the verified factory binary.
+uses Web Serial. There are no third-party runtime scripts, analytics, or hosted
+application servers. An optional local Python helper provides guided provisioning. Other browsers can download the verified factory binary.
 
 The public image contains no credentials. Wi-Fi settings, controller integration
 URL, separate cloud/local API keys, trusted local leaf-certificate fingerprint, and site/device UUIDs
@@ -20,11 +20,11 @@ and do not sync to other browsers or devices through this application. If browse
 storage is unavailable, installation still works for the current visit.
 Prepared USB blobs are discarded on form changes and navigation. Saved cloud
 IDs are only selection hints: discovery reloads available choices and requires
-fresh verification. The local certificate fingerprint is restored as an explicit
-user-supplied trust setting.
+fresh verification. The local certificate fingerprint is restored as the saved trust setting, whether
+entered manually or obtained from guided setup.
 No access-verification state, firmware bytes, or USB Blob URLs are persisted.
 Values are never sent to a site backend.
-In cloud discovery mode, only the cloud API key is sent directly to `https://api.ui.com` in the
+In cloud discovery mode, the cloud API key is sent directly to `https://api.ui.com` in the
 `X-API-Key` header for discovery and verification; Wi-Fi credentials never leave
 the browser except over USB. Requests omit cookies and reject redirects.
 The 4 KiB `UNIFICF1` settings sector goes to `0x3f0000`; settings
@@ -62,9 +62,12 @@ The display always uses a **direct local connection**, even with cloud discovery
 Enter a separate **Local Network API key** created in **Network → Integrations**,
 a local integration URL (usually `https://GATEWAY/proxy/network/integration`), and
 the trusted local controller leaf-certificate SHA-256 fingerprint. The cloud key
-stays in the browser and is excluded from the USB settings sector. Cloud discovery
+is excluded from the USB settings sector. The optional guided setup passes it to
+the helper on your computer for the same cloud discovery requests. Cloud discovery
 cannot retrieve or mint a local key or establish trust in a self-signed local
 certificate. Obtain the fingerprint through a trusted administrative connection.
+Guided setup can instead verify the console’s CA-signed direct-connect certificate
+and create a local key after one console sign-in, as described below.
 The browser's normal TLS validation handles the cloud API; no cloud certificate
 pin is shipped to the display and no periodic cloud-pin publication is needed.
 
@@ -74,6 +77,62 @@ link-local, or shared-address space before opening TCP/TLS. There is no cloud
 fallback. The firmware still verifies the exact local certificate and its TLS
 handshake signature. Reinstall settings if that local certificate rotates.
 **Enter local settings manually** bypasses cloud discovery altogether.
+
+**Open guided setup** removes manual certificate copying and key creation:
+
+1. Download **setup-display.py** from the installer and run `python3 setup-display.py`
+   (Python 3.10+, standard library only). Keep the terminal open, on the gateway LAN.
+2. In the installer, enter your cloud key and choose **Open guided setup**. The
+   local window discovers online consoles; choose one and verify its certificate.
+3. Sign in to the verified console once. Authenticator/backup codes, email/SMS
+   codes and push approval are supported through the console’s own login API.
+   Alternatively, paste an existing local key to verify and reuse it.
+4. The helper creates one **UniFi ESP32 Display** key and verifies the same four
+   LAN API reads used by the firmware. Choose **Use these settings in the installer**;
+   the URL, key, fingerprint and site/device IDs fill automatically. Add Wi-Fi and flash.
+
+The console password and two-factor codes are neither saved nor passed to the
+installer. The helper keeps temporary login cookies in memory and logs out after
+successful verification. A created key inherits the signing-in account’s existing
+permissions, has no requested expiry, and can be revoked in **Console → Integrations**.
+A failed verification retains the new key in memory so **Retry local verification**
+does not create another. A lost key-creation response is not automatically retried;
+check Integrations before restarting. Existing keys are never revoked by setup.
+
+The helper binds only `127.0.0.1:4177`. Its APIs require the exact loopback Host,
+Origin and a fresh session token; they expose no CORS access. The installer’s popup
+handoff checks the helper origin, exact window and one-time channel. It transfers
+only local device settings; Wi-Fi never enters the helper. **Forget saved settings**
+also cancels an outstanding handoff. If popups are unavailable, download local
+settings in the helper and use **Import settings from the helper** in the installer;
+that JSON contains a secret API key. Stop the helper with Ctrl-C after use.
+
+Automatic trust requires the console’s cloud-reported `directConnectDomain` under
+`ui.direct`, a reported LAN IPv4 address, and a valid system-trusted certificate
+for that exact hostname. HTTPS connects directly to the LAN IP with that TLS name,
+and pins the verified leaf for the rest of setup. It never accepts an unverified
+self-signed certificate. The firmware uses the same hostname and pin; configure
+its Wi-Fi to use the gateway DNS, which resolves that hostname locally. A different
+DNS server may not resolve it. Consoles without this identity use manual setup.
+Certificate rotation requires updating the display settings; rerun setup with the
+existing local key to obtain and verify the new certificate.
+
+The key-creation route is the console UI’s private API,
+`POST /proxy/users/api/v2/user/self/keys`. The cloud Connector rejects that service
+with HTTP 403, even for a key with Network owner access; console authentication is
+required. This is a console login, not an OAuth grant to this website. The flow was
+traced on UniFi OS 5.1.132 / Network 10.6.106; future UI API changes may require updates.
+
+For a read-only certificate/discovery check using an existing environment key:
+
+```sh
+python3 tools/setup-display.py --probe
+# Or explicitly read the saved key from a local dotenv file:
+python3 tools/setup-display.py --probe --env-file .env
+```
+
+The probe never logs in or creates keys. It prints the discovered LAN identity,
+certificate fingerprint and site choices, without printing the cloud key.
 
 From a **clean committed checkout**, build and preview:
 
