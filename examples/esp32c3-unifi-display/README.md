@@ -39,7 +39,9 @@ and prefers the root gateway when its MAC matches the console. Cloud verificatio
 checks the data paths using that cloud key, which stays in the browser.
 **The display always uses LAN access**: supply a separate local Network integration
 key and trusted local controller certificate fingerprint. Cloud discovery cannot
-provide these local credentials. See [installer setup](../../web/README.md).
+provide these local credentials by itself. **Open guided setup** uses a small local
+Python helper to verify the gateway certificate and create the local key after one
+console sign-in, then fills the installer automatically. See [installer setup](../../web/README.md).
 Cloud discovery requires UniFi OS 5.0.3 or newer and appropriate console access.
 The display itself does not need internet access and has no cloud fallback.
 

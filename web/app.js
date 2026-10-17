@@ -1,6 +1,7 @@
 import { encodeConfig, manifestWithSettings } from "./config.js";
 import { setupCloud } from "./cloud-setup.js";
 import { SAVED_SETTINGS_KEY, savedFields, readSavedSettings, writeSavedSettings } from "./saved-settings.js";
+import { setupWizard } from "./setup-wizard.js";
 
 const $ = id => document.getElementById(id);
 const form = $("settings");
@@ -56,8 +57,17 @@ function saveSettings() {
 
 const restored = restoreSettings();
 const cloud = setupCloud(forgetSettings, restored, saveSettings);
+const wizard = setupWizard(config => {
+  forgetSettings();
+  $("connection_mode").value = "local";
+  cloud.reset();
+  for (const [name, value] of Object.entries(config)) $(name).value = value;
+  saveSettings();
+  message("Local connection filled in. Add your Wi-Fi details, then prepare installation.");
+});
 
 $("forget_saved").addEventListener("click", () => {
+  wizard.cancel();
   form.reset();
   $("remember_settings").checked = false;
   cloud.reset();
