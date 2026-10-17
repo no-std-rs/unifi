@@ -129,6 +129,10 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
     selection() {
       return Object.fromEntries([consoleSelect, siteSelect, deviceSelect].map(select => [select.id, select.value || remembered[select.id] || ""]));
     },
-    reset(selection = {}) { remembered = { ...selection }; updateMode(); },
+    reset(selection = {}) {
+      remembered = { ...selection };
+      previousConsole = selection.cloud_console || "";
+      updateMode();
+    },
   };
 }

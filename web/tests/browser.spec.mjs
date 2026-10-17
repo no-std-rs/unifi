@@ -24,13 +24,13 @@ async function usbSettings(page) {
     return JSON.parse(new TextDecoder().decode(sector.subarray(16, 16 + length)));
   });
 }
-async function mockCloud(page, requests) {
+async function mockCloud(page, requests, consoleId = "console:123") {
   await page.route("https://api.ui.com/**", async route => {
     const request = route.request();
     requests.push({ url: request.url(), headers: request.headers() });
     const path = new URL(request.url()).pathname;
     let body = {};
-    if (path === "/v1/hosts") body = { data: [{ id: "console:123", type: "console", reportedState: { state: "connected", name: "Home console", mac: "aa:bb:cc:dd:ee:ff", ipAddrs: ["203.0.113.9", "192.168.6.1"] } }] };
+    if (path === "/v1/hosts") body = { data: [{ id: consoleId, type: "console", reportedState: { state: "connected", name: "Home console", mac: "aa:bb:cc:dd:ee:ff", ipAddrs: ["203.0.113.9", "192.168.6.1"] } }] };
     else if (path.endsWith("/sites")) body = { data: [{ id: site, name: "Home" }], totalCount: 1 };
     else if (path.endsWith("/devices")) body = { data: [{ id: device, name: "Gateway", macAddress: "aa:bb:cc:dd:ee:ff", ipAddress: "203.0.113.9", state: "ONLINE" }, { id: otherDevice, name: "Access point", state: "ONLINE" }], totalCount: 2 };
     else if (path.endsWith("/clients")) body = { data: [], totalCount: 50 };
@@ -221,6 +221,15 @@ test("restored cloud choices require rediscovery and verification while both key
   await page.getByRole("button", { name: "Prepare installation" }).click();
   await expect(page.getByRole("button", { name: "Install on display" })).toBeVisible();
   expect(await usbSettings(page)).toMatchObject({ device_id: otherDevice, api_key: "private-local-key", controller_url: "https://192.168.6.1/proxy/network/integration" });
+  await page.getByRole("button", { name: "Forget saved settings" }).click();
+  await mockCloud(page, requests, "different-console:456");
+  await page.getByLabel("Cloud discovery API key").fill("new-cloud-key");
+  await localCredentials(page);
+  await page.getByLabel("Local controller integration URL").fill("https://gateway.local/proxy/network/integration");
+  await page.getByRole("button", { name: "Discover consoles" }).click();
+  await expect(page.getByLabel("Device to display")).toHaveValue(device);
+  await expect(page.getByLabel("Local controller integration URL")).toHaveValue("https://gateway.local/proxy/network/integration");
+  await expect(page.getByLabel("Local Network API key")).toHaveValue("private-local-key");
 });
 
 test("opting out removes credentials and stays off on reopening", async ({ page }) => {
