@@ -29,6 +29,7 @@ use static_cell::StaticCell;
 use unifi_display::{
     api::{self, Client, Error},
     config::{self, DeviceConfig},
+    navigation::Navigation,
     panel, render,
     stats::Dashboard,
 };
@@ -109,6 +110,11 @@ impl unifi::embedded_async::Connector for Connector {
             .first()
             .copied()
             .ok_or(Error::Transport)?;
+        // Enforce LAN-only API traffic even when a configured DNS name changes.
+        let embassy_net::IpAddress::Ipv4(ip) = address;
+        if !config::local_ipv4(ip) {
+            return Err(Error::LocalAddress);
+        }
         let mut socket = TcpSocket::new(self.stack, &mut self.rx, &mut self.tx);
         socket.set_timeout(Some(Duration::from_secs(8)));
         socket
@@ -255,36 +261,25 @@ async fn main(spawner: Spawner) -> ! {
     spawner.spawn(network(runner).unwrap());
     spawner.spawn(poll_router(stack, state, config).unwrap());
 
-    let mut page = 0;
-    let mut page_since = Instant::now();
+    let mut navigation = Navigation::new(Instant::now().as_millis());
     let mut frame_at = Instant::now();
-    let mut was_down = false;
     loop {
         let now = Instant::now();
         let mut fingers = [0];
-        let mut changed = false;
-        if touch.write_read(0x15, &[0x02], &mut fingers).is_ok() {
-            let down = fingers[0] & 0x0F != 0;
-            if was_down && !down {
-                page = (page + 1) % render::PAGE_COUNT;
-                page_since = now;
-                changed = true;
-            }
-            was_down = down;
-        }
-        if now.duration_since(page_since) >= Duration::from_secs(8) {
-            page = (page + 1) % render::PAGE_COUNT;
-            page_since = now;
-            changed = true;
-        }
+        let touching = touch
+            .write_read(0x15, &[0x02], &mut fingers)
+            .ok()
+            .map(|_| fingers[0] & 0x0F != 0);
+        let changed = navigation.update(now.as_millis(), touching);
         if changed || now >= frame_at {
             let snapshot = state.lock().await.clone();
             for y in (0..240).step_by(panel::TILE_ROWS) {
-                render::draw(
+                render::draw_with_lock(
                     &mut panel::Tile { y, pixels },
                     &snapshot,
-                    page,
+                    navigation.page(),
                     now.as_millis(),
+                    navigation.locked(),
                 )
                 .unwrap();
                 panel.write_tile(y, pixels).unwrap();

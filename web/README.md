@@ -7,11 +7,24 @@ uses Web Serial; no third-party runtime scripts, analytics, or application serve
 are involved. Other browsers can download the verified factory binary.
 
 The public image contains no credentials. Wi-Fi settings, controller integration
-URL, API key, trusted leaf-certificate fingerprint, and site/device UUIDs
-stay in browser memory and local Blob URLs until written directly over USB.
-Prepared USB blobs are discarded on form changes and form fields reset on
-navigation. Values are never sent to a site backend or saved in browser storage.
-In cloud mode, the API key is sent directly to `https://api.ui.com` in the
+URL, separate cloud/local API keys, trusted local leaf-certificate fingerprint, and site/device UUIDs
+are automatically saved in this browser's `localStorage` by default, so they
+autofill on reopening the installer. **Remember settings in this browser** can
+be turned off to remove saved credentials and use settings only for that visit.
+**Forget saved settings** clears the form, credentials, cloud selections and
+prepared installation, and leaves remembering off. Only that preference remains
+stored. These controls never clear storage belonging to other applications.
+Credentials are stored without encryption in the browser profile; use remembering
+only on a trusted profile. They persist until forgotten or browser data is cleared,
+and do not sync to other browsers or devices through this application. If browser
+storage is unavailable, installation still works for the current visit.
+Prepared USB blobs are discarded on form changes and navigation. Saved cloud
+IDs are only selection hints: discovery reloads available choices and requires
+fresh verification. The local certificate fingerprint is restored as an explicit
+user-supplied trust setting.
+No access-verification state, firmware bytes, or USB Blob URLs are persisted.
+Values are never sent to a site backend.
+In cloud discovery mode, only the cloud API key is sent directly to `https://api.ui.com` in the
 `X-API-Key` header for discovery and verification; Wi-Fi credentials never leave
 the browser except over USB. Requests omit cookies and reject redirects.
 The 4 KiB `UNIFICF1` settings sector goes to `0x3f0000`; settings
@@ -32,35 +45,35 @@ performs anonymous GETs with an unrelated Origin header and requires wildcard
 CORS, the expected main revision, byte length and SHA-256 on the public download.
 The current public pointer is <https://no-std-rs.github.io/unifi/latest.json>.
 
-The default **UniFi cloud Connector** flow accepts a key created in
-[Site Manager → Settings → API Keys](https://unifi.ui.com/), discovers online
-consoles, paginates sites/devices, and requires an explicit device choice when
-there are several. **Verify cloud access** checks the same four GET routes used
-by the display's initial sample. Changing the key, console, site, device, or
-connection mode invalidates verification and any prepared installation.
-The resulting URL is
-`https://api.ui.com/v1/connector/consoles/CONSOLE_ID/proxy/network/integration`;
-the selected UUIDs are written to the existing settings format. No firmware
-credential exchange is involved and no local key is needed. The display needs
-internet access. Personal cloud keys can access only consoles their owner owns;
-organization keys need access to the console. UniFi OS 5.0.3 or newer is required.
-See the [official Connector documentation](https://developer.ui.com/network/v10.6.106/connectorget).
+The default **Discover with cloud · device stays local** flow accepts a key
+created in [Site Manager → Settings → API Keys](https://unifi.ui.com/), discovers
+online consoles, and paginates sites/devices. The root gateway is preferred only
+when its MAC matches the console. A remembered explicit device selection takes
+precedence; otherwise multiple unmatched devices require a choice.
+The installer uses private IPv4 entries from `reportedState.ipAddrs` to suggest
+the console's LAN address; it never substitutes the reported WAN address. With
+multiple LAN addresses, enter the one reachable from the display's Wi-Fi network.
+**Verify cloud access** checks the dashboard's four GET routes through the cloud
+Connector. This verifies cloud access, not the separate local credentials.
+Personal cloud keys require console ownership; organization keys need access to
+the console, and the Connector requires UniFi OS 5.0.3 or newer.
 
-`cloud.json` contains a public SHA-256 leaf-certificate pin obtained by the site
-build with OpenSSL CA and hostname verification, using the firmware-compatible
-TLS 1.3 cipher/signatures. The browser supplies this pin automatically and
-rejects expired metadata. Browsers cannot extract server certificates themselves.
-The main workflow rebuilds and publishes daily at 03:19 UTC to refresh this
-information even without source changes; keep its scheduled runs enabled.
-Pinning still verifies both the exact certificate and its handshake signature
-on the display. After Ubiquiti rotates the certificate, use the next daily site
-build (or rerun the main firmware workflow), then reinstall settings over USB. The display
-does not silently replace its trusted pin or bypass TLS checks.
+The display always uses a **direct local connection**, even with cloud discovery.
+Enter a separate **Local Network API key** created in **Network → Integrations**,
+a local integration URL (usually `https://GATEWAY/proxy/network/integration`), and
+the trusted local controller leaf-certificate SHA-256 fingerprint. The cloud key
+stays in the browser and is excluded from the USB settings sector. Cloud discovery
+cannot retrieve or mint a local key or establish trust in a self-signed local
+certificate. Obtain the fingerprint through a trusted administrative connection.
+The browser's normal TLS validation handles the cloud API; no cloud certificate
+pin is shipped to the display and no periodic cloud-pin publication is needed.
 
-**Local Network controller** preserves direct LAN access with a locally created
-Network integration key, integration URL and trusted controller certificate pin.
-Cloud discovery cannot retrieve a local key. There is no documented public
-Site Manager OAuth authorization flow; this installer uses the supported API-key flow.
+Firmware rejects cloud Connector URLs and public controller IPv4 addresses. DNS
+names remain supported, but their resolved address must be private (RFC1918),
+link-local, or shared-address space before opening TCP/TLS. There is no cloud
+fallback. The firmware still verifies the exact local certificate and its TLS
+handshake signature. Reinstall settings if that local certificate rotates.
+**Enter local settings manually** bypasses cloud discovery altogether.
 
 From a **clean committed checkout**, build and preview:
 
@@ -69,7 +82,6 @@ sh tools/build-dashboard-artifact.sh
 npm --prefix web ci
 npm --prefix web run build
 python3 tools/assemble-flasher.py dist/firmware dist/flasher
-python3 tools/cloud-certificate.py dist/flasher/cloud.json
 node web/tests/server.mjs
 ```
 

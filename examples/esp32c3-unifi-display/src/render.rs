@@ -125,6 +125,16 @@ pub fn draw<D: DrawTarget<Color = Rgb565>>(
     page: usize,
     now_ms: u64,
 ) -> Result<(), D::Error> {
+    draw_with_lock(d, s, page, now_ms, false)
+}
+
+pub fn draw_with_lock<D: DrawTarget<Color = Rgb565>>(
+    d: &mut D,
+    s: &Dashboard,
+    page: usize,
+    now_ms: u64,
+    locked: bool,
+) -> Result<(), D::Error> {
     d.clear(BACKGROUND)?;
     let page = page % PAGE_COUNT;
     center(
@@ -299,6 +309,26 @@ pub fn draw<D: DrawTarget<Color = Rgb565>>(
             }))
             .draw(d)?;
     }
+    let color = if locked { UP } else { MUTED };
+    let style = PrimitiveStyle::with_stroke(color, 1);
+    // A closed gold shackle indicates the page is locked; grey/open is unlocked.
+    let shackle_x = if locked { 167 } else { 173 };
+    for (a, b) in [
+        (Point::new(shackle_x, 214), Point::new(shackle_x, 210)),
+        (Point::new(shackle_x, 210), Point::new(shackle_x + 6, 210)),
+        (
+            Point::new(shackle_x + 6, 210),
+            Point::new(shackle_x + 6, 214),
+        ),
+    ] {
+        Line::new(a, b).into_styled(style).draw(d)?;
+    }
+    Rectangle::new(Point::new(165, 214), Size::new(11, 8))
+        .into_styled(PrimitiveStyle::with_stroke(color, 1))
+        .draw(d)?;
+    Line::new(Point::new(170, 217), Point::new(170, 219))
+        .into_styled(style)
+        .draw(d)?;
     Ok(())
 }
 #[cfg(test)]

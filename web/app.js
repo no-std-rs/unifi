@@ -1,5 +1,6 @@
 import { encodeConfig, manifestWithSettings } from "./config.js";
 import { setupCloud } from "./cloud-setup.js";
+import { SAVED_SETTINGS_KEY, savedFields, readSavedSettings, writeSavedSettings } from "./saved-settings.js";
 
 const $ = id => document.getElementById(id);
 const form = $("settings");
@@ -22,15 +23,62 @@ function forgetSettings() {
   for (const url of objectUrls.splice(0)) URL.revokeObjectURL(url);
 }
 
-const cloud = setupCloud(forgetSettings);
+function storageAction(action) {
+  try { action(window.localStorage); return true; }
+  catch {
+    $("saved_status").textContent = "This browser cannot save settings. You can still install using the settings for this visit.";
+    return false;
+  }
+}
+
+function restoreSettings() {
+  let saved;
+  storageAction(storage => { saved = readSavedSettings(storage); });
+  if (saved) {
+    $("remember_settings").checked = saved.remember;
+    if (saved.remember) {
+      for (const [name, value] of Object.entries(saved.values)) {
+        if (!["cloud_console", "cloud_site", "cloud_device"].includes(name)) $(name).value = value;
+      }
+      $("saved_status").textContent = "Saved settings restored from this browser." + (saved.values.connection_mode === "cloud" ? " Discover consoles and verify cloud access again before installing." : "");
+    }
+  }
+  return saved?.values || {};
+}
+
+function saveSettings() {
+  const remember = $("remember_settings").checked;
+  const values = { ...Object.fromEntries(Object.keys(savedFields).filter(name => !["cloud_console", "cloud_site", "cloud_device"].includes(name)).map(name => [name, $(name).value])), ...cloud.selection() };
+  if (storageAction(storage => writeSavedSettings(storage, remember, values))) {
+    $("saved_status").textContent = remember ? "Settings saved in this browser, including your API key and Wi-Fi password." : "Remembering is off. Your credentials have been removed from browser storage.";
+  }
+}
+
+const restored = restoreSettings();
+const cloud = setupCloud(forgetSettings, restored, saveSettings);
+
+$("forget_saved").addEventListener("click", () => {
+  form.reset();
+  $("remember_settings").checked = false;
+  cloud.reset();
+  // Keep only the preference to avoid saving credentials again on reopening.
+  if (storageAction(storage => {
+    storage.removeItem(SAVED_SETTINGS_KEY);
+    writeSavedSettings(storage, false);
+  })) $("saved_status").textContent = "Saved settings forgotten. Remembering is off.";
+  if (release) message("Settings cleared. Enter your Wi-Fi and UniFi settings to prepare another installation.");
+});
 
 form.addEventListener("input", () => {
   forgetSettings();
+  saveSettings();
   if (release) message("Your settings stay here. Prepare when you're ready.");
 });
+form.addEventListener("change", saveSettings);
 form.addEventListener("submit", event => {
   event.preventDefault();
   forgetSettings();
+  saveSettings();
   try {
     if (!release || !firmwareUrl) throw new Error("Wait for the latest firmware to finish loading.");
     const fields = ["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"];
@@ -60,7 +108,10 @@ window.addEventListener("pagehide", () => {
   cloud.reset();
 });
 window.addEventListener("pageshow", event => {
-  if (event.persisted) loadRelease().catch(error => message(error.message, true));
+  if (event.persisted) {
+    cloud.reset(restoreSettings());
+    loadRelease().catch(error => message(error.message, true));
+  }
 });
 
 async function loadRelease() {

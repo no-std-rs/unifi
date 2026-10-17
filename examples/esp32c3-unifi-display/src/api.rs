@@ -6,6 +6,7 @@ use unifi::{network, Call, Json};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     Transport,
+    LocalAddress,
     Tls,
     Timeout,
     TooLarge,
@@ -19,6 +20,7 @@ impl Error {
     pub fn label(self) -> &'static str {
         match self {
             Self::Transport => "NETWORK - RECONNECTING",
+            Self::LocalAddress => "USE LOCAL CONTROLLER IP",
             Self::Tls => "TLS CERTIFICATE / HANDSHAKE",
             Self::Timeout => "REQUEST TIMED OUT",
             Self::TooLarge => "RESPONSE TOO LARGE",

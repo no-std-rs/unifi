@@ -5,6 +5,7 @@ extern crate alloc;
 
 pub mod api;
 pub mod config;
+pub mod navigation;
 pub mod panel;
 pub mod render;
 pub mod stats;

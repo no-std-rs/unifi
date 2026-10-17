@@ -1,10 +1,12 @@
-import { CLOUD_ORIGIN, cloudBase, cloudClient, cloudTrust } from "./cloud.js";
+import { cloudBase, cloudClient, consoleLanUrl, rootGateway } from "./cloud.js";
 
-export function setupCloud(invalidate) {
+export function setupCloud(invalidate, initialSelection = {}, selectionChanged = () => {}) {
   const $ = id => document.getElementById(id);
-  const mode = $("connection_mode"), key = $("api_key");
+  const mode = $("connection_mode"), key = $("cloud_api_key");
   const consoleSelect = $("cloud_console"), siteSelect = $("cloud_site"), deviceSelect = $("cloud_device");
-  let trust, controller = new AbortController(), verified = false;
+  let controller = new AbortController(), verified = false, consoles = [];
+  let remembered = { ...initialSelection };
+  let previousConsole = initialSelection.cloud_console || "";
   const isCloud = () => mode.value === "cloud";
   function note(message, error = false) {
     $("cloud_status").textContent = message;
@@ -18,10 +20,14 @@ export function setupCloud(invalidate) {
     return controller.signal;
   }
   function clear(select) { select.replaceChildren(); select.disabled = true; }
-  function choices(select, rows, placeholder, label) {
+  function choices(select, rows, placeholder, label, preferred = "") {
     select.replaceChildren(new Option(placeholder, ""), ...rows.map(row => new Option(label(row), row.id)));
     select.disabled = false;
-    if (rows.length === 1) select.value = rows[0].id;
+    if (rows.some(row => row.id === remembered[select.id])) select.value = remembered[select.id];
+    else if (preferred && rows.some(row => row.id === preferred)) select.value = preferred;
+    else if (rows.length === 1) select.value = rows[0].id;
+    remembered[select.id] = select.value;
+    selectionChanged();
   }
   function client(signal) { return cloudClient(key.value, signal); }
   function run(signal, action) {
@@ -33,12 +39,26 @@ export function setupCloud(invalidate) {
     if (!siteSelect.value) return;
     const rows = await client(signal).devices(cloudBase(consoleSelect.value), siteSelect.value);
     if (signal.aborted) return;
-    choices(deviceSelect, rows, "Choose a device…", row => `${row.name || row.model || row.id}${row.state ? ` · ${row.state}` : ""}`);
+    const gateway = rootGateway(consoles.find(row => row.id === consoleSelect.value), rows);
+    choices(deviceSelect, rows, "Choose a device…", row => `${row.name || row.model || row.id}${row.id === gateway ? " · root gateway" : ""}${row.state ? ` · ${row.state}` : ""}`, gateway);
     $("verify_cloud").disabled = !deviceSelect.value;
     note(rows.length ? "Choose the device to display, then verify access." : "No adopted devices found in this site.");
   }
   async function loadSites(signal) {
     if (!consoleSelect.value) return;
+    const url = consoleLanUrl(consoles.find(row => row.id === consoleSelect.value));
+    if (previousConsole !== consoleSelect.value) {
+      if (previousConsole || !$("api_key").value) {
+        if (url !== $("controller_url").value) {
+          $("api_key").value = "";
+          $("certificate_sha256").value = "";
+        }
+        $("controller_url").value = url;
+      }
+      previousConsole = consoleSelect.value;
+      selectionChanged();
+    }
+    $("lan_address_note").textContent = url ? "LAN address discovered from the console. The display connects here directly." : "The console did not report a unique LAN IPv4 address. Enter its reachable local address below.";
     const rows = await client(signal).sites(cloudBase(consoleSelect.value));
     if (signal.aborted) return;
     choices(siteSelect, rows, "Choose a site…", row => row.name || row.id);
@@ -52,23 +72,19 @@ export function setupCloud(invalidate) {
   function updateMode() {
     resetSelections();
     $("cloud_setup").hidden = !isCloud();
-    $("local_settings").hidden = isCloud();
-    for (const input of $("local_settings").querySelectorAll("input")) input.disabled = isCloud();
-    $("key_help").textContent = isCloud()
-      ? "Create this key in unifi.ui.com → Settings → API Keys. Discovery sends it directly to api.ui.com; our site has no backend."
-      : "Create a local key in your Network application's Integrations settings. A Site Manager cloud key uses the cloud connection option.";
-    note(trust ? "Enter your cloud key, then discover consoles." : "Loading verified cloud certificate information…");
+    key.disabled = !isCloud();
+    note("Discover consoles with your cloud key. The device will use a separate local Network key.");
   }
-  mode.addEventListener("change", updateMode);
-  key.addEventListener("input", () => { resetSelections(); note("Key changed. Discover consoles again."); });
+  mode.addEventListener("change", () => { remembered = {}; updateMode(); });
+  key.addEventListener("input", () => { remembered = {}; resetSelections(); note("Key changed. Discover consoles again."); });
   $("discover_cloud").addEventListener("click", () => {
     resetSelections();
     const signal = controller.signal;
     run(signal, async () => {
-      cloudTrust(trust);
       note("Discovering online consoles…");
       const rows = await client(signal).consoles();
       if (signal.aborted) return;
+      consoles = rows;
       choices(consoleSelect, rows, "Choose a console…", row => row.reportedState?.name || row.reportedState?.hostname || row.id);
       $("cloud_choices").hidden = false;
       note(rows.length ? "Choose a console." : "No online consoles found. Check remote management and your account's access.");
@@ -76,43 +92,43 @@ export function setupCloud(invalidate) {
     });
   });
   consoleSelect.addEventListener("change", () => {
+    remembered = { cloud_console: consoleSelect.value };
     clear(siteSelect); clear(deviceSelect);
     const signal = cancel(); run(signal, () => loadSites(signal));
   });
   siteSelect.addEventListener("change", () => {
+    remembered = { cloud_console: consoleSelect.value, cloud_site: siteSelect.value };
     clear(deviceSelect);
     const signal = cancel(); run(signal, () => loadDevices(signal));
   });
-  deviceSelect.addEventListener("change", () => { cancel(); note("Verify access for this device before preparing installation."); });
+  deviceSelect.addEventListener("change", () => { remembered.cloud_device = deviceSelect.value; cancel(); note("Verify access for this device before preparing installation."); });
   $("verify_cloud").addEventListener("click", () => {
     const signal = cancel();
     $("verify_cloud").disabled = true;
     run(signal, async () => {
       try {
-        cloudTrust(trust);
         note("Checking device details, statistics, and site counts…");
         await client(signal).verify(cloudBase(consoleSelect.value), siteSelect.value, deviceSelect.value);
         if (signal.aborted) return;
         verified = true;
-        note("Cloud access verified for all dashboard reads. Ready to prepare installation.");
+        $("site_id").value = siteSelect.value;
+        $("device_id").value = deviceSelect.value;
+        selectionChanged();
+        note("Cloud reads verified. Supply the local Network key and trusted controller fingerprint below; local access is checked by the display.");
       } finally { if (!signal.aborted) $("verify_cloud").disabled = !deviceSelect.value; }
     });
   });
   updateMode();
-  fetch("./cloud.json", { cache: "no-store", credentials: "omit" }).then(async response => {
-    if (!response.ok) throw new Error("Cloud certificate information is unavailable. Use local setup or retry after the next site build.");
-    const metadata = await response.json();
-    cloudTrust(metadata); trust = metadata;
-    $("discover_cloud").disabled = false;
-    $("cloud_certificate").textContent = `Certificate verified by the site build; valid until ${new Date(trust.not_after).toLocaleDateString()}. If UniFi rotates it, update the display's settings using a refreshed site build.`;
-    note("Enter your cloud key, then discover consoles.");
-  }).catch(error => note(error.message, true));
+  $("discover_cloud").disabled = false;
   return {
     config() {
       if (!isCloud()) return {};
       if (!verified) throw new Error("Verify cloud access before preparing installation.");
-      return { controller_url: CLOUD_ORIGIN + cloudBase(consoleSelect.value), certificate_sha256: cloudTrust(trust), site_id: siteSelect.value, device_id: deviceSelect.value };
+      return { site_id: siteSelect.value, device_id: deviceSelect.value };
     },
-    reset() { resetSelections(); updateMode(); },
+    selection() {
+      return Object.fromEntries([consoleSelect, siteSelect, deviceSelect].map(select => [select.id, select.value || remembered[select.id] || ""]));
+    },
+    reset(selection = {}) { remembered = { ...selection }; updateMode(); },
   };
 }

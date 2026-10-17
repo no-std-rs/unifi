@@ -4,6 +4,13 @@ export const SECTOR_SIZE = 4096;
 const encoder = new TextEncoder();
 const fields = ["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"];
 const length = value => encoder.encode(value).length;
+export function isLocalIPv4(value) {
+  const parts = value.split(".");
+  if (parts.length !== 4 || parts.some(p => !/^(0|[1-9]\d{0,2})$/.test(p) || Number(p) > 255)) return false;
+  const [a, b] = parts.map(Number);
+  return a === 10 || a === 172 && b >= 16 && b <= 31 || a === 192 && b === 168
+    || a === 169 && b === 254 || a === 100 && b >= 64 && b <= 127;
+}
 export function validateConfig(config) {
   if (Object.keys(config).length !== fields.length || fields.some(k => typeof config[k] !== "string" || config[k].includes("\0"))) throw new Error("Complete the Wi-Fi and UniFi settings.");
   if (length(config.wifi_ssid) < 1 || length(config.wifi_ssid) > 32) throw new Error("The Wi-Fi name must be 1–32 UTF-8 bytes.");
@@ -18,6 +25,8 @@ export function validateConfig(config) {
       || !host || host.length>253 || host.split(".").some(label=>!label || label.length>63 || !/^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(label))
       || port !== undefined && (!/^\d+$/.test(port) || Number(port)<1 || Number(port)>65535)
       || /[?#]/.test(match?.[2] || "") || (match?.[2] || "").split("/").some(p=>p==="." || p==="..")) throw new Error("Use an https:// controller URL and integration base, with a DNS name or IPv4 address.");
+  if (host.toLowerCase() === "api.ui.com" || (match?.[2] || "").includes("/v1/connector/")
+      || /^\d+\.\d+\.\d+\.\d+$/.test(host) && !isLocalIPv4(host)) throw new Error("The display uses direct LAN access only. Enter your local controller's HTTPS URL, not a cloud Connector or public IP address.");
   if (!/^[\x21-\x7e]{1,512}$/.test(config.api_key)) throw new Error("Enter the UniFi API key (up to 512 ASCII bytes).");
   if (!/^[a-fA-F0-9]{64}$/.test(config.certificate_sha256)) throw new Error("Enter the trusted controller certificate's SHA-256 fingerprint as 64 hexadecimal characters.");
   for (const name of ["site_id","device_id"]) if (config[name] !== "" && !/^[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$/.test(config[name])) throw new Error("Site and device IDs must be UUIDs, or empty for an unambiguous single site/device.");

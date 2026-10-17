@@ -12,6 +12,7 @@ use unifi_display::{
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let locked = std::env::args().any(|arg| arg == "--locked");
     let output = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "preview.ppm".into());
@@ -58,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut pixels = [Rgb565::BLACK; WIDTH * TILE_ROWS];
     for page in 0..render::PAGE_COUNT {
         for y in (0..240u16).step_by(TILE_ROWS) {
-            let result: Result<(), Infallible> = render::draw(
+            let result: Result<(), Infallible> = render::draw_with_lock(
                 &mut Tile {
                     y,
                     pixels: &mut pixels,
@@ -66,6 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &snapshot,
                 page,
                 1000,
+                locked,
             );
             result.unwrap();
             for (i, pixel) in pixels.iter().enumerate() {

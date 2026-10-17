@@ -7,6 +7,16 @@ pub const SECTOR_SIZE: usize = 4096;
 pub const MAX_JSON: usize = 2048;
 pub const MAGIC: &[u8; 8] = b"UNIFICF1";
 
+/// Private, link-local and shared-address IPv4 ranges used by local controllers.
+pub fn local_ipv4(ip: core::net::Ipv4Addr) -> bool {
+    let [a, b, _, _] = ip.octets();
+    a == 10
+        || a == 172 && (16..=31).contains(&b)
+        || a == 192 && b == 168
+        || a == 169 && b == 254
+        || a == 100 && (64..=127).contains(&b)
+}
+
 // Deliberately no Debug: settings contain the user's passwords.
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -147,6 +157,14 @@ impl<'a> Endpoint<'a> {
             return Err(invalid());
         }
         unifi::Client::new(authority, base, "preflight").map_err(|_| invalid())?;
+        if host.eq_ignore_ascii_case("api.ui.com")
+            || base.contains("/v1/connector/")
+            || host
+                .parse::<core::net::Ipv4Addr>()
+                .is_ok_and(|ip| !local_ipv4(ip))
+        {
+            return Err(ConfigError::Invalid("Use a direct LAN controller URL"));
+        }
         Ok(Self {
             authority,
             host,
@@ -249,15 +267,30 @@ mod tests {
             (e.host, e.port, e.base),
             ("192.168.1.1", 8443, "/proxy/network/integration")
         );
-        let e = Endpoint::parse(
+        for url in [
             "https://api.ui.com/v1/connector/consoles/fixture%3A123/proxy/network/integration",
-        )
-        .unwrap();
-        assert!(unifi::Client::new(e.authority, e.base, "fixture-key").is_ok());
-        assert_eq!(e.host, "api.ui.com");
-        assert_eq!(
-            e.base,
-            "/v1/connector/consoles/fixture%3A123/proxy/network/integration"
-        );
+            "https://8.8.8.8/integration",
+            "https://controller.local/v1/connector/consoles/id/proxy/network/integration",
+        ] {
+            assert!(Endpoint::parse(url).is_err());
+        }
+        for ip in [
+            "10.1.2.3",
+            "172.16.0.1",
+            "192.168.6.1",
+            "169.254.1.2",
+            "100.64.0.1",
+        ] {
+            assert!(local_ipv4(ip.parse().unwrap()));
+        }
+        for ip in [
+            "8.8.8.8",
+            "127.0.0.1",
+            "172.32.0.1",
+            "100.128.0.1",
+            "224.0.0.1",
+        ] {
+            assert!(!local_ipv4(ip.parse().unwrap()));
+        }
     }
 }

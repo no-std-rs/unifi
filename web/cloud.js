@@ -1,4 +1,5 @@
 // All credentials go only to the official cloud origin, in a header.
+import { isLocalIPv4 } from "./config.js";
 export const CLOUD_ORIGIN = "https://api.ui.com";
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
@@ -9,13 +10,16 @@ export function cloudBase(consoleId) {
   return base;
 }
 
-export function cloudTrust(metadata, now = Date.now()) {
-  if (metadata.origin !== CLOUD_ORIGIN || !/^[a-f0-9]{64}$/.test(metadata.certificate_sha256)
-      || !Number.isFinite(Date.parse(metadata.not_after)) || Date.parse(metadata.not_after) <= now
-      || !Number.isFinite(Date.parse(metadata.verified_at)) || Date.parse(metadata.verified_at) > now + 300000) {
-    throw new Error("Cloud certificate information is unavailable or expired. Wait for an updated site build, or use local setup.");
-  }
-  return metadata.certificate_sha256;
+export function consoleLanUrl(host) {
+  const addresses = [...new Set((host?.reportedState?.ipAddrs || []).filter(ip => typeof ip === "string" && isLocalIPv4(ip)))];
+  return addresses.length === 1 ? `https://${addresses[0]}/proxy/network/integration` : "";
+}
+
+export function rootGateway(host, devices) {
+  const mac = value => typeof value === "string" ? value.replace(/[:-]/g, "").toLowerCase() : "";
+  const consoleMac = mac(host?.reportedState?.mac);
+  const matches = devices.filter(device => consoleMac && mac(device.macAddress) === consoleMac);
+  return matches.length === 1 ? matches[0].id : "";
 }
 
 export function cloudClient(key, signal, request = fetch) {
