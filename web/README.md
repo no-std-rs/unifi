@@ -50,9 +50,11 @@ See the [official Connector documentation](https://developer.ui.com/network/v10.
 build with OpenSSL CA and hostname verification, using the firmware-compatible
 TLS 1.3 cipher/signatures. The browser supplies this pin automatically and
 rejects expired metadata. Browsers cannot extract server certificates themselves.
+The main workflow rebuilds and publishes daily at 03:19 UTC to refresh this
+information even without source changes; keep its scheduled runs enabled.
 Pinning still verifies both the exact certificate and its handshake signature
-on the display. After Ubiquiti rotates the certificate, rerun the main firmware
-workflow to refresh the site, then reinstall settings over USB. The display
+on the display. After Ubiquiti rotates the certificate, use the next daily site
+build (or rerun the main firmware workflow), then reinstall settings over USB. The display
 does not silently replace its trusted pin or bypass TLS checks.
 
 **Local Network controller** preserves direct LAN access with a locally created
