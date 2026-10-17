@@ -2,7 +2,7 @@ import { DisplaySerial } from "./serial-client.js";
 import { validateConfig, validateWifi } from "./config.js";
 import { localConfig, localFields } from "./network-profiles.js";
 
-export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal, lookupNetwork, rememberNetwork, beforeConnect }) {
+export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal, lookupNetwork, rememberNetwork, beforeManual, beforeConnect }) {
   const $ = id => document.getElementById(id);
   let busy = false, manual = false, ready = false, generation = 0, verified = null, editing = false, saved = false;
   let accessPoints = new Map();
@@ -19,6 +19,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     $("usb_connect").hidden = connected; $("usb_connect").disabled = busy || !navigator.serial || !window.isSecureContext;
     $("usb_disconnect").hidden = !connected;
     $("manual_setup").disabled = busy || connected;
+    $("manual_setup").hidden = manual || connected;
     $("connected_tools").hidden = !connected;
     for (const id of ["usb_read", "usb_status_read"]) $(id).disabled = busy || !connected;
     $("blank_installer").querySelector("button").disabled = busy || connected;
@@ -177,7 +178,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     saved = true; await client.disconnect(false);
     note("usb_status", "Settings saved. Your display is restarting.");
   }));
-  $("manual_setup").addEventListener("click", () => { manual = true; editing = true; $("manual_wifi").hidden = false; refresh(); note("usb_status", "Prepare settings here, then install them with the firmware. A Wi-Fi test needs a connected display."); });
+  $("manual_setup").addEventListener("click", () => { beforeManual(); manual = true; editing = true; $("manual_wifi").hidden = false; refresh(); note("usb_status", "Prepare settings here, then install them with the firmware. A Wi-Fi test needs a connected display."); });
   window.addEventListener("pagehide", () => { generation++; verified = null; void client.disconnect(false); });
   refresh();
   return {

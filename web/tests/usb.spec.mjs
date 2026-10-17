@@ -160,3 +160,14 @@ test("offline preparation restores the verified profile password instead of a fa
   return JSON.parse(new TextDecoder().decode(bytes.slice(16,16+new DataView(bytes.buffer).getUint32(8,true))));
  });expect(saved.wifi_password).toBe(config.wifi_password);
 });
+
+test("switching directly from a failed device test to offline preparation restores the working password",async({page})=>{
+ await connect(page);await verified(page);await page.getByRole("button",{name:"Change password",exact:true}).click();
+ await password(page,"wrong-password");await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();await expect(page.locator("#wifi_status")).toContainText("association failed");
+ await page.getByRole("button",{name:"Disconnect display",exact:true}).click();
+ await page.locator("#device_tools > summary").click();await page.getByRole("button",{name:"Prepare settings without a device"}).click();
+ await expect(page.getByLabel("Wi-Fi password",{exact:true})).toHaveValue(config.wifi_password);
+ await expect(page.getByRole("button",{name:"Prepare installation"})).toBeEnabled();await page.getByRole("button",{name:"Prepare installation"}).click();
+ const value=await page.evaluate(async()=>{const m=await(await fetch(document.getElementById("installer").manifest)).json();const b=new Uint8Array(await(await fetch(m.builds[0].parts[1].path)).arrayBuffer());return JSON.parse(new TextDecoder().decode(b.slice(16,16+new DataView(b.buffer).getUint32(8,true)))).wifi_password;});
+ expect(value).toBe(config.wifi_password);
+});

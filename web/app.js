@@ -104,6 +104,11 @@ const device = setupDevice({
     for (const name of localFields) $(name).value = (draft ? draft[name] : config?.[name]) ?? (name === "controller_url" ? "https://unifi.local/proxy/network/integration" : "");
     saveSettings();
   },
+  beforeManual: () => {
+    importGeneration++; connectionDraft = undefined; forgetSettings();
+    const known = networks.get($("wifi_ssid").value);
+    if (known) $("wifi_password").value = known.password;
+  },
   beforeConnect: () => {
     importGeneration++; forgetSettings();
     connectionDraft = { ...readForm(), connection_mode: $("connection_mode").value, ...cloud.selection() };
