@@ -376,3 +376,41 @@ test("forgetting while an imported settings file is loading keeps credentials cl
   await expect(page.getByLabel("Local Network API key")).toHaveValue("");
   await expect(page.getByLabel("Remember settings in this browser")).not.toBeChecked();
 });
+
+test("guided setup requires explicit console, LAN, site and unmatched device choices", async ({ page, context }) => {
+  const calls = [];
+  await mockWizard(context, calls);
+  await context.route("http://127.0.0.1:4177/api/discover", route => route.fulfill({ json: { consoles: [
+    { id: "first-console", name: "First console", addresses: ["192.168.1.1"] },
+    { id: "fixture-console", name: "Chosen console", addresses: ["192.168.6.1", "192.168.6.2"] },
+  ] } }));
+  await context.route("http://127.0.0.1:4177/api/inspect", route => route.fulfill({ json: {
+    selection: "fixture-selection", hostname: "console.id.ui.direct", address: "192.168.6.1",
+    sites: [{ id: site, name: "First site" }, { id: otherDevice, name: "Second site" }],
+  } }));
+  await context.route("http://127.0.0.1:4177/api/devices", route => route.fulfill({ json: {
+    devices: [{ id: device, name: "First device" }, { id: otherDevice, name: "Second device" }], gateway: "",
+  } }));
+  await page.goto("/"); await page.getByLabel("Cloud discovery API key").fill("wizard-cloud-key");
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "Open guided setup", exact: true }).click();
+  const popup = await popupPromise;
+  await expect(popup.getByLabel("Console", { exact: true })).toBeVisible();
+  await expect(popup.getByLabel("Console", { exact: true })).toHaveValue("");
+  await popup.getByLabel("Console", { exact: true }).selectOption("fixture-console");
+  await expect(popup.getByLabel("Gateway LAN address")).toHaveValue("");
+  await popup.getByLabel("Gateway LAN address").selectOption("192.168.6.1");
+  await popup.getByRole("button", { name: "Verify gateway certificate" }).click();
+  await expect(popup.getByLabel("Site", { exact: true })).toBeVisible();
+  await expect(popup.getByLabel("Site", { exact: true })).toHaveValue("");
+  await popup.getByLabel("Site", { exact: true }).selectOption(site);
+  await expect(popup.getByLabel("Device to display")).toHaveValue("");
+  await popup.getByLabel("Console username or email").fill("fixture-user");
+  await popup.getByLabel("Console password", { exact: true }).fill("fixture-password");
+  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
+  await expect(popup.locator("#status")).toContainText("Choose a site and device first");
+  expect(calls.filter(call => call.path === "/api/login")).toHaveLength(0);
+  await popup.getByLabel("Device to display").selectOption(device);
+  await popup.getByRole("button", { name: "Sign in and create display key" }).click();
+  await expect(popup.locator("#complete")).toBeVisible();
+});

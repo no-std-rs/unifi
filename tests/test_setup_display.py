@@ -43,6 +43,7 @@ class SetupTests(unittest.TestCase):
 
     def setUp(self):
         self.calls, self.creations, self.fail_stats, self.require_mfa = [], 0, False, False
+        self.legacy_mfa = False
         owner = self
         class Gateway(BaseHTTPRequestHandler):
             def log_message(self, *_args):
@@ -65,7 +66,9 @@ class SetupTests(unittest.TestCase):
                 owner.calls.append((self.command, self.path, dict(self.headers), body))
                 status, response = 200, {}
                 if self.path == '/api/auth/login':
-                    if owner.require_mfa and not body.get('token'):
+                    if owner.legacy_mfa and (not body.get('ubic_2fa_token') or 'UBIC_2FA=fixture-old-challenge' not in self.headers.get('Cookie', '')):
+                        status, response = 499, {'token': 'UBIC_2FA=fixture-old-challenge; Path=/; HttpOnly; Secure'}
+                    elif owner.require_mfa and not body.get('token'):
                         status, response = 499, {'data': {'mfaCookie': 'fixture-challenge', 'authenticators': [{'id': 'push', 'type': 'push'}]}}
                     else:
                         self.send_response(200)
@@ -82,7 +85,7 @@ class SetupTests(unittest.TestCase):
                     self.wfile.write(b'{}')
                     return
                 elif self.path == '/proxy/users/api/v2/user/self/keys':
-                    if self.headers.get('Cookie') != 'TOKEN=fixture-session' or self.headers.get('X-CSRF-Token') != 'fixture-csrf':
+                    if 'TOKEN=fixture-session' not in self.headers.get('Cookie', '').split('; ') or self.headers.get('X-CSRF-Token') != 'fixture-csrf':
                         status = 403
                     else:
                         owner.creations += 1
@@ -164,6 +167,23 @@ class SetupTests(unittest.TestCase):
             self.wizard.provision(self.payload(local_key='wrong-key'))
         self.assertEqual(self.wizard.provision(self.payload(local_key=LOCAL))['state'], 'verified')
         self.assertEqual(self.creations, 0)
+
+    def test_rejected_existing_key_can_recover_by_signing_in(self):
+        with self.assertRaisesRegex(setup.SetupError, 'HTTP 401'):
+            self.wizard.provision(self.payload(local_key='wrong-key'))
+        self.login()
+        self.assertEqual(self.wizard.provision(self.payload())['state'], 'verified')
+        self.assertEqual(self.creations, 1)
+
+    def test_legacy_mfa_cookie_and_code_field_complete_login(self):
+        self.legacy_mfa = True
+        self.assertEqual(self.login()['state'], 'mfa')
+        self.assertEqual(self.wizard.login(self.payload(username='fixture-user', password='fixture-password', token='123456'))['state'], 'authenticated')
+        login = [call for call in self.calls if call[1] == '/api/auth/login'][-1]
+        self.assertEqual(login[3]['ubic_2fa_token'], '123456')
+        self.assertNotIn('token', login[3])
+        self.assertIn('UBIC_2FA=fixture-old-challenge', login[2]['Cookie'])
+        self.assertEqual(self.wizard.provision(self.payload())['state'], 'verified')
 
     def test_pin_change_blocks_credentials_before_http(self):
         self.wizard.target['pin'] = '00' * 32

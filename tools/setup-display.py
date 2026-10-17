@@ -219,14 +219,24 @@ class Wizard:
     def login(self, payload):
         self.selected(payload)
         self.authenticated = False
+        if not self.created_key:
+            self.local_key = None
         username, password, token = (payload.get(k, '') for k in ('username', 'password', 'token'))
         if not isinstance(username, str) or not username or not isinstance(password, str) or not password:
             raise SetupError('Enter your console username and password.')
-        status, data = self.local('POST', '/api/auth/login', {'username': username, 'password': password,
-                                                           'token': token, 'rememberMe': False})
+        body = {'username': username, 'password': password, 'rememberMe': False}
+        legacy_mfa = self.challenge and self.challenge.get('legacy')
+        body['ubic_2fa_token' if legacy_mfa else 'token'] = token
+        status, data = self.local('POST', '/api/auth/login', body)
         if status == 499:
-            self.challenge = data.get('data', {})
-            methods = [{'id': a['id'], 'type': a['type']} for a in self.challenge.get('authenticators', [])]
+            if isinstance(data.get('token'), str):
+                # Older UniFi OS returns the challenge cookie in JSON rather than Set-Cookie.
+                self.cookies.load(data['token'])
+                self.challenge = {'legacy': True}
+                methods = [{'id': 'totp', 'type': 'totp'}]
+            else:
+                self.challenge = data.get('data', {})
+                methods = [{'id': a['id'], 'type': a['type']} for a in self.challenge.get('authenticators', [])]
             return {'state': 'mfa', 'methods': methods}
         success(status, 'Console sign-in')
         self.authenticated = True
@@ -336,8 +346,11 @@ async function run(action) {
   finally { busy = false; document.querySelectorAll("button").forEach(b => { b.disabled = false; }); }
 }
 function options(id, rows, preferred = "") {
-  $(id).replaceChildren(...rows.map(row => new Option(row.name || row.id, row.id)));
+  $(id).replaceChildren(new Option("Choose…", ""), ...rows.map(row => new Option(row.name || row.id, row.id)));
+  $(id).required = true;
   if (preferred && rows.some(row => row.id === preferred)) $(id).value = preferred;
+  else if (rows.length === 1) $(id).value = rows[0].id;
+  else $(id).value = "";
 }
 function addresses() {
   const host = consoles.find(c => c.id === $("console").value);
@@ -353,10 +366,13 @@ async function discover() {
   note(consoles.length ? "Choose your console and verify its certificate." : "No online consoles found for this key.");
 }
 async function devices() {
+  options("device", []);
+  if (!$("site").value) return;
   const data = await api("devices", { site_id: $("site").value });
   options("device", data.devices, data.gateway);
 }
 async function provision(localKey = "") {
+  if (!$("site").value || !$("device").value) throw new Error("Choose a site and device first.");
   note("Creating local access and verifying the four display API reads…");
   $("retry").hidden = false;
   const data = await api("provision", { site_id: $("site").value, device_id: $("device").value, local_key: localKey });
@@ -378,6 +394,7 @@ $("inspect-form").onsubmit = event => { event.preventDefault(); run(async () => 
 }); };
 $("site").onchange = () => run(devices);
 $("login-form").onsubmit = event => { event.preventDefault(); run(async () => {
+  if (!$("site").value || !$("device").value) throw new Error("Choose a site and device first.");
   note("Signing in to the verified local gateway…");
   const data = await api("login", { username: $("username").value, password: $("password").value, token: $("otp").value });
   if (data.state === "mfa") {
@@ -487,7 +504,6 @@ def handler(wizard, token, origin):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port', type=int, default=4177)
     parser.add_argument('--no-browser', action='store_true')
     parser.add_argument('--env-file', type=Path, help='Optionally load UNIFI_API_KEY from this local file')
     parser.add_argument('--probe', action='store_true', help='Discover and verify the sole console certificate without signing in or creating a key')
@@ -504,8 +520,8 @@ def main():
             raise SetupError('The probe needs exactly one online console; use the wizard to choose.')
         print(json.dumps(wizard.inspect({'console_id': consoles[0]['id']}), indent=2))
         return
-    origin = f'http://127.0.0.1:{args.port}'
-    server = HTTPServer(('127.0.0.1', args.port), handler(wizard, secrets.token_hex(32), origin))
+    origin = 'http://127.0.0.1:4177'
+    server = HTTPServer(('127.0.0.1', 4177), handler(wizard, secrets.token_hex(32), origin))
     server.timeout = 1
     print(f'UniFi display setup: {origin}/\nIn the installer, choose Open guided setup.\nKeep this terminal open. Press Ctrl-C to stop.', flush=True)
     if not args.no_browser:
