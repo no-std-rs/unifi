@@ -41,6 +41,13 @@ test("a saved password can be changed and is replaced only after a passing test"
  await password(page,"replacement-password");await page.getByRole("button",{name:"Try again",exact:true}).click();await verified(page);
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem("unifi-display.networks.v1")).networks[0].password)).toBe("replacement-password");
 });
+test("rescanning without the selected network requires a new Wi-Fi check before saving",async({page})=>{
+ await connect(page);await verified(page);await expect(page.getByRole("button",{name:"Save and restart display"})).toBeVisible();
+ await page.evaluate(()=>window.scanNetworks=[{ssid:"other-network",rssi:-40,channel:6,secure:true}]);
+ await page.getByRole("button",{name:"Scan again",exact:true}).click();await expect(page.locator("#settings")).toHaveAttribute("aria-busy","false");
+ await expect(page.locator("#unifi_step")).toBeHidden();await expect(page.getByRole("button",{name:"Save and restart display"})).toBeHidden();
+ expect(await page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="test_wifi").length)).toBe(1);
+});
 test("blank firmware scans immediately and open networks need no password or helper",async({page})=>{
  const requests=[];page.on("request",r=>requests.push(r.url()));await connect(page,{blank:true});
  await expect(page.getByLabel("Wi-Fi network",{exact:true})).toBeEnabled();
