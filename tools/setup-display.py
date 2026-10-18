@@ -291,7 +291,9 @@ class Wizard:
             self.creation_attempted = True
             status, data = self.local('POST', f'/proxy/users/api/v2/user/{user_id}/keys', {'name': 'UniFi ESP32 Display'})
             success(status, 'Local key creation')
-            if data.get('code', 0) != 0 or not data.get('data', {}).get('full_api_key'):
+            code = data.get('code', 0)
+            accepted = data.get('codeS') == 'SUCCESS' if 'codeS' in data else type(code) is int and code == 0
+            if not accepted or not data.get('data', {}).get('full_api_key'):
                 raise SetupError('The console did not return a new key. Check Console → Integrations before retrying.')
             self.local_key = api_key(data['data']['full_api_key'])
             self.created_key = True

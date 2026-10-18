@@ -78,6 +78,10 @@ Key creation follows the console UI: refresh the current session with
 `POST /proxy/users/api/v2/user/{id}/keys`. The request omits `expired_at`, matching
 the UI's **Never expires** option. A missing or invalid profile ID stops before
 key creation and can be retried within the same console session.
+The current Console Users API reports successful creation with `code: 1` and
+`codeS: "SUCCESS"`. Enrollment accepts that status, retains compatibility with
+older zero-code responses, and rejects explicit error envelopes before using a
+returned key. A failed creation response never silently triggers another POST.
 Saved cloud keys resume discovery automatically once Wi-Fi is verified. A failed
 discovery stays available to retry instead of repeating on every Wi-Fi check.
 Push/email/SMS challenges send automatically; authenticator and backup codes show

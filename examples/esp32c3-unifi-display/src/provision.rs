@@ -396,13 +396,16 @@ impl Session {
                 )
                 .await?;
             successful(response.status)?;
-            if response
-                .data
-                .get("code")
-                .and_then(Value::as_i64)
-                .unwrap_or(0)
-                != 0
-            {
+            // Current Users service reports code=1 with codeS=SUCCESS.
+            // Older responses use numeric zero or omit the status envelope.
+            let accepted = match response.data.get("codeS") {
+                Some(code) => code.as_str() == Some("SUCCESS"),
+                None => match response.data.get("code") {
+                    Some(code) => code.as_i64() == Some(0),
+                    None => true,
+                },
+            };
+            if !accepted {
                 return Err("Console rejected local key creation");
             }
             let key = response
@@ -484,6 +487,7 @@ mod tests {
     struct Console {
         created: usize,
         user_profile: Value,
+        creation_response: Value,
         fail_verify: bool,
         invalid_payload: Option<(&'static str, Value)>,
         legacy: bool,
@@ -547,7 +551,7 @@ mod tests {
                     assert!(request.headers.contains(&("X-CSRF-Token", "updated-csrf")));
                     assert_eq!(body, json!({"name":"UniFi ESP32 Display"}));
                     self.created += 1;
-                    response.data = json!({"code":0,"data":{"full_api_key":"fixture-local-key"}});
+                    response.data = self.creation_response.clone();
                 }
                 path if path.starts_with("/proxy/network/integration/") => {
                     assert!(request
@@ -592,10 +596,69 @@ mod tests {
         Console {
             created: 0,
             user_profile: json!({"id":"fixture-local-user"}),
+            creation_response: json!({"code":1,"codeS":"SUCCESS","data":{"full_api_key":"fixture-local-key"}}),
             fail_verify: false,
             invalid_payload: None,
             legacy: false,
             log: Vec::new(),
+        }
+    }
+    #[tokio::test]
+    async fn key_creation_accepts_current_and_legacy_success_envelopes() {
+        for envelope in [
+            json!({"code":1,"codeS":"SUCCESS"}),
+            json!({"code":0}),
+            json!({}),
+        ] {
+            let mut session = session();
+            let mut console = console();
+            console.creation_response = envelope;
+            console.creation_response["data"] = json!({"full_api_key":"fixture-local-key"});
+            session
+                .login(&mut console, "user", "password", "")
+                .await
+                .unwrap();
+            let result = session
+                .provision(&mut console, SITE, DEVICE, "")
+                .await
+                .unwrap();
+            assert_eq!(result["config"]["api_key"], "fixture-local-key");
+            assert_eq!(console.created, 1);
+        }
+    }
+    #[tokio::test]
+    async fn rejected_creation_envelopes_never_use_the_key_or_repeat_creation() {
+        for envelope in [
+            json!({"code":1,"codeS":"ERROR"}),
+            json!({"code":0,"codeS":"PERMISSION_DENIED"}),
+            json!({"code":1}),
+            json!({"code":0,"codeS":null}),
+        ] {
+            let mut session = session();
+            let mut console = console();
+            console.creation_response = envelope;
+            console.creation_response["data"] = json!({"full_api_key":"fixture-local-key"});
+            session
+                .login(&mut console, "user", "password", "")
+                .await
+                .unwrap();
+            assert_eq!(
+                session
+                    .provision(&mut console, SITE, DEVICE, "")
+                    .await
+                    .err(),
+                Some("Console rejected local key creation")
+            );
+            assert!(session.key.is_none());
+            assert!(!console
+                .log
+                .iter()
+                .any(|(path, _)| path.starts_with("/proxy/network/")));
+            assert!(session
+                .provision(&mut console, SITE, DEVICE, "")
+                .await
+                .is_err());
+            assert_eq!(console.created, 1);
         }
     }
     #[tokio::test]
