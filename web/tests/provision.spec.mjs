@@ -3,6 +3,10 @@ import { device, config } from "./serial-fixture.mjs";
 const site="11111111-1111-4111-8111-111111111111",gateway="22222222-2222-4222-8222-222222222222";
 async function setup(page, options={}) {
  if(options.existing)await page.addInitScript(config=>localStorage.setItem("unifi-display.settings.v1",JSON.stringify({version:1,remember:true,values:{...config,connection_mode:"local",cloud_api_key:"fixture-cloud-key",cloud_console:"",cloud_site:"",cloud_device:""}})),config);
+ if(options.sharedKey)await page.addInitScript(config=>{
+  const local=Object.fromEntries(Object.entries(config).filter(([key])=>!key.startsWith("wifi_")));
+  localStorage.setItem("unifi-display.networks.v1",JSON.stringify({version:1,networks:[{ssid:"scanned-network",password:"other-password",config:local},{ssid:"different-key-network",password:"different-password",config:{...local,api_key:"unrelated-local-key"}}]}));
+ },config);
  await device(page,{blank:!options.existing,...options});
  await page.route("https://api.ui.com/**",route=>{
   const path=new URL(route.request().url()).pathname;
@@ -87,4 +91,12 @@ test("a rejected cached key stays invalidated after rescanning the saved network
  await expect(page.locator("#wifi_status")).toContainText("Wi-Fi verified");
  await expect(page.locator("#api_key")).toHaveValue("",{timeout:1000});
  await expect(page.getByRole("button",{name:"Save and restart display"})).toBeHidden();
+});
+test("every cached copy of the denied key is invalidated while other credentials remain",async({page})=>{
+ await setup(page,{existing:true,provisionFailure:true,sharedKey:true});await expect(page.locator("#provision_status")).toContainText("create a replacement local key");
+ await page.getByLabel("Wi-Fi network",{exact:true}).selectOption("scanned-network");await expect(page.locator("#settings")).toHaveAttribute("aria-busy","false");await expect(page.locator("#wifi_status")).toContainText("Wi-Fi verified");
+ await expect(page.locator("#api_key")).toHaveValue("",{timeout:1000});await expect(page.getByRole("button",{name:"Save and restart display"})).toBeHidden();
+ const profiles=await page.evaluate(()=>JSON.parse(localStorage.getItem("unifi-display.networks.v1")).networks);
+ expect(profiles.find(p=>p.ssid==="scanned-network")).toMatchObject({password:"other-password",config:null});
+ expect(profiles.find(p=>p.ssid==="different-key-network").config.api_key).toBe("unrelated-local-key");
 });
