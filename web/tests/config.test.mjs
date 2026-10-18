@@ -28,7 +28,7 @@ test("rejects invalid credentials, routes, Unicode byte limits, and unknown fiel
 });
 
 test("install manifest writes settings only to the dedicated partition", () => {
-  const release = { application: "unifi-display", settings_schema: "UNIFICF1", dirty: false, chip: "ESP32-C3", flash_size: 4194304, config_offset: CONFIG_OFFSET, revision: "a".repeat(40), sha256: "b".repeat(64), size: 1000000 };
+  const release = { application: "unifi-display", settings_schema: "UNIFICF1", settings_capabilities:["tls_server_name"], dirty: false, chip: "ESP32-C3", flash_size: 4194304, config_offset: CONFIG_OFFSET, revision: "a".repeat(40), sha256: "b".repeat(64), size: 1000000 };
   const manifest = manifestWithSettings(release, "blob:firmware", "blob:settings");
   assert.deepEqual(manifest.builds[0].parts, [{ path: "blob:firmware", offset: 0 }, { path: "blob:settings", offset: 0x3f0000 }]);
   assert.equal(manifest.new_install_improv_wait_time, 0);
@@ -37,6 +37,8 @@ test("install manifest writes settings only to the dedicated partition", () => {
   assert.throws(() => manifestWithSettings({ ...release, dirty: true }, "f", "s"));
   assert.throws(() => manifestWithSettings({ ...release, application: "ubus-display" }, "f", "s"));
   assert.throws(() => manifestWithSettings({ ...release, settings_schema: "UBUSCFG1" }, "f", "s"));
+  assert.throws(() => manifestWithSettings({ ...release, settings_capabilities:[] }, "f", "s"), /needs an update/);
+  assert.throws(() => manifestWithSettings({ ...release, settings_capabilities:undefined }, "f", "s"), /needs an update/);
 });
 test("a numeric connection destination keeps its optional TLS identity without changing legacy sectors",()=>{
  const config={...settings(),controller_url:"https://192.168.6.1/proxy/network/integration",tls_server_name:"console.id.ui.direct"};

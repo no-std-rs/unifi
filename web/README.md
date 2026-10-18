@@ -37,6 +37,8 @@ size and SHA-256 of the factory binary. The page verifies both metadata and byte
 before enabling preparation. It flashes those exact verified Blob bytes even if
 the published main image changes while the page remains open. Dirty builds,
 wrong-board metadata, altered bytes, or a mismatched schema are rejected.
+The image must also advertise the `tls_server_name` settings capability, so a
+stale factory download cannot be paired with settings its firmware cannot read.
 
 `.github/workflows/firmware.yml` runs host/TLS tests, a real C3 cross-build,
 configuration tests and Chromium tests on PRs. Only pushes to `main` publish

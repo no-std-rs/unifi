@@ -151,6 +151,16 @@ test("corrupt firmware cannot be prepared or flashed", async ({ page }) => {
   await offline(page);
   await expect(page.getByRole("button", { name: "Prepare installation" })).toBeDisabled();
 });
+test("an older image cannot be flashed with settings requiring the new TLS identity capability",async({page})=>{
+ await serial(page);
+ await page.route("**/latest.json",async route=>{
+  const release=await(await route.fetch()).json();delete release.settings_capabilities;
+  await route.fulfill({json:release});
+ });
+ await page.goto("/");await expect(page.getByRole("alert")).toContainText("firmware needs an update");
+ await expect(page.locator("#blank_install_area")).toBeHidden();await offline(page);
+ await expect(page.getByRole("button",{name:"Prepare installation"})).toBeDisabled();
+});
 
 test("a same-size firmware change fails SHA-256 verification", async ({ page }) => {
   const binary = await readFile(new URL("../../dist/flasher/unifi-display.bin", import.meta.url));

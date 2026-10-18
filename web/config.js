@@ -64,6 +64,7 @@ export function encodeConfig(config) {
 }
 
 export function manifestWithSettings(release, firmwareUrl, settingsUrl) {
+  if (!Array.isArray(release.settings_capabilities) || !release.settings_capabilities.includes("tls_server_name")) throw new Error("The published firmware needs an update for this installer. Reload once the new build is published.");
   if (release.application !== "unifi-display" || release.settings_schema !== "UNIFICF1" || release.dirty !== false || release.chip !== "ESP32-C3" || release.config_offset !== CONFIG_OFFSET || release.flash_size !== 4194304
       || !/^[0-9a-f]{40}$/.test(release.revision) || !/^[0-9a-f]{64}$/.test(release.sha256)
       || !Number.isSafeInteger(release.size) || release.size < 65536 || release.size >= CONFIG_OFFSET) throw new Error("The firmware metadata does not match this board.");
