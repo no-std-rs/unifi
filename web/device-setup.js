@@ -7,6 +7,8 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   let busy = false, manual = false, ready = false, generation = 0, verified = null, editing = false, saved = false;
   let accessPoints = new Map(), offlineSSID = "", offlineDirty = false;
   let capabilities = [];
+  let firmwareFocus = false;
+  const supportsConsole = () => capabilities.includes("console_provision") && capabilities.includes("tls_server_name");
   function wifiChanging() {
     verified = null;
     window.dispatchEvent(new Event("wifi-changing"));
@@ -31,6 +33,11 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     for (const id of ["usb_read", "usb_status_read"]) $(id).disabled = busy || !connected;
     $("blank_install_area").hidden = !ready || connected || manual;
     $("blank_installer").querySelector("button").disabled = busy || connected || !ready;
+    if (firmwareFocus && !$("blank_install_area").hidden && !busy) {
+      firmwareFocus = false;
+      $("blank_install_area").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      $("blank_installer").querySelector("button").focus();
+    }
     $("wifi_step").hidden = !connected && !manual;
     $("wifi_step").disabled = busy;
     $("unifi_step").hidden = !manual && !(connected && matches());
@@ -60,23 +67,18 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   async function run(action, propagate = false) {
     if (busy) return;
     const previousWifi = verified;
-    let needsFirmware = false;
     busy = true; refresh();
     const started = generation;
     try { return await action(() => started === generation); }
     catch (error) {
       if (started === generation) {
         note("usb_status", error.message, true);
-        needsFirmware = /Install the latest firmware/i.test(error.message);
+        firmwareFocus = /Install the latest firmware/i.test(error.message);
       }
       if (propagate) throw error;
     }
     finally {
       busy = false; refresh();
-      if (started === generation && needsFirmware && !$("blank_install_area").hidden) {
-        $("blank_install_area").scrollIntoView({ behavior: "smooth", block: "nearest" });
-        $("blank_installer").querySelector("button").focus();
-      }
       if (started === generation && client.connected && matches() && verified !== previousWifi) window.dispatchEvent(new Event("wifi-verified"));
       if (started === generation && client.connected && editing) $("wifi_password").focus();
     }
@@ -157,7 +159,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     rememberNetwork(config.wifi_ssid, lookupNetwork(config.wifi_ssid)?.password ?? config.wifi_password, Object.fromEntries(localFields.map(name => [name, config[name]])));
   }
   $("usb_connect").addEventListener("click", () => run(async current => {
-    saved = false; beforeConnect(); note("usb_status", "Choose your display’s USB port.");
+    saved = false; firmwareFocus = false; beforeConnect(); note("usb_status", "Choose your display’s USB port.");
     const hello = await client.connect(); if (!current()) return;
     capabilities = hello.capabilities;
     manual = false; verified = null; editing = false;
@@ -227,6 +229,12 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     let config;
     try { config = validateConfig(readSaveConfig()); }
     catch (error) { $("unifi_editor").open = true; note("unifi_status", error.message, true); return; }
+    if (!config.tls_server_name) delete config.tls_server_name;
+    if (config.tls_server_name && !capabilities.includes("tls_server_name")) {
+      await updateFirmware();
+      note("usb_status", "Install the latest firmware for the local IP and TLS certificate name, then reconnect and import your local settings.");
+      return;
+    }
     note("usb_status", "Saving settings on your display…");
     await client.command({ name: "save_config", config }, 10000);
     if (!current()) return;
@@ -234,23 +242,23 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     saved = true; await client.disconnect(false);
     note("usb_status", "Settings saved. Your display is restarting.");
   }));
-  $("manual_setup").addEventListener("click", () => { beforeManual(); offlineSSID = $("wifi_ssid").value; offlineDirty = false; manual = true; editing = true; $("manual_wifi").hidden = false; refresh(); note("usb_status", "Prepare settings here, then install them with the firmware. A Wi-Fi test needs a connected display."); });
+  $("manual_setup").addEventListener("click", () => { firmwareFocus = false; beforeManual(); offlineSSID = $("wifi_ssid").value; offlineDirty = false; manual = true; editing = true; $("manual_wifi").hidden = false; refresh(); note("usb_status", "Prepare settings here, then install them with the firmware. A Wi-Fi test needs a connected display."); });
   window.addEventListener("pagehide", () => { generation++; verified = null; void client.disconnect(false); });
   refresh();
+  async function updateFirmware() {
+    firmwareFocus = true;
+    generation++; await client.disconnect();
+    manual = false; refresh();
+  }
   return {
     connected: () => client.connected,
-    supportsConsole: () => capabilities.includes("console_provision"),
-    updateFirmware: async () => {
-      generation++; await client.disconnect();
-      manual = false; refresh();
-      $("blank_install_area").scrollIntoView({ behavior: "smooth", block: "center" });
-      $("blank_installer").querySelector("button").focus();
-    },
-    consoleReady: () => client.connected && !!matches() && capabilities.includes("console_provision"),
+    supportsConsole,
+    updateFirmware,
+    consoleReady: () => client.connected && !!matches() && supportsConsole(),
     consoleCommand: async (command, timeout = 45000) => {
       if (busy) throw new Error("The display is busy. Try again when its current check finishes.");
       if (!client.connected || !matches()) throw new Error("Connect the display and verify Wi-Fi first.");
-      if (!capabilities.includes("console_provision")) throw new Error("Install the latest firmware first to create local access over USB.");
+      if (!supportsConsole()) throw new Error("Install the latest firmware first to create local access over USB.");
       return run(async current => {
         const result = await client.command(command, timeout);
         if (!current()) throw new Error("Setup changed. Discover the console again.");
@@ -259,6 +267,6 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     },
     firmwareReady: value => { ready = value; refresh(); },
     localChanged,
-    reset: () => { generation++; verified = null; accessPoints.clear(); manual = false; saved = false; void client.disconnect(false); refresh(); },
+    reset: () => { generation++; firmwareFocus = false; verified = null; accessPoints.clear(); manual = false; saved = false; void client.disconnect(false); refresh(); },
   };
 }

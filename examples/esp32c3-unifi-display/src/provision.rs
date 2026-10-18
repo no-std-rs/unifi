@@ -459,8 +459,8 @@ impl Session {
                 });
             }
         }
-        let result = json!({"state":"verified","config":{"controller_url":format!("https://{}/proxy/network/integration",self.target.hostname),
-            "api_key":self.key,"certificate_sha256":self.fingerprint(),"site_id":site,"device_id":device}});
+        let result = json!({"state":"verified","config":{"controller_url":format!("https://{}/proxy/network/integration",self.target.address),
+            "tls_server_name":self.target.hostname,"api_key":self.key,"certificate_sha256":self.fingerprint(),"site_id":site,"device_id":device}});
         if self.authenticated {
             let _ = self
                 .request(
@@ -731,6 +731,10 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(result["config"]["api_key"], "fixture-local-key");
+        assert_eq!(
+            result["config"]["controller_url"],
+            "https://192.168.6.1/proxy/network/integration"
+        );
         assert_eq!(result["config"]["certificate_sha256"], "ab".repeat(32));
         assert_eq!(console.created, 1);
         assert!(session.cookies.is_empty());

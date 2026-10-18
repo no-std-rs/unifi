@@ -35,6 +35,7 @@ def package(directory):
     metadata = {
         'name': 'UniFi display', 'board': 'GUITION ESP32-2424S012-V1.0',
         'application': 'unifi-display', 'settings_schema': 'UNIFICF1',
+        'settings_capabilities': ['tls_server_name'],
         'chip': 'ESP32-C3', 'revision': revision, 'dirty': dirty,
         'sha256': checksum, 'size': len(binary), 'flash_size': 4 * 1024 * 1024,
         'config_offset': CONFIG_OFFSET,

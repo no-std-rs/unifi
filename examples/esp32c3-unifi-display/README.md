@@ -28,7 +28,8 @@ For manual setup or a self-hosted controller, use **Advanced local settings**:
 - The controller's **HTTPS integration base**, usually
   `https://CONTROLLER/proxy/network/integration` on UniFi OS, or
   `https://CONTROLLER:8443/integration` on a self-hosted Network server.
-  Use a reachable IPv4 address or DNS name; IPv6 is not enabled on this board.
+  Automatic setup saves the gateway's LAN IPv4 address and connects without DNS.
+  Manually configured DNS names remain supported; IPv6 is not enabled on this board.
 - A Network integration API key with access to the intended site and device.
   Dashboard polling uses GET requests. Automatic setup creates the local key
   explicitly through your console session; it does not change network configuration.
@@ -84,7 +85,12 @@ No cloud key is part of the device protocol or saved configuration. Automatic
 local setup temporarily keeps the tested Wi-Fi connected; sign-in state is bound
 to the current USB session and discarded when it ends. The saved radio settings
 are restored on disconnect or heartbeat expiry. Older APP firmware must be updated
-to advertise the `console_provision` capability.
+to advertise both `console_provision` and `tls_server_name` capabilities.
+
+Automatic enrollment saves the gateway's numeric LAN URL plus an optional
+`tls_server_name` that selects its enrolled certificate on that same LAN socket.
+The TLS name is never resolved. Polling needs no public DNS, cloud access or
+clock synchronization once the local key and certificate pin are saved.
 
 Prepare the installation, then use the USB dialog. The public factory image has
 no credentials. The page verifies its advertised size and SHA-256, then creates

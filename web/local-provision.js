@@ -43,12 +43,18 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
     const result = await command("console_provision", { site_id: target.site_id, device_id: target.device_id, local_key: localKey }, 150000);
     if (!current()) return;
     const config = localConfig(result?.config);
+    const lanUrl = `https://${target.address}/proxy/network/integration`;
     if (result.state !== "verified" || config.site_id !== target.site_id || config.device_id !== target.device_id
-        || config.controller_url !== `https://${target.hostname}/proxy/network/integration`) throw new Error("The display returned settings for a different console. Discover again.");
+        || ![lanUrl, `https://${target.hostname}/proxy/network/integration`].includes(config.controller_url)
+        || config.tls_server_name && config.tls_server_name !== target.hostname) throw new Error("The display returned settings for a different console. Discover again.");
+    // Older enrollment firmware returns the verified hostname. Save the LAN IP
+    // for those displays too, so dashboard polling never depends on public DNS.
+    config.controller_url = lanUrl;
+    config.tls_server_name = target.hostname;
     login = undefined; for (const id of fields) $(id).value = "";
     $("console_auth").hidden = true; $("provision_retry").hidden = true;
     apply(config); phase = "done";
-    note("Local access ready. Key and certificate verified by your display. Save below to finish.");
+    note(`Local access ready at ${target.address}. Key and certificate verified. Save below for LAN-only operation without internet.`);
   }
   async function signedIn(result, current) {
     if (!current()) return;
@@ -75,7 +81,7 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
     if (!current()) return;
     if (result?.hostname !== target.hostname || !/^[a-f0-9]{64}$/i.test(result.certificate_sha256 || "")) throw new Error("The display could not verify this console's certificate.");
     $("certificate_sha256").value = result.certificate_sha256;
-    $("controller_url").value = `https://${target.hostname}/proxy/network/integration`;
+    $("controller_url").value = `https://${target.address}/proxy/network/integration`;
     $("api_key").value = key;
     $("console_auth").hidden = !!key; $("console_credentials").hidden = false;
     $("console_signin").hidden = false;

@@ -24,6 +24,8 @@ pub struct DeviceConfig {
     pub wifi_ssid: String,
     pub wifi_password: String,
     pub controller_url: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub tls_server_name: String,
     pub api_key: String,
     pub certificate_sha256: String,
     pub site_id: String,
@@ -42,6 +44,9 @@ impl DeviceConfig {
         validate_wifi(&self.wifi_ssid, &self.wifi_password)?;
         let bounded = |s: &str, min, max| s.len() >= min && s.len() <= max && !s.contains('\0');
         Endpoint::parse(&self.controller_url)?;
+        if !self.tls_server_name.is_empty() && !valid_hostname(&self.tls_server_name) {
+            return Err(ConfigError::Invalid("TLS server name"));
+        }
         if !bounded(&self.api_key, 1, 512) || !self.api_key.bytes().all(|b| b.is_ascii_graphic()) {
             return Err(ConfigError::Invalid("API key"));
         }
@@ -140,6 +145,19 @@ pub struct Endpoint<'a> {
     pub port: u16,
     pub base: &'a str,
 }
+fn valid_hostname(host: &str) -> bool {
+    !host.is_empty()
+        && host.len() <= 253
+        && host.split('.').all(|label| {
+            !label.is_empty()
+                && label.len() <= 63
+                && !label.starts_with('-')
+                && !label.ends_with('-')
+                && label
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        })
+}
 impl<'a> Endpoint<'a> {
     pub fn parse(url: &'a str) -> Result<Self, ConfigError> {
         let invalid = || ConfigError::Invalid("Controller HTTPS URL");
@@ -160,17 +178,7 @@ impl<'a> Endpoint<'a> {
             ),
             None => (authority, 443),
         };
-        if host.is_empty()
-            || host.len() > 253
-            || host.split('.').any(|label| {
-                label.is_empty()
-                    || label.len() > 63
-                    || label.starts_with('-')
-                    || label.ends_with('-')
-                    || !label
-                        .bytes()
-                        .all(|b| b.is_ascii_alphanumeric() || b == b'-')
-            })
+        if !valid_hostname(host)
             || base.contains(['?', '#'])
             || base.split('/').any(|part| part == "." || part == "..")
         {
@@ -222,6 +230,7 @@ mod tests {
             wifi_ssid: "test network".into(),
             wifi_password: "test-password".into(),
             controller_url: "https://unifi.example.com/proxy/network/integration".into(),
+            tls_server_name: String::new(),
             api_key: "fixture-key".into(),
             certificate_sha256: "ab".repeat(32),
             site_id: "".into(),
@@ -247,6 +256,31 @@ mod tests {
         assert!(matches!(decode_sector(MAGIC), Err(ConfigError::Corrupt)));
         assert_eq!(crc32(b"123456789"), 0xcbf43926);
         assert_eq!(config.fingerprint(), [0xab; 32]);
+    }
+    #[test]
+    fn saves_tls_identity_separately_and_preserves_legacy_settings() {
+        let legacy = serde_json::to_value(settings()).unwrap();
+        assert!(legacy.get("tls_server_name").is_none());
+        let loaded: DeviceConfig = serde_json::from_value(legacy).unwrap();
+        assert!(loaded.tls_server_name.is_empty());
+        let mut config = settings();
+        config.controller_url = "https://192.168.6.1/proxy/network/integration".into();
+        config.tls_server_name = "console.id.ui.direct".into();
+        let sector = encode_sector(&config).unwrap();
+        let saved = decode_sector(&sector).unwrap();
+        assert_eq!(saved.controller_url, config.controller_url);
+        assert_eq!(saved.tls_server_name, config.tls_server_name);
+        assert_eq!(saved.fingerprint(), [0xab; 32]);
+        for invalid in [
+            "https://console.id.ui.direct",
+            "console:443",
+            "*.ui.direct",
+            "bad\r\nHeader",
+            "-invalid.test",
+        ] {
+            config.tls_server_name = invalid.into();
+            assert!(config.validate().is_err());
+        }
     }
     #[test]
     fn validates_https_keys_ids_and_utf8_lengths() {

@@ -15,3 +15,9 @@ test("rejects corrupt/oversized profiles and excludes cloud keys or Wi-Fi from c
  assert.throws(()=>profile("name","short"));assert.throws(()=>localConfig({...config,controller_url:"https://api.ui.com"}));
  const networks=new Map(Array.from({length:20},(_,i)=>[String(i),profile(String(i),"password")]));writeNetworks(s,true,networks);assert.equal(readNetworks(s).size,16);
 });
+test("TLS identity follows its LAN connection through import and per-network storage",()=>{
+ const local={...config,tls_server_name:"console.id.ui.direct"},s=storage();
+ assert.deepEqual(localConfig(local),local);writeNetworks(s,true,new Map([["First",profile("First","password",local)]]));
+ assert.deepEqual(readNetworks(s).get("First").config,local);
+ assert.throws(()=>localConfig({...local,tls_server_name:"https://bad/"}));
+});

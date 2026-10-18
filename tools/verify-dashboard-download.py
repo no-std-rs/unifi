@@ -27,6 +27,9 @@ def verify(base_url, revision):
     metadata = json.loads(download(base_url + 'latest.json', 8192))
     if metadata['revision'] != revision or metadata['dirty']:
         raise ValueError('the deployed firmware is not the expected clean main build')
+    capabilities = metadata.get('settings_capabilities')
+    if not isinstance(capabilities, list) or 'tls_server_name' not in capabilities:
+        raise ValueError('the deployed image does not advertise LAN IP/TLS identity support')
     binary = download(base_url + 'unifi-display.bin', 4 * 1024 * 1024)
     if len(binary) != metadata['size'] or hashlib.sha256(binary).hexdigest() != metadata['sha256']:
         raise ValueError('the deployed firmware does not match its size and SHA-256')

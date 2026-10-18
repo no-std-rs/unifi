@@ -37,6 +37,8 @@ size and SHA-256 of the factory binary. The page verifies both metadata and byte
 before enabling preparation. It flashes those exact verified Blob bytes even if
 the published main image changes while the page remains open. Dirty builds,
 wrong-board metadata, altered bytes, or a mismatched schema are rejected.
+The image must also advertise the `tls_server_name` settings capability, so a
+stale factory download cannot be paired with settings its firmware cannot read.
 
 `.github/workflows/firmware.yml` runs host/TLS tests, a real C3 cross-build,
 configuration tests and Chromium tests on PRs. Only pushes to `main` publish
@@ -65,6 +67,17 @@ cloud-reported LAN address with the console-specific `ui.direct` TLS name, verif
 the public CA chain/name/validity, and returns the leaf-certificate SHA-256. No
 fingerprint copying is needed. The browser supplies its current time for this
 initial verification; dashboard polling subsequently uses the enrolled pin.
+Enrollment saves the gateway's numeric LAN IP in the controller URL, for example
+`https://192.168.6.1/proxy/network/integration`. Polling connects to that IP
+directly and authenticates the pinned certificate and handshake signature. It
+needs no DNS lookup, public CA service, cloud login, internet connection or clock
+sync after setup. The saved `tls_server_name` selects the enrolled certificate
+on that LAN socket; it is never resolved or used as a connection destination.
+UniFi can serve a different certificate without this TLS name. Firmware that
+does not advertise this settings capability must be updated before saving the
+new connection. Existing settings without an override still load normally.
+If the gateway's LAN IP changes,
+update the saved address or repeat setup.
 
 Saved local keys are checked through the display. Otherwise **Sign in & create
 local access** signs in to the console over pinned LAN TLS, handles authenticator
@@ -92,7 +105,7 @@ The console login is separate authorization: the cloud key alone cannot create a
 local key. It stays in the browser and is excluded from USB commands/settings.
 The device remains connected to the tested Wi-Fi during provisioning and restores
 its saved radio settings when the USB session ends. Firmware without the
-`console_provision` capability offers an update before sending login commands.
+`console_provision` and `tls_server_name` capabilities offers an update before sending login commands.
 Changing or rescanning Wi-Fi clears pending console sign-in and approval. After a
 successful Wi-Fi recheck, an already verified cloud selection automatically starts
 a fresh certificate check before sign-in can continue.
@@ -139,8 +152,9 @@ hidden during USB setup and offline preparation.
 Offline preparation and device diagnostics are in **Other setup options**.
 Offline preparation preserves the original
 configuration-plus-firmware flash path and cannot test a physical connection.
-Local connection JSON can be imported inline; only the five local fields are
-accepted, excluding cloud and Wi-Fi credentials. No password or API key is logged.
+Local connection JSON can be imported inline; only the five local fields and the
+optional `tls_server_name` are accepted, excluding cloud and Wi-Fi credentials.
+No password or API key is logged.
 
 From a **clean committed checkout**, build and preview:
 

@@ -72,6 +72,7 @@ mod tests {
             wifi_ssid: "fixture".into(),
             wifi_password: "password".into(),
             controller_url: "https://192.168.1.1/integration".into(),
+            tls_server_name: "".into(),
             api_key: key.into(),
             certificate_sha256: "ab".repeat(32),
             site_id: "".into(),

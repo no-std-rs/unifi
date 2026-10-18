@@ -38,12 +38,35 @@ test("cloud discovery automatically enrolls the certificate and creates local ac
  await expect(page.locator("#provision_status")).toContainText("Certificate verified automatically");
  await expect(page.getByLabel("Certificate SHA-256 fingerprint")).toHaveValue("cd".repeat(32));
  await signIn(page);await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ const cloudReads=requests.filter(r=>r.url.startsWith("https://api.ui.com/")).length;
+ await page.route("https://api.ui.com/**",route=>route.abort());
  await page.getByRole("button",{name:"Save and restart display"}).click();await expect(page.locator("#usb_status")).toContainText("Settings saved");
  const commands=await page.evaluate(()=>window.usbRequests.map(r=>r.command));
- expect(commands.find(c=>c.name==="save_config").config).toMatchObject({api_key:"created-local-key",certificate_sha256:"cd".repeat(32),site_id:site,device_id:gateway,controller_url:"https://console.id.ui.direct/proxy/network/integration"});
+ expect(commands.find(c=>c.name==="save_config").config).toMatchObject({api_key:"created-local-key",certificate_sha256:"cd".repeat(32),site_id:site,device_id:gateway,controller_url:"https://192.168.6.1/proxy/network/integration",tls_server_name:"console.id.ui.direct"});
  expect(JSON.stringify(commands)).not.toContain("fixture-cloud-key");expect(JSON.stringify(requests)).not.toContain("fixture-console-password");
  expect(await page.evaluate(()=>JSON.stringify(localStorage))).not.toContain("fixture-console-password");
+ expect(requests.filter(r=>r.url.startsWith("https://api.ui.com/")).length).toBe(cloudReads);
  expect(requests.every(r=>r.url.startsWith("blob:") || [new URL(page.url()).origin,"https://api.ui.com"].includes(new URL(r.url).origin))).toBe(true);
+});
+test("older enrollment firmware migrates its verified hostname to a saved LAN IP",async({page})=>{
+ await setup(page,{existing:true,controllerUrl:"https://console.id.ui.direct/proxy/network/integration",legacyProvisionUrl:true});
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ await expect(page.locator("#controller_url")).toHaveValue("https://192.168.6.1/proxy/network/integration");
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_login"))).toBe(false);
+ await page.route("https://api.ui.com/**",route=>route.abort());
+ await page.getByRole("button",{name:"Save and restart display"}).click();
+ await expect(page.locator("#usb_status")).toContainText("Settings saved");
+ const saved=await page.evaluate(()=>window.usbRequests.find(r=>r.command.name==="save_config").command.config);
+ expect(saved.controller_url).toBe("https://192.168.6.1/proxy/network/integration");
+ expect(saved.tls_server_name).toBe("console.id.ui.direct");
+ expect(saved.api_key).toBe(config.api_key);
+});
+test("an enrollment result for a different LAN address cannot replace local settings",async({page})=>{
+ await setup(page,{provisionUrl:"https://192.168.6.2/proxy/network/integration"});
+ await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
+ await expect(page.locator("#provision_status")).toContainText("different console");
+ await expect(page.getByRole("button",{name:"Save and restart display"})).toBeHidden();
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="save_config"))).toBe(false);
 });
 test("an untrusted console certificate never exposes the sign-in form or sends credentials",async({page})=>{
  await setup(page,{badCertificate:true});await expect(page.locator("#provision_status")).toContainText("certificate could not be verified");
@@ -77,6 +100,12 @@ test("older APP firmware offers an update before attempting enrollment",async({p
  expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_begin"))).toBe(false);
  await page.getByRole("button",{name:"Update display firmware"}).click();
  await expect(page.getByRole("button",{name:"Install firmware first"})).toBeEnabled();await expect(page.getByRole("button",{name:"Connect display",exact:true})).toBeVisible();
+});
+test("firmware without separate TLS identity support is updated before enrollment",async({page})=>{
+ await setup(page,{noTlsName:true});await expect(page.locator("#provision_status")).toContainText("Install the latest firmware");
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_begin"))).toBe(false);
+ await page.getByRole("button",{name:"Update display firmware"}).click();
+ await expect(page.getByRole("button",{name:"Install firmware first"})).toBeEnabled();
 });
 test("forget cancels pending push approval and clears transient console credentials",async({page})=>{
  await page.clock.install();await setup(page,{mfa:"push"});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);

@@ -54,6 +54,7 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
         if (previousConsole || url !== $("controller_url").value) {
           $("api_key").value = "";
           $("certificate_sha256").value = "";
+          $("tls_server_name").value = "";
         }
         $("controller_url").value = url;
       }

@@ -167,7 +167,7 @@ pub async fn receive(mut rx: UsbSerialJtagRx<'static, Async>, tx: &'static Tx) -
                     let id = u32::from_le_bytes(random).max(1);
                     SESSION.lock(|s| s.borrow_mut().open(id, now()));
                     set_label("Connected to website");
-                    reply(tx,request.id,id,Ok(json!({"nonce":nonce,"board":"ESP32-2424S012","protocol":1,"capabilities":["scan_wifi","test_wifi","save_config","console_provision"]}))).await;
+                    reply(tx,request.id,id,Ok(json!({"nonce":nonce,"board":"ESP32-2424S012","protocol":1,"capabilities":["scan_wifi","test_wifi","save_config","console_provision","tls_server_name"]}))).await;
                 }
                 Command::Ping {} => {
                     let valid = SESSION.lock(|s| s.borrow_mut().touch(request.session, now()));

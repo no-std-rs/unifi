@@ -74,7 +74,7 @@ function saveSettings() {
 const restored = restoreSettings();
 let connectionDraft;
 const cloud = setupCloud(forgetSettings, restored, saveSettings, () => device.connected());
-const readForm = () => Object.fromEntries(["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"].map(name => [name, $(name).value]));
+const readForm = () => Object.fromEntries(["wifi_ssid", "wifi_password", ...localFields].map(name => [name, $(name).value]));
 const readSaveConfig = () => ({ ...readForm(), ...cloud.config() });
 const device = setupDevice({
   readForm,
@@ -82,7 +82,7 @@ const device = setupDevice({
   applyConfig: config => {
     connectionDraft = undefined;
     importGeneration++; forgetSettings(); $("connection_mode").value = "local"; cloud.reset();
-    for (const [name, value] of Object.entries(config)) $(name).value = value;
+    for (const name of ["wifi_ssid", "wifi_password", ...localFields]) $(name).value = config[name] ?? "";
     saveSettings();
   },
   lookupNetwork: ssid => {
@@ -126,7 +126,7 @@ setupProvision({ device, cloud, wifi: readForm, invalidateKey: key => {
   if (connectionDraft?.api_key === key) connectionDraft.api_key = "";
 }, apply: config => {
   connectionDraft = undefined; importGeneration++; forgetSettings();
-  for (const name of localFields) $(name).value = config[name];
+  for (const name of localFields) $(name).value = config[name] ?? "";
   const values = readForm();
   networks.delete(values.wifi_ssid);
   networks.set(values.wifi_ssid, profile(values.wifi_ssid, values.wifi_password, config));
@@ -160,7 +160,7 @@ $("import_setup").addEventListener("change", async event => {
     if (generation !== importGeneration) return;
     connectionDraft = undefined;
     forgetSettings(); $("connection_mode").value = "local"; cloud.reset();
-    for (const [name, value] of Object.entries(config)) $(name).value = value;
+    for (const name of localFields) $(name).value = config[name] ?? "";
     saveSettings(); device.localChanged();
     $("import_status").textContent = "Local connection imported.";
   } catch (error) { if (generation === importGeneration) $("import_status").textContent = error.message; }
