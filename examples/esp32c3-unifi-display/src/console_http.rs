@@ -50,7 +50,12 @@ pub async fn exchange<S: Read + Write>(
     }
     // Login success/session/verification responses can be large; only their status
     // and headers are needed. The connection is closed rather than buffering them.
-    let parse = request.json && !(request.path == "/api/auth/login" && status != 499);
+    // Error bodies may be HTML/plain text from the console's reverse proxy.
+    // Preserve their status for authentication/rate-limit handling. MFA's 499
+    // challenge is the one error response whose JSON is part of the protocol.
+    let login = request.path == "/api/auth/login";
+    let parse =
+        request.json && ((!login && (200..300).contains(&status)) || (login && status == 499));
     let data = if parse {
         let mut body = vec![0; 16385];
         let mut reader = response.body().reader();
@@ -82,4 +87,74 @@ pub async fn exchange<S: Read + Write>(
         csrf,
         data,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use embedded_io_adapters::tokio_1::FromTokio;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    async fn reply(status: u16, path: &str, body: &str) -> Result<Response> {
+        let (client, mut server) = tokio::io::duplex(32768);
+        let wire = alloc::format!(
+            "HTTP/1.1 {status} Response\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        let serving = tokio::spawn(async move {
+            let mut byte = [0];
+            let mut headers = Vec::new();
+            while !headers.ends_with(b"\r\n\r\n") {
+                server.read_exact(&mut byte).await.unwrap();
+                headers.push(byte[0]);
+            }
+            server.write_all(wire.as_bytes()).await.unwrap();
+        });
+        let target = crate::provision::Target::new("192.168.6.1", "console.id.ui.direct").unwrap();
+        let result = exchange(
+            &mut FromTokio::new(client),
+            HttpRequest {
+                target: &target,
+                pin: [0xab; 32],
+                method: ConsoleMethod::Post,
+                path,
+                headers: &[],
+                body: None,
+                json: true,
+            },
+        )
+        .await;
+        serving.await.unwrap();
+        result
+    }
+
+    #[tokio::test]
+    async fn http_errors_preserve_status_even_with_non_json_bodies() {
+        for status in [401, 403, 429, 502] {
+            let response = reply(
+                status,
+                "/proxy/users/api/v2/user/self/keys",
+                "<html>upstream error</html>",
+            )
+            .await
+            .unwrap();
+            assert_eq!(response.status, status);
+            assert!(response.data.is_null());
+        }
+        for status in [200, 499] {
+            let path = if status == 499 {
+                "/api/auth/login"
+            } else {
+                "/proxy/users/api/v2/user/self/keys"
+            };
+            assert!(reply(status, path, "invalid JSON").await.is_err());
+        }
+        assert_eq!(
+            reply(499, "/api/auth/login", r#"{"token":"challenge"}"#)
+                .await
+                .unwrap()
+                .data["token"],
+            "challenge"
+        );
+    }
 }

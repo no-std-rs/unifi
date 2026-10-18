@@ -19,12 +19,13 @@ export async function device(page, options = {}) {
           if (!line.startsWith("UNIFI_APP ")) continue;
           const request = JSON.parse(line.slice(10)); window.usbRequests.push(request);
           const command = request.command;
+          if (["scan_wifi", "test_wifi"].includes(command.name)) { window.consoleTarget = undefined; window.consoleKey = undefined; }
           let result = null, error = null;
           if (command.name === "hello") { mode = true; window.appMode = mode; result = { nonce: command.nonce, protocol: 1, board: "ESP32-2424S012", capabilities: ["scan_wifi", "test_wifi", "save_config", ...(options.noProvision ? [] : ["console_provision"])] }; }
           if (command.name === "hello" && options.oldFirmware) result.capabilities = [];
           if (command.name === "status") result = { configured: !options.blank, ip: "192.168.6.20", app_mode: mode };
           if (command.name === "get_config") result = { config: options.blank ? null : { ...config, wifi_password: options.devicePassword || config.wifi_password } };
-          if (command.name === "scan_wifi") result = { networks: options.networks || [{ ssid: "saved-network", rssi: -30, channel: 1, secure: true },{ ssid: "scanned-network", rssi: -40, channel: 6, secure: true }, { ssid: "scanned-network", rssi: -80, channel: 6, secure: true }, { ssid: "<script>noise</script>", rssi: -60, channel: 1, secure: false }] };
+          if (command.name === "scan_wifi") result = { networks: window.scanNetworks || options.networks || [{ ssid: "saved-network", rssi: -30, channel: 1, secure: true },{ ssid: "scanned-network", rssi: -40, channel: 6, secure: true }, { ssid: "scanned-network", rssi: -80, channel: 6, secure: true }, { ssid: "<script>noise</script>", rssi: -60, channel: 1, secure: false }] };
           if (command.name === "test_wifi") {
             if (command.password === "wrong-password") error = "Wi-Fi association failed; check network and password";
             else result = { ssid: command.ssid, ip: "192.168.6.42" };
@@ -43,11 +44,12 @@ export async function device(page, options = {}) {
           }
           if (command.name === "console_mfa") result = { state: "sent" };
           if (command.name === "console_poll") result = { state: "authenticated" };
-          if (command.name === "console_provision") {
+          if (command.name === "console_provision" && window.consoleTarget) {
             window.consoleKey = command.local_key || window.consoleKey || "created-local-key";
             if (options.provisionFailure && !window.provisionRetried) { window.provisionRetried = true; error = options.transientExisting ? "Console rate limit reached; wait before trying again" : command.local_key ? "Console access denied; check the account or local API key" : "Local verification failed; retry"; }
             else result = { state: "verified", config: { controller_url: `https://${window.consoleTarget.hostname}/proxy/network/integration`, api_key: window.consoleKey, certificate_sha256: "cd".repeat(32), site_id: command.site_id, device_id: command.device_id } };
           }
+          if (["console_login", "console_mfa", "console_poll", "console_provision"].includes(command.name) && !window.consoleTarget) error = "Verify the console certificate first";
           if (command.name === "bye") { mode = false; window.appMode = mode; }
           const data = { v: 1, id: request.id, session: 321, ok: !error, result, error };
           if (command.name === options.delay) window.completeUsbOperation = () => respond(data);

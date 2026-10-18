@@ -136,11 +136,15 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
     else $("cloud_api_key").focus();
   });
   window.addEventListener("cloud-selection", () => { clear(); note("Discover your gateway to set up its local key and certificate automatically."); });
-  window.addEventListener("cloud-verified", () => {
+  function enroll() {
     clear();
+    $("unifi_editor").open = true;
     if (device.consoleReady()) { if (busy) requested = true; else void run(inspect); }
     else { note(device.connected() ? "Install the latest firmware to create local access over USB." : "Connect your display to set up its local key and certificate automatically."); $("provision_retry").hidden = false; }
-  });
+  }
+  window.addEventListener("cloud-verified", enroll);
+  window.addEventListener("wifi-changing", () => { clear(); note("Check Wi-Fi to continue local console setup."); });
+  window.addEventListener("wifi-verified", () => { if (cloud.verified()) enroll(); });
   window.addEventListener("display-state", () => { if (!device.connected()) clear(); else refresh(); });
   window.addEventListener("pagehide", clear);
   refresh();

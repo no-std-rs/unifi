@@ -7,6 +7,10 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   let busy = false, manual = false, ready = false, generation = 0, verified = null, editing = false, saved = false;
   let accessPoints = new Map(), offlineSSID = "", offlineDirty = false;
   let capabilities = [];
+  function wifiChanging() {
+    verified = null;
+    window.dispatchEvent(new Event("wifi-changing"));
+  }
   function note(id, text, error = false) {
     $(id).textContent = text; $(id).classList.toggle("error", error);
     $(id).setAttribute("role", error ? "alert" : "status");
@@ -54,11 +58,16 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   });
   async function run(action, propagate = false) {
     if (busy) return;
+    const previousWifi = verified;
     busy = true; refresh();
     const started = generation;
     try { return await action(() => started === generation); }
     catch (error) { if (started === generation) note("usb_status", error.message, true); if (propagate) throw error; }
-    finally { busy = false; refresh(); if (started === generation && client.connected && editing) $("wifi_password").focus(); }
+    finally {
+      busy = false; refresh();
+      if (started === generation && client.connected && matches() && verified !== previousWifi) window.dispatchEvent(new Event("wifi-verified"));
+      if (started === generation && client.connected && editing) $("wifi_password").focus();
+    }
   }
   function localChanged() {
     note("unifi_status", "");
@@ -72,7 +81,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   }
   async function testWifi(current) {
     const { wifi_ssid: ssid, wifi_password: password } = readForm();
-    verified = null; refresh();
+    wifiChanging(); refresh();
     try {
       validateWifi(ssid, password);
       note("wifi_status", `Checking ${ssid} on your display…`);
@@ -91,12 +100,12 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
       $("usb_test").textContent = "Try again";
     }
   }
-  async function choose(ssid, current, secure = true) {
-    verified = null; editing = false;
+  async function choose(ssid, current, secure = true, rescan = false) {
+    wifiChanging(); editing = false;
     $("wifi_ssid").value = ssid;
     const known = lookupNetwork(ssid);
     $("wifi_password").value = secure ? known?.password || "" : "";
-    applyLocal(known?.config || null);
+    applyLocal(known?.config || null, { rescan });
     $("unifi_editor").open = !known?.config;
     $("manual_wifi").hidden = !!accessPoints.get(ssid);
     refresh();
@@ -104,6 +113,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     else { editing = true; note("wifi_status", `Enter the password for ${ssid}, then connect.`); }
   }
   async function scan(current) {
+    wifiChanging(); refresh();
     note("wifi_status", "Finding nearby 2.4 GHz networks…");
     const { networks } = await client.command({ name: "scan_wifi" }, 40000);
     if (!current()) return;
@@ -120,7 +130,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     const previous = $("wifi_ssid").value;
     if (accessPoints.has(previous)) {
       select.value = previous;
-      await choose(previous, current, accessPoints.get(previous).secure);
+      await choose(previous, current, accessPoints.get(previous).secure, true);
     } else {
       select.selectedIndex = 0;
       editing = false; $("manual_wifi").hidden = !!accessPoints.size;
@@ -150,14 +160,14 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   $("wifi_networks").addEventListener("change", () => run(async current => {
     const ssid = $("wifi_networks").value;
     if (!ssid) {
-      verified = null; editing = true; $("manual_wifi").hidden = false;
+      wifiChanging(); editing = true; $("manual_wifi").hidden = false;
       $("wifi_ssid").value = ""; $("wifi_password").value = ""; applyLocal(null);
       note("wifi_status", "Enter your 2.4 GHz network name and password.");
       return;
     }
     await choose(ssid, current, accessPoints.get(ssid).secure);
   }));
-  $("wifi_change").addEventListener("click", () => { verified = null; editing = true; note("wifi_status", "Enter a new password, then connect to check it."); refresh(); $("wifi_password").focus(); });
+  $("wifi_change").addEventListener("click", () => { wifiChanging(); editing = true; note("wifi_status", "Enter a new password, then connect to check it."); refresh(); $("wifi_password").focus(); });
   function offlineNetwork(ssid, commit) {
     if (!commit) {
       offlineDirty = true;
@@ -175,7 +185,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     offlineSSID = ssid; offlineDirty = false; localChanged();
   }
   for (const id of ["wifi_ssid", "wifi_password"]) $(id).addEventListener("input", () => {
-    verified = null;
+    wifiChanging();
     if (client.connected) editing = true;
     else if (manual && id === "wifi_ssid") offlineNetwork($("wifi_ssid").value, false);
     refresh();

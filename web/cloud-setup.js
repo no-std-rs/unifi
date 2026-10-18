@@ -128,6 +128,7 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
   updateMode();
   $("discover_cloud").disabled = false;
   return {
+    verified: () => isCloud() && verified,
     target() {
       if (!isCloud() || !verified) return null;
       return { ...consoleTarget(consoles.find(row => row.id === consoleSelect.value)), site_id: siteSelect.value, device_id: deviceSelect.value };

@@ -107,3 +107,27 @@ test("a transient existing-key check retries without discarding the key or signi
  await expect(page.locator("#api_key")).toHaveValue(config.api_key);
  expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_login"))).toBe(false);
 });
+test("changing the Wi-Fi password cancels approval and automatically verifies the console again",async({page})=>{
+ await page.clock.install();await setup(page,{mfa:"push"});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
+ await page.getByRole("button",{name:"Send code / approval"}).click();await expect(page.locator("#provision_status")).toContainText("Approve sign-in");
+ await page.getByRole("button",{name:"Change password",exact:true}).click();
+ await page.getByLabel("Wi-Fi password",{exact:true}).fill("replacement-password");
+ await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="console_begin").length)).toBe(2);
+ await expect(page.locator("#provision_status")).toContainText("Certificate verified automatically");
+ await expect(page.locator("#console_username")).toHaveValue("");await expect(page.locator("#console_mfa")).toBeHidden();
+ await page.clock.fastForward(5000);
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_poll"))).toBe(false);
+ await signIn(page);await page.getByRole("button",{name:"Send code / approval"}).click();await page.clock.fastForward(2500);
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
+});
+test("rescanning the enrolled network rechecks local access without cloud rediscovery or another login",async({page})=>{
+ let discoveries=0;page.on("request",request=>{if(request.url()==="https://api.ui.com/v1/hosts")discoveries++;});
+ await setup(page);await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ await page.getByRole("button",{name:"Scan again",exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="console_begin").length)).toBe(2);
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ await expect(page.locator("#connection_mode")).toHaveValue("cloud");expect(discoveries).toBe(1);
+ expect(await page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="console_login").length)).toBe(1);
+});
