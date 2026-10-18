@@ -599,6 +599,93 @@ mod tests {
             .unwrap();
         assert_eq!(console.created, 1);
     }
+    #[tokio::test]
+    async fn push_approval_retains_the_challenge_across_poll_failures() {
+        struct PushConsole {
+            console: Console,
+            polls: usize,
+        }
+        impl Http for PushConsole {
+            async fn exchange(&mut self, request: HttpRequest<'_>) -> Result<Response> {
+                let body = request
+                    .body
+                    .map(|bytes| serde_json::from_slice::<Value>(bytes).unwrap())
+                    .unwrap_or(Value::Null);
+                let mut response = Response {
+                    status: 200,
+                    cookies: Vec::new(),
+                    csrf: None,
+                    data: Value::Null,
+                };
+                match request.path {
+                    "/api/auth/login" => {
+                        response.status = 499;
+                        response.data = json!({"data":{"mfaCookie":"initial-challenge","authenticators":[{"id":"verify","type":"push"}]}});
+                    }
+                    "/api/sso/login/mfa/send" => {
+                        assert_eq!(
+                            body,
+                            json!({"id":"verify","method":"push","mfaCookie":"initial-challenge"})
+                        );
+                        response.data = json!({"mfaCookie":"rotated-challenge"});
+                    }
+                    "/api/auth/login/poll" => {
+                        assert_eq!(
+                            body,
+                            json!({"mfaCookie":"rotated-challenge","rememberMe":false})
+                        );
+                        self.polls += 1;
+                        response.status = match self.polls {
+                            1 => 429,
+                            2 => 202,
+                            _ => 200,
+                        };
+                        if response.status == 200 {
+                            response.cookies.push("TOKEN=session-only; Secure".into());
+                            response.csrf = Some("first-csrf".into());
+                        }
+                    }
+                    _ => return self.console.exchange(request).await,
+                }
+                Ok(response)
+            }
+        }
+        let mut session = session();
+        let mut console = PushConsole {
+            console: console(),
+            polls: 0,
+        };
+        assert_eq!(
+            session
+                .login(&mut console, "user", "password", "")
+                .await
+                .unwrap()["state"],
+            "mfa"
+        );
+        assert_eq!(
+            session.mfa(&mut console, "verify").await.unwrap()["state"],
+            "sent"
+        );
+        assert_eq!(
+            session.poll(&mut console).await.unwrap_err(),
+            "Console rate limit reached; wait before trying again"
+        );
+        assert_eq!(
+            session.poll(&mut console).await.unwrap()["state"],
+            "waiting"
+        );
+        assert_eq!(
+            session.poll(&mut console).await.unwrap()["state"],
+            "authenticated"
+        );
+        session
+            .provision(&mut console, SITE, DEVICE, "")
+            .await
+            .unwrap();
+        assert_eq!(console.console.created, 1);
+        assert!(session.challenge.is_none());
+        assert!(session.cookies.is_empty());
+    }
     #[test]
     fn only_cloud_direct_connect_names_and_lan_addresses_are_accepted() {
         for (ip, host) in [

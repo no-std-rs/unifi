@@ -40,10 +40,13 @@ export async function device(page, options = {}) {
           if (command.name === "console_login") {
             window.consoleKey = undefined;
             if (command.password === "wrong-login") error = "Console access denied";
-            else result = options.mfa && !command.token ? { state: "mfa", methods: [{ id: "method-1", type: options.mfa }] } : { state: "authenticated" };
+            else result = options.mfa && !command.token ? { state: "mfa", methods: (options.methods || [options.mfa]).map((type,i)=>({id:`method-${i+1}`,type})) } : { state: "authenticated" };
           }
           if (command.name === "console_mfa") result = { state: "sent" };
-          if (command.name === "console_poll") result = { state: "authenticated" };
+          if (command.name === "console_poll") {
+            if (options.pollFailure && !window.pollRetried) { window.pollRetried = true; error = "Console rate limit reached; wait before trying again"; }
+            else result = { state: "authenticated" };
+          }
           if (command.name === "console_provision" && window.consoleTarget) {
             window.consoleKey = command.local_key || window.consoleKey || "created-local-key";
             if (options.provisionFailure && !window.provisionRetried) { window.provisionRetried = true; error = options.transientExisting ? "Console rate limit reached; wait before trying again" : command.local_key ? "Console access denied; check the account or local API key" : "Local verification failed; retry"; }

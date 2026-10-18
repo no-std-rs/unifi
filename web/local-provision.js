@@ -3,13 +3,16 @@ import { localConfig } from "./network-profiles.js";
 export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
   const $ = id => document.getElementById(id);
   let generation = 0, busy = false, target, login, phase = "inspect", timer, requested = false, layout;
+  let approvalSent = false;
   const fields = ["console_username", "console_password", "console_token"];
   const note = (text, error = false) => { $("provision_status").textContent = text; $("provision_status").classList.toggle("error", error); };
   function clear() {
-    generation++; clearTimeout(timer); target = undefined; login = undefined; phase = "inspect"; requested = false;
+    generation++; clearTimeout(timer); target = undefined; login = undefined; phase = "inspect"; requested = false; approvalSent = false;
     for (const id of fields) $(id).value = "";
     $("console_auth").hidden = true; $("console_mfa").hidden = true;
     $("console_credentials").hidden = false; $("provision_retry").hidden = true;
+    $("console_signin").hidden = false;
+    $("console_restart").hidden = true;
     refresh();
   }
   function refresh() {
@@ -18,6 +21,7 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
     $("automatic_local").hidden = $("connection_mode").value !== "cloud";
     $("console_signin").disabled = busy || !device.consoleReady();
     $("console_mfa_send").disabled = busy;
+    $("console_restart").disabled = busy || !device.consoleReady();
     $("provision_retry").disabled = busy || !device.consoleReady();
     $("provision_update").hidden = !device.connected() || device.supportsConsole();
     $("provision_update").disabled = busy;
@@ -29,7 +33,7 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
     const started = generation; busy = true; refresh();
     const current = () => started === generation && device.consoleReady();
     try { await action(current); }
-    catch (error) { if (started === generation) { if (phase === "login") login = undefined; note(error.message, true); $("provision_retry").hidden = false; } }
+    catch (error) { if (started === generation) { if (phase === "login") login = undefined; note(error.message, true); $("provision_retry").hidden = phase === "login" || phase === "mfa" && selectedMethod()?.dataset.type !== "push"; } }
     finally { busy = false; refresh(); if (requested && device.consoleReady()) { requested = false; void run(inspect); } }
   }
   async function command(name, values = {}, timeout) { return device.consoleCommand({ name, ...values }, timeout); }
@@ -51,10 +55,10 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
     if (result?.state === "authenticated") { login = undefined; await finish(current); return; }
     if (result?.state !== "mfa" || !Array.isArray(result.methods) || !result.methods.length) throw new Error("The console did not return a supported sign-in result.");
     phase = "mfa"; $("console_credentials").hidden = true; $("console_mfa").hidden = false;
+    $("console_restart").hidden = false;
     $("console_method").replaceChildren(...result.methods.map(m => new Option(({push:"Approve in UniFi Verify",totp:"Authenticator code",email:"Email code",sms:"SMS code",backup:"Backup code"})[m.type] || m.type, m.id)));
     for (const [index, method] of result.methods.entries()) $("console_method").options[index].dataset.type = method.type;
-    $("console_signin").textContent = "Verify code & create local access";
-    note("Complete the console's two-factor sign-in.");
+    await chooseMethod(current);
   }
   async function inspect(current) {
     target = cloud.target();
@@ -74,6 +78,7 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
     $("controller_url").value = `https://${target.hostname}/proxy/network/integration`;
     $("api_key").value = key;
     $("console_auth").hidden = !!key; $("console_credentials").hidden = false;
+    $("console_signin").hidden = false;
     $("console_signin").textContent = "Sign in & create local access";
     phase = "login";
     if (key) {
@@ -109,24 +114,51 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
   function poll(started) {
     clearTimeout(timer);
     timer = setTimeout(async () => {
-      if (started !== generation || !device.consoleReady() || phase !== "mfa") return;
+      if (started !== generation || !device.consoleReady() || phase !== "mfa" || selectedMethod()?.dataset.type !== "push") return;
       if (busy) { poll(started); return; }
       await run(async current => {
-        const result = await command("console_poll");
-        if (!current()) return;
-        if (result?.state === "waiting") { poll(started); return; }
-        await signedIn(result, current);
+        await checkApproval(current);
       });
     }, 2000);
   }
-  $("console_mfa_send").addEventListener("click", () => run(async current => {
-    const option = $("console_method").selectedOptions[0];
-    if (!option || !["push", "email", "sms"].includes(option.dataset.type)) { note("Enter the code from your authenticator."); return; }
+  const selectedMethod = () => $("console_method").selectedOptions[0];
+  async function checkApproval(current) {
+    const result = await command("console_poll");
+    if (!current()) return;
+    if (result?.state === "waiting") { note("Approve sign-in in UniFi Verify. This page will continue automatically."); poll(generation); return; }
+    await signedIn(result, current);
+  }
+  async function sendApproval(current) {
+    const option = selectedMethod();
+    if (!option || !["push", "email", "sms"].includes(option.dataset.type)) return;
+    clearTimeout(timer); approvalSent = false;
     await command("console_mfa", { id: option.value }); if (!current()) return;
+    approvalSent = true; $("provision_retry").hidden = true;
     note(option.dataset.type === "push" ? "Approve sign-in in UniFi Verify. This page will continue automatically." : "Enter the code sent by your console.");
     if (option.dataset.type === "push") poll(generation);
+    else $("console_token").focus();
+  }
+  async function chooseMethod(current) {
+    clearTimeout(timer); approvalSent = false; $("console_token").value = "";
+    const kind = selectedMethod()?.dataset.type;
+    $("console_code").hidden = kind === "push";
+    $("console_signin").hidden = kind === "push";
+    $("console_signin").textContent = "Verify code & create local access";
+    $("console_mfa_send").hidden = !["push", "email", "sms"].includes(kind);
+    $("console_mfa_send").textContent = kind === "push" ? "Resend approval" : "Resend code";
+    $("provision_retry").hidden = true;
+    if (["push", "email", "sms"].includes(kind)) await sendApproval(current);
+    else { note(kind === "backup" ? "Enter one of your backup codes." : "Enter the code from your authenticator."); $("console_token").focus(); }
+  }
+  $("console_method").addEventListener("change", () => run(chooseMethod));
+  $("console_restart").addEventListener("click", () => { if (!busy) { clear(); void run(inspect); } });
+  $("console_mfa_send").addEventListener("click", () => run(sendApproval));
+  $("provision_retry").addEventListener("click", () => run(async current => {
+    $("provision_retry").hidden = true;
+    if (phase === "verify" && target) await finish(current);
+    else if (phase === "mfa") { if (approvalSent) await checkApproval(current); else await sendApproval(current); }
+    else await inspect(current);
   }));
-  $("provision_retry").addEventListener("click", () => run(async current => { if (phase === "verify" && target) await finish(current); else await inspect(current); }));
   $("provision_update").addEventListener("click", () => { clear(); void device.updateFirmware(); });
   $("automatic_setup").addEventListener("click", () => {
     $("unifi_editor").open = true;
@@ -144,7 +176,7 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
   }
   window.addEventListener("cloud-verified", enroll);
   window.addEventListener("wifi-changing", () => { clear(); note("Check Wi-Fi to continue local console setup."); });
-  window.addEventListener("wifi-verified", () => { if (cloud.verified()) enroll(); });
+  window.addEventListener("wifi-verified", () => { if (cloud.verified()) enroll(); else cloud.resume(); });
   window.addEventListener("display-state", () => { if (!device.connected()) clear(); else refresh(); });
   window.addEventListener("pagehide", clear);
   refresh();

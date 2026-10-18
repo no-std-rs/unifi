@@ -73,6 +73,12 @@ verifies all four dashboard reads. Retry verification retains a newly created ke
 an uncertain creation attempt never silently creates another. Passwords, MFA codes
 and console session cookies are temporary and excluded from browser storage and
 device flash. The local integration key and trusted pin are remembered normally.
+Saved cloud keys resume discovery automatically once Wi-Fi is verified. A failed
+discovery stays available to retry instead of repeating on every Wi-Fi check.
+Push/email/SMS challenges send automatically; authenticator and backup codes show
+only code entry. Switching methods cancels pending polling, and a failed push
+check retries the same approval. **Restart sign-in** clears the pending login and
+starts a fresh certificate check when an account or approval needs replacing.
 The console login is separate authorization: the cloud key alone cannot create a
 local key. It stays in the browser and is excluded from USB commands/settings.
 The device remains connected to the tested Wi-Fi during provisioning and restores
