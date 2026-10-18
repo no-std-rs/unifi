@@ -4,7 +4,7 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
   const $ = id => document.getElementById(id);
   const mode = $("connection_mode"), key = $("cloud_api_key");
   const consoleSelect = $("cloud_console"), siteSelect = $("cloud_site"), deviceSelect = $("cloud_device");
-  let controller = new AbortController(), verified = false, consoles = [];
+  let controller = new AbortController(), verified = false, consoles = [], discovering = false, attemptedKey = "";
   let remembered = { ...initialSelection };
   let previousConsole = initialSelection.cloud_console || "";
   const isCloud = () => mode.value === "cloud";
@@ -14,7 +14,7 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
     $("cloud_status").setAttribute("role", error ? "alert" : "status");
   }
   function cancel() {
-    controller.abort(); controller = new AbortController(); verified = false;
+    controller.abort(); controller = new AbortController(); verified = false; discovering = false;
     $("verify_cloud").disabled = !deviceSelect.value;
     invalidate();
     window.dispatchEvent(new Event("cloud-selection"));
@@ -72,6 +72,7 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
     $("cloud_choices").hidden = true;
   }
   function updateMode() {
+    attemptedKey = "";
     resetSelections();
     $("cloud_discovery").open = true;
     $("cloud_discovery_summary").textContent = "Discover your gateway";
@@ -84,16 +85,23 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
   $("discover_cloud").addEventListener("click", () => {
     resetSelections();
     const signal = controller.signal;
+    discovering = true; attemptedKey = key.value;
     run(signal, async () => {
-      note("Discovering online consoles…");
-      const rows = await client(signal).consoles();
-      if (signal.aborted) return;
-      consoles = rows;
-      choices(consoleSelect, rows, "Choose a console…", row => row.reportedState?.name || row.reportedState?.hostname || row.id);
-      $("cloud_choices").hidden = false;
-      note(rows.length ? "Choose a console." : "No online consoles found. Check remote management and your account's access.");
-      await loadSites(signal);
+      try {
+        note("Discovering online consoles…");
+        const rows = await client(signal).consoles();
+        if (signal.aborted) return;
+        consoles = rows;
+        choices(consoleSelect, rows, "Choose a console…", row => row.reportedState?.name || row.reportedState?.hostname || row.id);
+        $("cloud_choices").hidden = false;
+        note(rows.length ? "Choose a console." : "No online consoles found. Check remote management and your account's access.");
+        await loadSites(signal);
+      }
+      finally { if (!signal.aborted) discovering = false; }
     });
+  });
+  key.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.isComposing) { event.preventDefault(); $("discover_cloud").click(); }
   });
   consoleSelect.addEventListener("change", () => {
     remembered = { cloud_console: consoleSelect.value };
@@ -129,6 +137,9 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
   $("discover_cloud").disabled = false;
   return {
     verified: () => isCloud() && verified,
+    resume() {
+      if (isCloud() && !verified && !discovering && key.value && key.value !== attemptedKey) $("discover_cloud").click();
+    },
     target() {
       if (!isCloud() || !verified) return null;
       return { ...consoleTarget(consoles.find(row => row.id === consoleSelect.value)), site_id: siteSelect.value, device_id: deviceSelect.value };

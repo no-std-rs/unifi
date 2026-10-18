@@ -9,6 +9,13 @@ async function local(page) {
  await page.getByLabel("Local Network API key").fill(config.api_key);
  await page.getByLabel("Certificate SHA-256 fingerprint").fill(config.certificate_sha256);
 }
+test("connection waits for the installer to finish loading before accepting clicks",async({page})=>{
+ await device(page);let release,started;const held=new Promise(resolve=>release=resolve),loading=new Promise(resolve=>started=resolve);
+ await page.route("**/local-provision.js",async route=>{started();await held;await route.continue();});
+ await page.goto("/",{waitUntil:"commit"});await loading;
+ try { await expect(page.getByRole("button",{name:"Connect display",exact:true})).toBeDisabled(); } finally { release(); }
+ await page.getByRole("button",{name:"Connect display",exact:true}).click();await verified(page);
+});
 test("connect automatically reads, scans, tests saved Wi-Fi and reuses local settings",async({page})=>{
  const requests=[],errors=[];page.on("request",r=>requests.push({url:r.url(),body:r.postData()}));page.on("pageerror",e=>errors.push(e.message));
  await connect(page);await verified(page);

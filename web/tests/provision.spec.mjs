@@ -2,23 +2,27 @@ import { test, expect } from "@playwright/test";
 import { device, config } from "./serial-fixture.mjs";
 const site="11111111-1111-4111-8111-111111111111",gateway="22222222-2222-4222-8222-222222222222";
 async function setup(page, options={}) {
+ if(options.rememberedCloud)await page.addInitScript(config=>localStorage.setItem("unifi-display.settings.v1",JSON.stringify({version:1,remember:true,values:{...config,api_key:"",certificate_sha256:"",connection_mode:"cloud",cloud_api_key:"fixture-cloud-key",cloud_console:"",cloud_site:"",cloud_device:""}})),config);
  if(options.existing)await page.addInitScript(config=>localStorage.setItem("unifi-display.settings.v1",JSON.stringify({version:1,remember:true,values:{...config,connection_mode:"local",cloud_api_key:"fixture-cloud-key",cloud_console:"",cloud_site:"",cloud_device:""}})),config);
  if(options.sharedKey)await page.addInitScript(config=>{
   const local=Object.fromEntries(Object.entries(config).filter(([key])=>!key.startsWith("wifi_")));
   localStorage.setItem("unifi-display.networks.v1",JSON.stringify({version:1,networks:[{ssid:"scanned-network",password:"other-password",config:local},{ssid:"different-key-network",password:"different-password",config:{...local,api_key:"unrelated-local-key"}}]}));
  },config);
  await device(page,{blank:!options.existing,...options});
+ let failCloud=options.cloudFailure;
  await page.route("https://api.ui.com/**",route=>{
   const path=new URL(route.request().url()).pathname;
+  if(path==="/v1/hosts" && failCloud){failCloud=false;return route.fulfill({status:403,json:{}});}
   const data=path==="/v1/hosts"?{data:[{id:"console:1",type:"console",reportedState:{state:"connected",name:"Gateway",mac:"aa:bb:cc:dd:ee:ff",ipAddrs:["192.168.6.1"],directConnectDomain:"console.id.ui.direct"}}]}:
    path.endsWith("/sites")?{data:[{id:site,name:"Default"}],totalCount:1}:
    path.endsWith("/devices")?{data:[{id:gateway,name:"Root gateway",macAddress:"aa:bb:cc:dd:ee:ff"}],totalCount:1}:{};
   return route.fulfill({json:data});
  });
  await page.goto("/");await page.getByRole("button",{name:"Connect display",exact:true}).click();
- if(!options.existing){await page.getByLabel("Wi-Fi network",{exact:true}).selectOption("saved-network");await page.getByLabel("Wi-Fi password",{exact:true}).fill("fixture-password");await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();}
+ if(!options.existing && !options.rememberedCloud){await page.getByLabel("Wi-Fi network",{exact:true}).selectOption("saved-network");await page.getByLabel("Wi-Fi password",{exact:true}).fill("fixture-password");await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();}
  await expect(page.locator("#wifi_status")).toContainText("Wi-Fi verified");
  if(options.existing){await expect(page.locator("#unifi_editor")).not.toHaveAttribute("open");await page.getByRole("button",{name:"Set up key & certificate automatically"}).click();return;}
+ if(options.rememberedCloud)return;
  await page.getByLabel("Cloud discovery API key").fill("fixture-cloud-key");await page.getByRole("button",{name:"Discover consoles",exact:true}).click();
 }
 async function signIn(page,password="fixture-console-password") {
@@ -44,13 +48,16 @@ test("an untrusted console certificate never exposes the sign-in form or sends c
 });
 test("authenticator approval continues enrollment without manual key or SHA fields",async({page})=>{
  await setup(page,{mfa:"totp"});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
+ await expect(page.locator("#console_mfa_send")).toBeHidden();await expect(page.locator("#console_token")).toBeFocused();
  await page.getByLabel("Two-factor or backup code").fill("123456");await page.getByRole("button",{name:"Verify code & create local access"}).click();
  await expect(page.locator("#provision_status")).toContainText("Local access ready");
  const log=await page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="console_login").map(r=>r.command));expect(log[1].token).toBe("123456");expect(log[1].password).toBe("fixture-console-password");
 });
 test("push approval automatically finishes local enrollment",async({page})=>{
  await setup(page,{mfa:"push"});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
- await page.getByRole("button",{name:"Send code / approval"}).click();await expect(page.locator("#provision_status")).toContainText("Local access ready",{timeout:15000});
+ await expect(page.locator("#console_code")).toBeHidden();await expect(page.locator("#console_signin")).toBeHidden();
+ await expect(page.locator("#provision_status")).toContainText("Local access ready",{timeout:15000});
+ expect(await page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="console_mfa").length)).toBe(1);
 });
 test("verification retry reuses enrollment without another login",async({page})=>{
  await setup(page,{provisionFailure:true});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
@@ -69,7 +76,7 @@ test("older APP firmware offers an update before attempting enrollment",async({p
 });
 test("forget cancels pending push approval and clears transient console credentials",async({page})=>{
  await page.clock.install();await setup(page,{mfa:"push"});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
- await page.getByRole("button",{name:"Send code / approval"}).click();await expect(page.locator("#provision_status")).toContainText("Approve sign-in");
+ await expect(page.locator("#provision_status")).toContainText("Approve sign-in");
  await page.locator(".saved-settings > summary").click();await page.getByRole("button",{name:"Forget saved settings"}).click();await page.clock.fastForward(5000);
  expect(await page.evaluate(()=>window.usbRequests.some(r=>["console_poll","console_provision"].includes(r.command.name)))).toBe(false);
  await expect(page.locator("#console_password")).toHaveValue("");await expect(page.locator("#console_username")).toHaveValue("");
@@ -109,7 +116,7 @@ test("a transient existing-key check retries without discarding the key or signi
 });
 test("changing the Wi-Fi password cancels approval and automatically verifies the console again",async({page})=>{
  await page.clock.install();await setup(page,{mfa:"push"});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
- await page.getByRole("button",{name:"Send code / approval"}).click();await expect(page.locator("#provision_status")).toContainText("Approve sign-in");
+ await expect(page.locator("#provision_status")).toContainText("Approve sign-in");
  await page.getByRole("button",{name:"Change password",exact:true}).click();
  await page.getByLabel("Wi-Fi password",{exact:true}).fill("replacement-password");
  await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();
@@ -118,7 +125,7 @@ test("changing the Wi-Fi password cancels approval and automatically verifies th
  await expect(page.locator("#console_username")).toHaveValue("");await expect(page.locator("#console_mfa")).toBeHidden();
  await page.clock.fastForward(5000);
  expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_poll"))).toBe(false);
- await signIn(page);await page.getByRole("button",{name:"Send code / approval"}).click();await page.clock.fastForward(2500);
+ await signIn(page);await expect(page.locator("#provision_status")).toContainText("Approve sign-in");await page.clock.fastForward(2500);
  await expect(page.locator("#provision_status")).toContainText("Local access ready");
 });
 test("rescanning the enrolled network rechecks local access without cloud rediscovery or another login",async({page})=>{
@@ -130,4 +137,53 @@ test("rescanning the enrolled network rechecks local access without cloud redisc
  await expect(page.locator("#provision_status")).toContainText("Local access ready");
  await expect(page.locator("#connection_mode")).toHaveValue("cloud");expect(discoveries).toBe(1);
  expect(await page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="console_login").length)).toBe(1);
+});
+test("a saved cloud key resumes discovery as soon as remembered Wi-Fi connects",async({page})=>{
+ let discoveries=0;page.on("request",r=>{if(r.url()==="https://api.ui.com/v1/hosts")discoveries++;});
+ await setup(page,{rememberedCloud:true});await expect(page.locator("#console_auth")).toBeVisible();
+ await expect(page.locator("#provision_status")).toContainText("Certificate verified automatically");expect(discoveries).toBe(1);
+ expect(await page.evaluate(()=>JSON.stringify(window.usbRequests))).not.toContain("fixture-cloud-key");
+ await signIn(page);await expect(page.locator("#provision_status")).toContainText("Local access ready");
+});
+test("failed saved-key discovery stays inline and does not loop on a Wi-Fi retry",async({page})=>{
+ let discoveries=0;page.on("request",r=>{if(r.url()==="https://api.ui.com/v1/hosts")discoveries++;});
+ await setup(page,{rememberedCloud:true,cloudFailure:true});await expect(page.locator("#cloud_status")).toContainText("HTTP 403");
+ await page.getByRole("button",{name:"Change password",exact:true}).click();await page.getByLabel("Wi-Fi password",{exact:true}).fill("replacement-password");
+ await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();await expect(page.locator("#settings")).toHaveAttribute("aria-busy","false");
+ expect(discoveries).toBe(1);await expect(page.locator("#cloud_status")).toContainText("HTTP 403");
+ await page.getByRole("button",{name:"Discover consoles",exact:true}).click();await expect(page.locator("#console_auth")).toBeVisible();expect(discoveries).toBe(2);
+});
+test("push polling retries the same approval without another login or certificate check",async({page})=>{
+ await page.clock.install();await setup(page,{mfa:"push",pollFailure:true});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
+ await expect(page.locator("#provision_status")).toContainText("Approve sign-in");await page.clock.fastForward(2500);
+ await expect(page.locator("#provision_status")).toContainText("rate limit reached");await page.getByRole("button",{name:"Retry local setup"}).click();
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ const commands=await page.evaluate(()=>window.usbRequests.map(r=>r.command.name));
+ for(const name of ["console_begin","console_login","console_mfa"])expect(commands.filter(c=>c===name)).toHaveLength(1);
+ expect(commands.filter(c=>c==="console_poll")).toHaveLength(2);
+});
+test("switching from push to an authenticator cancels polling and focuses the code",async({page})=>{
+ await page.clock.install();await setup(page,{mfa:"push",methods:["push","totp"]});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
+ await expect(page.locator("#provision_status")).toContainText("Approve sign-in");await page.getByLabel("Two-factor method").selectOption("method-2");
+ await expect(page.locator("#console_mfa_send")).toBeHidden();await expect(page.locator("#console_token")).toBeFocused();await page.clock.fastForward(5000);
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_poll"))).toBe(false);
+ await page.getByLabel("Two-factor or backup code").fill("123456");await page.getByRole("button",{name:"Verify code & create local access"}).click();
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
+});
+test("email approval sends the code automatically and keeps a resend action",async({page})=>{
+ await setup(page,{mfa:"email"});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
+ await expect(page.locator("#provision_status")).toContainText("Enter the code sent");await expect(page.locator("#console_token")).toBeFocused();
+ await page.getByRole("button",{name:"Resend code",exact:true}).click();
+ expect(await page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="console_mfa").length)).toBe(2);
+ await page.getByLabel("Two-factor or backup code").fill("123456");await page.getByRole("button",{name:"Verify code & create local access"}).click();
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
+});
+test("restarting two-factor sign-in clears credentials and cancels the old approval",async({page})=>{
+ await page.clock.install();await setup(page,{mfa:"push"});await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
+ await expect(page.locator("#provision_status")).toContainText("Approve sign-in");await page.getByRole("button",{name:"Restart sign-in",exact:true}).click();
+ await expect(page.locator("#provision_status")).toContainText("Certificate verified automatically");await expect(page.locator("#console_username")).toHaveValue("");
+ await expect(page.locator("#console_password")).toHaveValue("");await expect(page.locator("#console_mfa")).toBeHidden();await page.clock.fastForward(5000);
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_poll"))).toBe(false);
+ await signIn(page);await expect(page.locator("#provision_status")).toContainText("Approve sign-in");await page.clock.fastForward(2500);
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
 });
