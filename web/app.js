@@ -90,16 +90,17 @@ const device = setupDevice({
   },
   rememberNetwork: (ssid, password, config) => {
     const previous = networks.get(ssid);
+    if (connectionDraft?.wifi_ssid === ssid) connectionDraft.wifi_password = password;
     networks.delete(ssid); networks.set(ssid, profile(ssid, password, config || previous?.config));
     if (networks.size > 16) networks.delete(networks.keys().next().value);
     saveSettings();
   },
-  applyLocal: config => {
+  applyLocal: (config, { offline = false } = {}) => {
     importGeneration++; forgetSettings();
     const draft = connectionDraft?.wifi_ssid === $("wifi_ssid").value ? connectionDraft : null;
     const sameCloud = draft?.connection_mode === "cloud" && $("connection_mode").value === "cloud"
       && ["cloud_console", "cloud_site", "cloud_device"].every(name => cloud.selection()[name] === draft[name]);
-    $("connection_mode").value = draft?.connection_mode || (config ? "local" : "cloud");
+    $("connection_mode").value = draft?.connection_mode || (config ? "local" : offline ? $("connection_mode").value : "cloud");
     if (!sameCloud) cloud.reset(draft || {});
     for (const name of localFields) $(name).value = (draft ? draft[name] : config?.[name]) ?? (name === "controller_url" ? "https://unifi.local/proxy/network/integration" : "");
     saveSettings();

@@ -5,7 +5,7 @@ import { localConfig, localFields } from "./network-profiles.js";
 export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal, lookupNetwork, rememberNetwork, beforeManual, beforeConnect }) {
   const $ = id => document.getElementById(id);
   let busy = false, manual = false, ready = false, generation = 0, verified = null, editing = false, saved = false;
-  let accessPoints = new Map();
+  let accessPoints = new Map(), offlineSSID = "", offlineDirty = false;
   function note(id, text, error = false) {
     $(id).textContent = text; $(id).classList.toggle("error", error);
     $(id).setAttribute("role", error ? "alert" : "status");
@@ -150,9 +150,35 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     await choose(ssid, current, accessPoints.get(ssid).secure);
   }));
   $("wifi_change").addEventListener("click", () => { verified = null; editing = true; note("wifi_status", "Enter a new password, then connect to check it."); refresh(); $("wifi_password").focus(); });
-  for (const id of ["wifi_ssid", "wifi_password"]) $(id).addEventListener("input", () => { verified = null; if (client.connected) editing = true; refresh(); });
+  function offlineNetwork(ssid, commit) {
+    if (!commit) {
+      offlineDirty = true;
+      if (offlineSSID && ssid !== offlineSSID) {
+        $("wifi_password").value = "";
+        applyLocal(null, { offline: true });
+      }
+      return;
+    }
+    const known = lookupNetwork(ssid);
+    if (known || offlineSSID && ssid !== offlineSSID) {
+      $("wifi_password").value = known?.password || "";
+      applyLocal(known?.config || null, { offline: true });
+    }
+    offlineSSID = ssid; offlineDirty = false; localChanged();
+  }
+  for (const id of ["wifi_ssid", "wifi_password"]) $(id).addEventListener("input", () => {
+    verified = null;
+    if (client.connected) editing = true;
+    else if (manual && id === "wifi_ssid") offlineNetwork($("wifi_ssid").value, false);
+    refresh();
+  });
   $("wifi_ssid").addEventListener("change", () => {
-    if (client.connected && $("wifi_ssid").value) void run(current => choose($("wifi_ssid").value, current));
+    const ssid = $("wifi_ssid").value;
+    if (client.connected && ssid) void run(current => choose(ssid, current));
+    else if (manual) offlineNetwork(ssid, true);
+  });
+  $("wifi_ssid").addEventListener("blur", () => {
+    if (manual && !client.connected && offlineDirty) offlineNetwork($("wifi_ssid").value, true);
   });
   $("wifi_step").addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.isComposing && client.connected && event.target instanceof HTMLInputElement) {
@@ -174,11 +200,11 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     note("usb_status", "Saving settings on your display…");
     await client.command({ name: "save_config", config }, 10000);
     if (!current()) return;
-    rememberNetwork(config.wifi_ssid, lookupNetwork(config.wifi_ssid)?.password ?? config.wifi_password, Object.fromEntries(localFields.map(name => [name, config[name]])));
+    rememberNetwork(config.wifi_ssid, config.wifi_password, Object.fromEntries(localFields.map(name => [name, config[name]])));
     saved = true; await client.disconnect(false);
     note("usb_status", "Settings saved. Your display is restarting.");
   }));
-  $("manual_setup").addEventListener("click", () => { beforeManual(); manual = true; editing = true; $("manual_wifi").hidden = false; refresh(); note("usb_status", "Prepare settings here, then install them with the firmware. A Wi-Fi test needs a connected display."); });
+  $("manual_setup").addEventListener("click", () => { beforeManual(); offlineSSID = $("wifi_ssid").value; offlineDirty = false; manual = true; editing = true; $("manual_wifi").hidden = false; refresh(); note("usb_status", "Prepare settings here, then install them with the firmware. A Wi-Fi test needs a connected display."); });
   window.addEventListener("pagehide", () => { generation++; verified = null; void client.disconnect(false); });
   refresh();
   return {

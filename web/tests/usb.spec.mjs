@@ -171,3 +171,36 @@ test("switching directly from a failed device test to offline preparation restor
  const value=await page.evaluate(async()=>{const m=await(await fetch(document.getElementById("installer").manifest)).json();const b=new Uint8Array(await(await fetch(m.builds[0].parts[1].path)).arrayBuffer());return JSON.parse(new TextDecoder().decode(b.slice(16,16+new DataView(b.buffer).getUint32(8,true)))).wifi_password;});
  expect(value).toBe(config.wifi_password);
 });
+
+test("a manual draft retry saves the verified password and reuses it after rescan and reload",async({page})=>{
+ await device(page,{blank:true});await page.goto("/");await page.locator("#device_tools > summary").click();
+ await page.getByRole("button",{name:"Prepare settings without a device"}).click();
+ await page.getByLabel("Wi-Fi name").fill("scanned-network");await password(page,"wrong-password");await local(page);
+ await page.getByRole("button",{name:"Connect display",exact:true}).click();await expect(page.locator("#wifi_status")).toContainText("association failed");
+ await password(page,"corrected-password");await page.getByRole("button",{name:"Try again",exact:true}).click();await verified(page);
+ await page.getByRole("button",{name:"Scan again",exact:true}).click();await expect(page.locator("#settings")).toHaveAttribute("aria-busy","false");await verified(page);
+ await page.getByRole("button",{name:"Save and restart display"}).click();await expect(page.locator("#usb_status")).toContainText("Settings saved");
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem("unifi-display.networks.v1")).networks.find(p=>p.ssid==="scanned-network").password)).toBe("corrected-password");
+ await page.reload();await page.getByRole("button",{name:"Connect display",exact:true}).click();await verified(page);
+ expect(await page.evaluate(()=>window.usbRequests.find(r=>r.command.name==="test_wifi").command.password)).toBe("corrected-password");
+});
+
+test("offline SSID changes clear unknown credentials and load the matching saved connection",async({page})=>{
+ await page.addInitScript(({config})=>{
+  const names=["wifi_ssid","wifi_password","api_key","cloud_api_key","controller_url","certificate_sha256","site_id","device_id","connection_mode","cloud_console","cloud_site","cloud_device"];
+  const values=Object.fromEntries(names.map(k=>[k,""]));Object.assign(values,config,{connection_mode:"local"});
+  localStorage.setItem("unifi-display.settings.v1",JSON.stringify({version:1,remember:true,values}));
+  const local=Object.fromEntries(Object.entries(config).filter(([k])=>!k.startsWith("wifi_")));
+  localStorage.setItem("unifi-display.networks.v1",JSON.stringify({version:1,networks:[{ssid:config.wifi_ssid,password:config.wifi_password,config:local},{ssid:"other-saved",password:"other-password",config:{...local,api_key:"other-api-key",controller_url:"https://192.168.7.1/integration",certificate_sha256:"cd".repeat(32)}}]}));
+ },{config});
+ await device(page,{blank:true});await page.goto("/");await page.locator("#device_tools > summary").click();await page.getByRole("button",{name:"Prepare settings without a device"}).click();
+ await page.getByLabel("Wi-Fi name").fill("unremembered");
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem("unifi-display.settings.v1")).values.api_key)).toBe("");
+ await page.getByLabel("Wi-Fi name").press("Tab");
+ await expect(page.getByLabel("Wi-Fi password",{exact:true})).toHaveValue("");await expect(page.getByLabel("Local Network API key")).toHaveValue("");await expect(page.getByLabel("Certificate SHA-256 fingerprint")).toHaveValue("");
+ await page.getByLabel("Wi-Fi name").fill("other-saved");await page.getByLabel("Wi-Fi name").press("Tab");
+ await expect(page.getByLabel("Wi-Fi password",{exact:true})).toHaveValue("other-password");await expect(page.getByLabel("Local Network API key")).toHaveValue("other-api-key");
+ await page.getByRole("button",{name:"Prepare installation"}).click();
+ const saved=await page.evaluate(async()=>{const m=await(await fetch(document.getElementById("installer").manifest)).json();const b=new Uint8Array(await(await fetch(m.builds[0].parts[1].path)).arrayBuffer());return JSON.parse(new TextDecoder().decode(b.slice(16,16+new DataView(b.buffer).getUint32(8,true))));});
+ expect(saved).toMatchObject({wifi_ssid:"other-saved",wifi_password:"other-password",api_key:"other-api-key",controller_url:"https://192.168.7.1/integration",certificate_sha256:"cd".repeat(32)});
+});
