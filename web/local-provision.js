@@ -13,6 +13,8 @@ export function setupProvision({ device, cloud, wifi, apply }) {
     refresh();
   }
   function refresh() {
+    $("automatic_setup").hidden = !device.connected() || $("connection_mode").value !== "local";
+    $("automatic_setup").disabled = busy;
     $("automatic_local").hidden = $("connection_mode").value !== "cloud";
     $("console_signin").disabled = busy || !device.consoleReady();
     $("console_mfa_send").disabled = busy;
@@ -117,6 +119,13 @@ export function setupProvision({ device, cloud, wifi, apply }) {
   }));
   $("provision_retry").addEventListener("click", () => run(async current => { if (phase === "verify" && target) await finish(current); else await inspect(current); }));
   $("provision_update").addEventListener("click", () => { clear(); void device.updateFirmware(); });
+  $("automatic_setup").addEventListener("click", () => {
+    $("unifi_editor").open = true;
+    $("connection_mode").value = "cloud";
+    $("connection_mode").dispatchEvent(new Event("change", { bubbles: true }));
+    if ($("cloud_api_key").value) $("discover_cloud").click();
+    else $("cloud_api_key").focus();
+  });
   window.addEventListener("cloud-selection", () => { clear(); note("Discover your gateway to set up its local key and certificate automatically."); });
   window.addEventListener("cloud-verified", () => {
     clear();

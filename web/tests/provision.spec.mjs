@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { device } from "./serial-fixture.mjs";
+import { device, config } from "./serial-fixture.mjs";
 const site="11111111-1111-4111-8111-111111111111",gateway="22222222-2222-4222-8222-222222222222";
 async function setup(page, options={}) {
- await device(page,{blank:true,...options});
+ if(options.existing)await page.addInitScript(config=>localStorage.setItem("unifi-display.settings.v1",JSON.stringify({version:1,remember:true,values:{...config,connection_mode:"local",cloud_api_key:"fixture-cloud-key",cloud_console:"",cloud_site:"",cloud_device:""}})),config);
+ await device(page,{blank:!options.existing,...options});
  await page.route("https://api.ui.com/**",route=>{
   const path=new URL(route.request().url()).pathname;
   const data=path==="/v1/hosts"?{data:[{id:"console:1",type:"console",reportedState:{state:"connected",name:"Gateway",mac:"aa:bb:cc:dd:ee:ff",ipAddrs:["192.168.6.1"],directConnectDomain:"console.id.ui.direct"}}]}:
@@ -11,8 +12,9 @@ async function setup(page, options={}) {
   return route.fulfill({json:data});
  });
  await page.goto("/");await page.getByRole("button",{name:"Connect display",exact:true}).click();
- await page.getByLabel("Wi-Fi network",{exact:true}).selectOption("saved-network");await page.getByLabel("Wi-Fi password",{exact:true}).fill("fixture-password");await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();
+ if(!options.existing){await page.getByLabel("Wi-Fi network",{exact:true}).selectOption("saved-network");await page.getByLabel("Wi-Fi password",{exact:true}).fill("fixture-password");await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();}
  await expect(page.locator("#wifi_status")).toContainText("Wi-Fi verified");
+ if(options.existing){await expect(page.locator("#unifi_editor")).not.toHaveAttribute("open");await page.getByRole("button",{name:"Set up key & certificate automatically"}).click();return;}
  await page.getByLabel("Cloud discovery API key").fill("fixture-cloud-key");await page.getByRole("button",{name:"Discover consoles",exact:true}).click();
 }
 async function signIn(page,password="fixture-console-password") {
@@ -68,4 +70,12 @@ test("forget cancels pending push approval and clears transient console credenti
  expect(await page.evaluate(()=>window.usbRequests.some(r=>["console_poll","console_provision"].includes(r.command.name)))).toBe(false);
  await expect(page.locator("#console_password")).toHaveValue("");await expect(page.locator("#console_username")).toHaveValue("");
  expect(await page.evaluate(()=>JSON.stringify(localStorage))).not.toContain("fixture-console-password");
+});
+test("an existing display exposes automatic repair and reuses its saved cloud key",async({page})=>{
+ await setup(page,{existing:true,provisionFailure:true});
+ await expect(page.locator("#console_auth")).toBeVisible();await expect(page.locator("#provision_status")).toContainText("create a replacement local key");
+ await expect(page.locator("#certificate_sha256")).toHaveValue("cd".repeat(32));
+ await signIn(page);await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ await page.getByRole("button",{name:"Save and restart display"}).click();await expect(page.locator("#usb_status")).toContainText("Settings saved");
+ expect(await page.evaluate(()=>window.usbRequests.find(r=>r.command.name==="save_config").command.config.api_key)).toBe("created-local-key");
 });
