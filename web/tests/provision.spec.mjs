@@ -100,3 +100,10 @@ test("every cached copy of the denied key is invalidated while other credentials
  expect(profiles.find(p=>p.ssid==="scanned-network")).toMatchObject({password:"other-password",config:null});
  expect(profiles.find(p=>p.ssid==="different-key-network").config.api_key).toBe("unrelated-local-key");
 });
+test("a transient existing-key check retries without discarding the key or signing in",async({page})=>{
+ await setup(page,{existing:true,provisionFailure:true,transientExisting:true});await expect(page.locator("#provision_status")).toContainText("rate limit reached");
+ await expect(page.locator("#api_key")).toHaveValue(config.api_key,{timeout:1000});await expect(page.locator("#console_auth")).toBeHidden();
+ await page.getByRole("button",{name:"Retry local setup"}).click();await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ await expect(page.locator("#api_key")).toHaveValue(config.api_key);
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_login"))).toBe(false);
+});

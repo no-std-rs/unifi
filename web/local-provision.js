@@ -34,6 +34,7 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
   }
   async function command(name, values = {}, timeout) { return device.consoleCommand({ name, ...values }, timeout); }
   async function finish(current, localKey = "") {
+    $("console_auth").hidden = true;
     phase = "verify"; note(localKey ? "Checking your existing local key on the display…" : "Creating and checking your local display key…");
     const result = await command("console_provision", { site_id: target.site_id, device_id: target.device_id, local_key: localKey }, 150000);
     if (!current()) return;
@@ -72,16 +73,18 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
     $("certificate_sha256").value = result.certificate_sha256;
     $("controller_url").value = `https://${target.hostname}/proxy/network/integration`;
     $("api_key").value = key;
-    $("console_auth").hidden = false; $("console_credentials").hidden = false;
+    $("console_auth").hidden = !!key; $("console_credentials").hidden = false;
     $("console_signin").textContent = "Sign in & create local access";
     phase = "login";
     if (key) {
       try { await finish(current, key); return; }
       catch (error) {
         if (!current()) return;
+        if (!/access denied/i.test(error.message)) throw error;
         $("api_key").value = "";
-        if (/access denied/i.test(error.message)) invalidateKey(key);
+        invalidateKey(key);
         $("api_key").dispatchEvent(new Event("input", { bubbles: true }));
+        $("console_auth").hidden = false;
         phase = "login"; note(`${error.message}. Sign in below to create a replacement local key.`, true);
       }
     } else note("Certificate verified automatically. Sign in once to create the display's local key.");
