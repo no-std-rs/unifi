@@ -1,6 +1,6 @@
 import { localConfig } from "./network-profiles.js";
 
-export function setupProvision({ device, cloud, wifi, apply }) {
+export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
   const $ = id => document.getElementById(id);
   let generation = 0, busy = false, target, login, phase = "inspect", timer, requested = false, layout;
   const fields = ["console_username", "console_password", "console_token"];
@@ -13,6 +13,8 @@ export function setupProvision({ device, cloud, wifi, apply }) {
     refresh();
   }
   function refresh() {
+    $("automatic_setup").hidden = !device.connected() || $("connection_mode").value !== "local";
+    $("automatic_setup").disabled = busy;
     $("automatic_local").hidden = $("connection_mode").value !== "cloud";
     $("console_signin").disabled = busy || !device.consoleReady();
     $("console_mfa_send").disabled = busy;
@@ -32,6 +34,7 @@ export function setupProvision({ device, cloud, wifi, apply }) {
   }
   async function command(name, values = {}, timeout) { return device.consoleCommand({ name, ...values }, timeout); }
   async function finish(current, localKey = "") {
+    $("console_auth").hidden = true;
     phase = "verify"; note(localKey ? "Checking your existing local key on the display…" : "Creating and checking your local display key…");
     const result = await command("console_provision", { site_id: target.site_id, device_id: target.device_id, local_key: localKey }, 150000);
     if (!current()) return;
@@ -70,12 +73,20 @@ export function setupProvision({ device, cloud, wifi, apply }) {
     $("certificate_sha256").value = result.certificate_sha256;
     $("controller_url").value = `https://${target.hostname}/proxy/network/integration`;
     $("api_key").value = key;
-    $("console_auth").hidden = false; $("console_credentials").hidden = false;
+    $("console_auth").hidden = !!key; $("console_credentials").hidden = false;
     $("console_signin").textContent = "Sign in & create local access";
     phase = "login";
     if (key) {
       try { await finish(current, key); return; }
-      catch (error) { if (!current()) return; phase = "login"; note(`${error.message}. Sign in below to create a replacement local key.`, true); }
+      catch (error) {
+        if (!current()) return;
+        if (!/access denied/i.test(error.message)) throw error;
+        $("api_key").value = "";
+        invalidateKey(key);
+        $("api_key").dispatchEvent(new Event("input", { bubbles: true }));
+        $("console_auth").hidden = false;
+        phase = "login"; note(`${error.message}. Sign in below to create a replacement local key.`, true);
+      }
     } else note("Certificate verified automatically. Sign in once to create the display's local key.");
     $("console_username").focus();
   }
@@ -117,6 +128,13 @@ export function setupProvision({ device, cloud, wifi, apply }) {
   }));
   $("provision_retry").addEventListener("click", () => run(async current => { if (phase === "verify" && target) await finish(current); else await inspect(current); }));
   $("provision_update").addEventListener("click", () => { clear(); void device.updateFirmware(); });
+  $("automatic_setup").addEventListener("click", () => {
+    $("unifi_editor").open = true;
+    $("connection_mode").value = "cloud";
+    $("connection_mode").dispatchEvent(new Event("change", { bubbles: true }));
+    if ($("cloud_api_key").value) $("discover_cloud").click();
+    else $("cloud_api_key").focus();
+  });
   window.addEventListener("cloud-selection", () => { clear(); note("Discover your gateway to set up its local key and certificate automatically."); });
   window.addEventListener("cloud-verified", () => {
     clear();

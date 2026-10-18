@@ -78,6 +78,9 @@ local key. It stays in the browser and is excluded from USB commands/settings.
 The device remains connected to the tested Wi-Fi during provisioning and restores
 its saved radio settings when the USB session ends. Firmware without the
 `console_provision` capability offers an update before sending login commands.
+Already configured displays also show **Set up key & certificate automatically**
+outside the collapsed manual settings. It opens enrollment and starts discovery
+with the saved cloud key, or focuses the key input when none was saved.
 
 **Advanced local settings** remains available for self-hosted controllers,
 self-signed certificates, consoles without a direct-connect identity or a unique

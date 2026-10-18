@@ -1,8 +1,13 @@
 import { test, expect } from "@playwright/test";
-import { device } from "./serial-fixture.mjs";
+import { device, config } from "./serial-fixture.mjs";
 const site="11111111-1111-4111-8111-111111111111",gateway="22222222-2222-4222-8222-222222222222";
 async function setup(page, options={}) {
- await device(page,{blank:true,...options});
+ if(options.existing)await page.addInitScript(config=>localStorage.setItem("unifi-display.settings.v1",JSON.stringify({version:1,remember:true,values:{...config,connection_mode:"local",cloud_api_key:"fixture-cloud-key",cloud_console:"",cloud_site:"",cloud_device:""}})),config);
+ if(options.sharedKey)await page.addInitScript(config=>{
+  const local=Object.fromEntries(Object.entries(config).filter(([key])=>!key.startsWith("wifi_")));
+  localStorage.setItem("unifi-display.networks.v1",JSON.stringify({version:1,networks:[{ssid:"scanned-network",password:"other-password",config:local},{ssid:"different-key-network",password:"different-password",config:{...local,api_key:"unrelated-local-key"}}]}));
+ },config);
+ await device(page,{blank:!options.existing,...options});
  await page.route("https://api.ui.com/**",route=>{
   const path=new URL(route.request().url()).pathname;
   const data=path==="/v1/hosts"?{data:[{id:"console:1",type:"console",reportedState:{state:"connected",name:"Gateway",mac:"aa:bb:cc:dd:ee:ff",ipAddrs:["192.168.6.1"],directConnectDomain:"console.id.ui.direct"}}]}:
@@ -11,8 +16,9 @@ async function setup(page, options={}) {
   return route.fulfill({json:data});
  });
  await page.goto("/");await page.getByRole("button",{name:"Connect display",exact:true}).click();
- await page.getByLabel("Wi-Fi network",{exact:true}).selectOption("saved-network");await page.getByLabel("Wi-Fi password",{exact:true}).fill("fixture-password");await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();
+ if(!options.existing){await page.getByLabel("Wi-Fi network",{exact:true}).selectOption("saved-network");await page.getByLabel("Wi-Fi password",{exact:true}).fill("fixture-password");await page.getByRole("button",{name:"Connect to Wi-Fi",exact:true}).click();}
  await expect(page.locator("#wifi_status")).toContainText("Wi-Fi verified");
+ if(options.existing){await expect(page.locator("#unifi_editor")).not.toHaveAttribute("open");await page.getByRole("button",{name:"Set up key & certificate automatically"}).click();return;}
  await page.getByLabel("Cloud discovery API key").fill("fixture-cloud-key");await page.getByRole("button",{name:"Discover consoles",exact:true}).click();
 }
 async function signIn(page,password="fixture-console-password") {
@@ -68,4 +74,36 @@ test("forget cancels pending push approval and clears transient console credenti
  expect(await page.evaluate(()=>window.usbRequests.some(r=>["console_poll","console_provision"].includes(r.command.name)))).toBe(false);
  await expect(page.locator("#console_password")).toHaveValue("");await expect(page.locator("#console_username")).toHaveValue("");
  expect(await page.evaluate(()=>JSON.stringify(localStorage))).not.toContain("fixture-console-password");
+});
+test("an existing display exposes automatic repair and reuses its saved cloud key",async({page})=>{
+ await setup(page,{existing:true,provisionFailure:true});
+ await expect(page.locator("#console_auth")).toBeVisible();await expect(page.locator("#provision_status")).toContainText("create a replacement local key");
+ await expect(page.getByRole("button",{name:"Save and restart display"})).toBeHidden({timeout:1000});
+ await expect(page.locator("#certificate_sha256")).toHaveValue("cd".repeat(32));
+ await signIn(page);await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ await page.getByRole("button",{name:"Save and restart display"}).click();await expect(page.locator("#usb_status")).toContainText("Settings saved");
+ expect(await page.evaluate(()=>window.usbRequests.find(r=>r.command.name==="save_config").command.config.api_key)).toBe("created-local-key");
+});
+test("a rejected cached key stays invalidated after rescanning the saved network",async({page})=>{
+ await setup(page,{existing:true,provisionFailure:true});
+ await expect(page.locator("#provision_status")).toContainText("create a replacement local key");
+ await page.getByRole("button",{name:"Scan again",exact:true}).click();await expect(page.locator("#settings")).toHaveAttribute("aria-busy","false");
+ await expect(page.locator("#wifi_status")).toContainText("Wi-Fi verified");
+ await expect(page.locator("#api_key")).toHaveValue("",{timeout:1000});
+ await expect(page.getByRole("button",{name:"Save and restart display"})).toBeHidden();
+});
+test("every cached copy of the denied key is invalidated while other credentials remain",async({page})=>{
+ await setup(page,{existing:true,provisionFailure:true,sharedKey:true});await expect(page.locator("#provision_status")).toContainText("create a replacement local key");
+ await page.getByLabel("Wi-Fi network",{exact:true}).selectOption("scanned-network");await expect(page.locator("#settings")).toHaveAttribute("aria-busy","false");await expect(page.locator("#wifi_status")).toContainText("Wi-Fi verified");
+ await expect(page.locator("#api_key")).toHaveValue("",{timeout:1000});await expect(page.getByRole("button",{name:"Save and restart display"})).toBeHidden();
+ const profiles=await page.evaluate(()=>JSON.parse(localStorage.getItem("unifi-display.networks.v1")).networks);
+ expect(profiles.find(p=>p.ssid==="scanned-network")).toMatchObject({password:"other-password",config:null});
+ expect(profiles.find(p=>p.ssid==="different-key-network").config.api_key).toBe("unrelated-local-key");
+});
+test("a transient existing-key check retries without discarding the key or signing in",async({page})=>{
+ await setup(page,{existing:true,provisionFailure:true,transientExisting:true});await expect(page.locator("#provision_status")).toContainText("rate limit reached");
+ await expect(page.locator("#api_key")).toHaveValue(config.api_key,{timeout:1000});await expect(page.locator("#console_auth")).toBeHidden();
+ await page.getByRole("button",{name:"Retry local setup"}).click();await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ await expect(page.locator("#api_key")).toHaveValue(config.api_key);
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_login"))).toBe(false);
 });

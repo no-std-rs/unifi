@@ -32,18 +32,21 @@ export async function device(page, options = {}) {
           if (command.name === "save_config") result = { restart: true };
           if (command.name === "console_begin") {
             window.consoleTarget = command;
+            window.consoleKey = undefined;
             if (options.badCertificate) error = "Console certificate could not be verified";
             else result = { hostname: command.hostname, certificate_sha256: "cd".repeat(32) };
           }
           if (command.name === "console_login") {
+            window.consoleKey = undefined;
             if (command.password === "wrong-login") error = "Console access denied";
             else result = options.mfa && !command.token ? { state: "mfa", methods: [{ id: "method-1", type: options.mfa }] } : { state: "authenticated" };
           }
           if (command.name === "console_mfa") result = { state: "sent" };
           if (command.name === "console_poll") result = { state: "authenticated" };
           if (command.name === "console_provision") {
-            if (options.provisionFailure && !window.provisionRetried) { window.provisionRetried = true; error = "Local verification failed; retry"; }
-            else result = { state: "verified", config: { controller_url: `https://${window.consoleTarget.hostname}/proxy/network/integration`, api_key: command.local_key || "created-local-key", certificate_sha256: "cd".repeat(32), site_id: command.site_id, device_id: command.device_id } };
+            window.consoleKey = command.local_key || window.consoleKey || "created-local-key";
+            if (options.provisionFailure && !window.provisionRetried) { window.provisionRetried = true; error = options.transientExisting ? "Console rate limit reached; wait before trying again" : command.local_key ? "Console access denied; check the account or local API key" : "Local verification failed; retry"; }
+            else result = { state: "verified", config: { controller_url: `https://${window.consoleTarget.hostname}/proxy/network/integration`, api_key: window.consoleKey, certificate_sha256: "cd".repeat(32), site_id: command.site_id, device_id: command.device_id } };
           }
           if (command.name === "bye") { mode = false; window.appMode = mode; }
           const data = { v: 1, id: request.id, session: 321, ok: !error, result, error };
