@@ -145,8 +145,10 @@ test("changing the key cancels old discovery and requires new verification", asy
 
 test("corrupt firmware cannot be prepared or flashed", async ({ page }) => {
   await page.route("**/unifi-display.bin", route => route.fulfill({ body: Buffer.alloc(32), contentType: "application/octet-stream" }));
-  await page.goto("/"); await offline(page);
+  await page.goto("/");
   await expect(page.getByRole("alert")).toContainText("download size changed");
+  await expect(page.locator("#blank_install_area")).toBeHidden();
+  await offline(page);
   await expect(page.getByRole("button", { name: "Prepare installation" })).toBeDisabled();
 });
 
@@ -154,8 +156,10 @@ test("a same-size firmware change fails SHA-256 verification", async ({ page }) 
   const binary = await readFile(new URL("../../dist/flasher/unifi-display.bin", import.meta.url));
   binary[binary.length - 1] ^= 1;
   await page.route("**/unifi-display.bin", route => route.fulfill({ body: binary, contentType: "application/octet-stream" }));
-  await page.goto("/"); await offline(page);
+  await page.goto("/");
   await expect(page.getByRole("alert")).toContainText("checksum did not match");
+  await expect(page.locator("#blank_install_area")).toBeHidden();
+  await offline(page);
   await expect(page.getByRole("button", { name: "Prepare installation" })).toBeDisabled();
 });
 

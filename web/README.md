@@ -125,8 +125,15 @@ Opt-out and forget remove all saved network credentials, including the separate
 profile store. USB save requires a successful test of the current Wi-Fi draft.
 The test verifies Wi-Fi and DHCP, not the local API key or certificate.
 
-Firmware installation, offline preparation and device diagnostics are in
-**Firmware & other options**. Offline preparation preserves the original
+**Install firmware first** is visible beside the connection step for new displays.
+Install, close the flasher dialog, then choose **Connect display** to continue
+with Wi-Fi, certificate verification and Console sign-in for local key creation.
+An unsupported firmware response brings this install action into view. The
+firmware-only manifest contains the verified public image and no settings sector;
+installation without erasing preserves saved display settings. The action stays
+hidden during USB setup and offline preparation.
+Offline preparation and device diagnostics are in **Other setup options**.
+Offline preparation preserves the original
 configuration-plus-firmware flash path and cannot test a physical connection.
 Local connection JSON can be imported inline; only the five local fields are
 accepted, excluding cloud and Wi-Fi credentials. No password or API key is logged.

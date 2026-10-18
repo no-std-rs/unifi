@@ -16,6 +16,26 @@ test("connection waits for the installer to finish loading before accepting clic
  try { await expect(page.getByRole("button",{name:"Connect display",exact:true})).toBeDisabled(); } finally { release(); }
  await page.getByRole("button",{name:"Connect display",exact:true}).click();await verified(page);
 });
+test("first-time installation exposes verified firmware without opening other options",async({page})=>{
+ await device(page,{blank:true});await page.goto("/");
+ const install=page.getByRole("button",{name:"Install firmware first",exact:true});
+ await expect(install).toBeVisible();await expect(install).toBeEnabled();
+ await expect(page.locator("#device_tools")).not.toHaveAttribute("open");
+ await expect(page.locator("#blank_install_area")).toContainText("close the flasher dialog");
+ const image=await page.evaluate(async()=>{
+  const manifest=await(await fetch(document.getElementById("blank_installer").manifest)).json();
+  const bytes=await(await fetch(manifest.builds[0].parts[0].path)).arrayBuffer();
+  const release=await(await fetch("./latest.json")).json();
+  const digest=[...new Uint8Array(await crypto.subtle.digest("SHA-256",bytes))].map(x=>x.toString(16).padStart(2,"0")).join("");
+  return {manifest,size:bytes.byteLength,release,digest};
+ });
+ expect(image.manifest.builds[0].parts).toHaveLength(1);expect(image.manifest.builds[0].parts[0].offset).toBe(0);
+ expect(image.size).toBe(image.release.size);expect(image.digest).toBe(image.release.sha256);
+ await page.getByRole("button",{name:"Connect display",exact:true}).click();
+ await expect(page.getByLabel("Wi-Fi network",{exact:true})).toBeEnabled();
+ await expect(install).toBeHidden();
+ await page.getByRole("button",{name:"Disconnect display",exact:true}).click();await expect(install).toBeVisible();
+});
 test("connect automatically reads, scans, tests saved Wi-Fi and reuses local settings",async({page})=>{
  const requests=[],errors=[];page.on("request",r=>requests.push({url:r.url(),body:r.postData()}));page.on("pageerror",e=>errors.push(e.message));
  await connect(page);await verified(page);
@@ -86,7 +106,12 @@ test("disconnect cancels an automatic read without refilling the form",async({pa
  await page.getByRole("button",{name:"Disconnect display",exact:true}).click();await expect(page.getByRole("button",{name:"Connect display",exact:true})).toBeEnabled();
  expect(await page.evaluate(()=>document.getElementById("api_key").value)).toBe("");
 });
-test("unsupported firmware reports how to recover",async({page})=>{await connect(page,{oldFirmware:true});await expect(page.locator("#usb_status")).toContainText("Install the latest firmware first");});
+test("unsupported firmware brings the enabled install action into focus",async({page})=>{
+ await connect(page,{oldFirmware:true});await expect(page.locator("#usb_status")).toContainText("Install the latest firmware first");
+ const install=page.getByRole("button",{name:"Install firmware first",exact:true});
+ await expect(install).toBeVisible();await expect(install).toBeEnabled();await expect(install).toBeFocused();
+ await expect(page.locator("#device_tools")).not.toHaveAttribute("open");
+});
 test("slow tests retain inline progress beyond 65 seconds",async({page})=>{
  await page.clock.install();await connect(page,{delay:"test_wifi"});await expect.poll(()=>page.evaluate(()=>typeof window.completeUsbOperation)).toBe("function");
  await page.clock.runFor(68000);await expect(page.locator("#wifi_status")).toContainText("Checking saved-network");await page.evaluate(()=>window.completeUsbOperation());await verified(page);
