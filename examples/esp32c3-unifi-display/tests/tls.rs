@@ -326,11 +326,19 @@ async fn console_key_creation_uses_real_tls_http_cookies_and_csrf() {
             } else {
                 if header.starts_with("GET /proxy/network/integration/") {
                     assert!(header.contains("X-API-Key: fixture-new-key"));
+                    assert!(header.contains("Accept-Encoding: identity"));
                     reads += 1;
+                    if header.contains("/statistics/latest ") {
+                        ("", r#"{"interfaces":{}}"#)
+                    } else if header.contains("?limit=1 ") {
+                        ("", r#"{"data":[],"totalCount":0}"#)
+                    } else {
+                        ("", r#"{"id":"22222222-2222-4222-8222-222222222222"}"#)
+                    }
                 } else {
                     assert!(header.starts_with("POST /api/auth/logout "));
+                    ("", "{}")
                 }
-                ("", "{}")
             };
             let reply=format!("HTTP/1.1 200 OK\r\n{extra}Content-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{data}",data.len());
             io.write_all(reply.as_bytes()).unwrap();

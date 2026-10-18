@@ -31,6 +31,7 @@ pub async fn exchange<S: Read + Write>(
     let status: u16 = response.status.0;
     let mut cookies = Vec::new();
     let mut csrf = None;
+    let mut encoded = false;
     for (name, value) in response.headers() {
         if name.eq_ignore_ascii_case("set-cookie") {
             cookies.push(
@@ -46,9 +47,13 @@ pub async fn exchange<S: Read + Write>(
                     .map_err(|_| "Invalid console CSRF token")?
                     .to_string(),
             );
+        } else if name.eq_ignore_ascii_case("content-encoding")
+            && !value.eq_ignore_ascii_case(b"identity")
+        {
+            encoded = true;
         }
     }
-    // Login success/session/verification responses can be large; only their status
+    // Login success/session responses can be large; only their status
     // and headers are needed. The connection is closed rather than buffering them.
     // Error bodies may be HTML/plain text from the console's reverse proxy.
     // Preserve their status for authentication/rate-limit handling. MFA's 499
@@ -57,6 +62,9 @@ pub async fn exchange<S: Read + Write>(
     let parse =
         request.json && ((!login && (200..300).contains(&status)) || (login && status == 499));
     let data = if parse {
+        if encoded {
+            return Err("Console returned unsupported content encoding");
+        }
         let mut body = vec![0; 16385];
         let mut reader = response.body().reader();
         let mut used = 0;
@@ -96,9 +104,18 @@ mod tests {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     async fn reply(status: u16, path: &str, body: &str) -> Result<Response> {
+        encoded_reply(status, path, body, "").await
+    }
+
+    async fn encoded_reply(
+        status: u16,
+        path: &str,
+        body: &str,
+        encoding: &str,
+    ) -> Result<Response> {
         let (client, mut server) = tokio::io::duplex(32768);
         let wire = alloc::format!(
-            "HTTP/1.1 {status} Response\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            "HTTP/1.1 {status} Response\r\n{encoding}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
             body.len()
         );
         let serving = tokio::spawn(async move {
@@ -126,6 +143,34 @@ mod tests {
         .await;
         serving.await.unwrap();
         result
+    }
+
+    #[tokio::test]
+    async fn parsed_responses_require_identity_encoding_and_bounded_json() {
+        let path = "/proxy/network/integration/v1/sites/site/devices/device";
+        assert_eq!(
+            encoded_reply(200, path, "{}", "Content-Encoding: gzip\r\n")
+                .await
+                .err(),
+            Some("Console returned unsupported content encoding")
+        );
+        assert!(
+            encoded_reply(200, path, "{}", "Content-Encoding: IDENTITY\r\n")
+                .await
+                .is_ok()
+        );
+        assert_eq!(
+            encoded_reply(403, path, "error", "Content-Encoding: gzip\r\n")
+                .await
+                .unwrap()
+                .status,
+            403
+        );
+        let oversized = " ".repeat(16385);
+        assert_eq!(
+            reply(200, path, &oversized).await.err(),
+            Some("Console response exceeds the display limit")
+        );
     }
 
     #[tokio::test]

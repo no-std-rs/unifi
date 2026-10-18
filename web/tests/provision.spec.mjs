@@ -9,13 +9,17 @@ async function setup(page, options={}) {
   localStorage.setItem("unifi-display.networks.v1",JSON.stringify({version:1,networks:[{ssid:"scanned-network",password:"other-password",config:local},{ssid:"different-key-network",password:"different-password",config:{...local,api_key:"unrelated-local-key"}}]}));
  },config);
  await device(page,{blank:!options.existing,...options});
- let failCloud=options.cloudFailure;
+ let failCloud=options.cloudFailure, badStatistics=options.badCloudStatistics;
  await page.route("https://api.ui.com/**",route=>{
   const path=new URL(route.request().url()).pathname;
   if(path==="/v1/hosts" && failCloud){failCloud=false;return route.fulfill({status:403,json:{}});}
+  if(path.endsWith("/statistics/latest") && badStatistics){badStatistics=false;return route.fulfill({json:{interfaces:null}});}
   const data=path==="/v1/hosts"?{data:[{id:"console:1",type:"console",reportedState:{state:"connected",name:"Gateway",mac:"aa:bb:cc:dd:ee:ff",ipAddrs:["192.168.6.1"],directConnectDomain:"console.id.ui.direct"}}]}:
    path.endsWith("/sites")?{data:[{id:site,name:"Default"}],totalCount:1}:
-   path.endsWith("/devices")?{data:[{id:gateway,name:"Root gateway",macAddress:"aa:bb:cc:dd:ee:ff"}],totalCount:1}:{};
+   path.endsWith("/devices")?{data:[{id:gateway,name:"Root gateway",macAddress:"aa:bb:cc:dd:ee:ff"}],totalCount:1}:
+   path.endsWith("/statistics/latest")?{interfaces:{}}:
+   path.endsWith(`/devices/${gateway}`)?{id:gateway}:
+   path.endsWith("/clients")?{data:[],totalCount:0}:{};
   return route.fulfill({json:data});
  });
  await page.goto("/");await page.getByRole("button",{name:"Connect display",exact:true}).click();
@@ -186,4 +190,16 @@ test("restarting two-factor sign-in clears credentials and cancels the old appro
  expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_poll"))).toBe(false);
  await signIn(page);await expect(page.locator("#provision_status")).toContainText("Approve sign-in");await page.clock.fastForward(2500);
  await expect(page.locator("#provision_status")).toContainText("Local access ready");
+});
+
+test("incompatible cloud statistics stop enrollment and retry keeps the selection",async({page})=>{
+ let discoveries=0;page.on("request",r=>{if(r.url()==="https://api.ui.com/v1/hosts")discoveries++;});
+ await setup(page,{badCloudStatistics:true});
+ await expect(page.locator("#cloud_status")).toContainText("Device statistics: UniFi returned incompatible data");
+ await expect(page.locator("#console_auth")).toBeHidden();
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="console_begin"))).toBe(false);
+ await page.getByRole("button",{name:"Verify cloud access",exact:true}).click();
+ await expect(page.locator("#provision_status")).toContainText("Certificate verified automatically");
+ await signIn(page);await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ expect(discoveries).toBe(1);
 });

@@ -20,6 +20,9 @@ test("discovery paginates and every dashboard read uses the official origin and 
     else if (url.includes("/hosts?")) value = { data: [{ id: "console:1", type: "console", reportedState: { state: "connected" } }] };
     else if (url.endsWith("/sites?offset=0&limit=100")) value = { data: [{ id: site }], totalCount: 2 };
     else if (url.endsWith("/sites?offset=1&limit=100")) value = { data: [{ id: "other" }], totalCount: 2 };
+    else if (url.endsWith("/statistics/latest")) value = { interfaces: {} };
+    else if (url.endsWith(`/devices/${device}`)) value = { id: device };
+    else if (url.endsWith("?limit=1")) value = { data: [], totalCount: 0 };
     return Response.json(value);
   });
   assert.equal((await api.consoles()).length, 1);
@@ -60,4 +63,15 @@ test("automatic enrollment binds a private address to the cloud-reported direct-
     assert.throws(()=>consoleTarget({reportedState:{...host.reportedState,directConnectDomain:name}}));
   }
   assert.throws(()=>consoleTarget({reportedState:{...host.reportedState,ipAddrs:["203.0.113.9"]}}));
+});
+test("HTTP 200 does not verify another device, incompatible statistics or invalid page data",async()=>{
+ const base=cloudBase("console");
+ const paths=[`/devices/${device}`,`/devices/${device}/statistics/latest`,"/devices?limit=1","/clients?limit=1"];
+ const valid=[{id:device},{interfaces:{}},{data:[],totalCount:0},{data:[],totalCount:0}];
+ for(const [index,bad] of [[0,{id:site}],[1,{}],[1,{interfaces:{radios:{}}}],[2,{data:{},totalCount:1}],[3,{data:[],totalCount:-1}]]){
+  let calls=0;const api=cloudClient("fixture-key",signal(),async url=>{const i=paths.findIndex(path=>url.endsWith(path));calls++;return Response.json(i===index?bad:valid[i]);});
+  await assert.rejects(api.verify(base,site,device), /device|statistics|count/i);assert.equal(calls,index+1);
+ }
+ const html=cloudClient("fixture-key",signal(),async()=>new Response("private-test-material: <html>login</html>"));
+ await assert.rejects(html.verify(base,site,device),error=>/invalid JSON/i.test(error.message) && !error.message.includes("private"));
 });
