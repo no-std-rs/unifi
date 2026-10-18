@@ -100,12 +100,12 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
       $("usb_test").textContent = "Try again";
     }
   }
-  async function choose(ssid, current, secure = true) {
+  async function choose(ssid, current, secure = true, rescan = false) {
     wifiChanging(); editing = false;
     $("wifi_ssid").value = ssid;
     const known = lookupNetwork(ssid);
     $("wifi_password").value = secure ? known?.password || "" : "";
-    applyLocal(known?.config || null);
+    applyLocal(known?.config || null, { rescan });
     $("unifi_editor").open = !known?.config;
     $("manual_wifi").hidden = !!accessPoints.get(ssid);
     refresh();
@@ -130,7 +130,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     const previous = $("wifi_ssid").value;
     if (accessPoints.has(previous)) {
       select.value = previous;
-      await choose(previous, current, accessPoints.get(previous).secure);
+      await choose(previous, current, accessPoints.get(previous).secure, true);
     } else {
       select.selectedIndex = 0;
       editing = false; $("manual_wifi").hidden = !!accessPoints.size;

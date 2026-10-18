@@ -138,6 +138,7 @@ export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
   window.addEventListener("cloud-selection", () => { clear(); note("Discover your gateway to set up its local key and certificate automatically."); });
   function enroll() {
     clear();
+    $("unifi_editor").open = true;
     if (device.consoleReady()) { if (busy) requested = true; else void run(inspect); }
     else { note(device.connected() ? "Install the latest firmware to create local access over USB." : "Connect your display to set up its local key and certificate automatically."); $("provision_retry").hidden = false; }
   }

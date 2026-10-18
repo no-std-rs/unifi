@@ -96,8 +96,10 @@ const device = setupDevice({
     if (networks.size > 16) networks.delete(networks.keys().next().value);
     saveSettings();
   },
-  applyLocal: (config, { offline = false } = {}) => {
+  applyLocal: (config, { offline = false, rescan = false } = {}) => {
     importGeneration++; forgetSettings();
+    // A same-network scan renews the device session, not the cloud selection.
+    if (rescan && cloud.verified()) { saveSettings(); return; }
     const draft = connectionDraft?.wifi_ssid === $("wifi_ssid").value ? connectionDraft : null;
     const sameCloud = draft?.connection_mode === "cloud" && $("connection_mode").value === "cloud"
       && ["cloud_console", "cloud_site", "cloud_device"].every(name => cloud.selection()[name] === draft[name]);

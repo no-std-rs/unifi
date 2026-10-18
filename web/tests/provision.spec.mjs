@@ -121,3 +121,13 @@ test("changing the Wi-Fi password cancels approval and automatically verifies th
  await signIn(page);await page.getByRole("button",{name:"Send code / approval"}).click();await page.clock.fastForward(2500);
  await expect(page.locator("#provision_status")).toContainText("Local access ready");
 });
+test("rescanning the enrolled network rechecks local access without cloud rediscovery or another login",async({page})=>{
+ let discoveries=0;page.on("request",request=>{if(request.url()==="https://api.ui.com/v1/hosts")discoveries++;});
+ await setup(page);await expect(page.locator("#console_auth")).toBeVisible();await signIn(page);
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ await page.getByRole("button",{name:"Scan again",exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="console_begin").length)).toBe(2);
+ await expect(page.locator("#provision_status")).toContainText("Local access ready");
+ await expect(page.locator("#connection_mode")).toHaveValue("cloud");expect(discoveries).toBe(1);
+ expect(await page.evaluate(()=>window.usbRequests.filter(r=>r.command.name==="console_login").length)).toBe(1);
+});
