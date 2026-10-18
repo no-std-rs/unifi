@@ -23,7 +23,7 @@ export async function device(page, options = {}) {
           let result = null, error = null;
           if (command.name === "hello") { mode = true; window.appMode = mode; result = { nonce: command.nonce, protocol: 1, board: "ESP32-2424S012", capabilities: ["scan_wifi", "test_wifi", "save_config", ...(options.noProvision ? [] : ["console_provision"]), ...(options.noTlsName ? [] : ["tls_server_name"])] }; }
           if (command.name === "hello" && options.oldFirmware) result.capabilities = [];
-          if (command.name === "status") result = { configured: !options.blank, ip: "192.168.6.20", app_mode: mode };
+          if (command.name === "status") result = { configured: !options.blank, ip: "192.168.6.20", app_mode: mode, ...(options.connectionStatus ? {connection_status:options.connectionStatus} : {}) };
           if (command.name === "get_config") result = { config: options.blank ? null : { ...config, controller_url: options.controllerUrl || config.controller_url, wifi_password: options.devicePassword || config.wifi_password } };
           if (command.name === "scan_wifi") result = { networks: window.scanNetworks || options.networks || [{ ssid: "saved-network", rssi: -30, channel: 1, secure: true },{ ssid: "scanned-network", rssi: -40, channel: 6, secure: true }, { ssid: "scanned-network", rssi: -80, channel: 6, secure: true }, { ssid: "<script>noise</script>", rssi: -60, channel: 1, secure: false }] };
           if (command.name === "test_wifi") {

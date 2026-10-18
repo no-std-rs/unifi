@@ -9,6 +9,22 @@ async function local(page) {
  await page.getByLabel("Local Network API key").fill(config.api_key);
  await page.getByLabel("Certificate SHA-256 fingerprint").fill(config.certificate_sha256);
 }
+test("connection diagnostics are visible without opening other options",async({page})=>{
+ await connect(page,{connectionStatus:"NO DHCP ADDRESS - RETRYING"});await verified(page);
+ await expect(page.locator("#device_tools")).not.toHaveAttribute("open");
+ await page.getByRole("button",{name:"Check connection",exact:true}).click();
+ await expect(page.locator("#connection_status")).toContainText("NO DHCP ADDRESS - RETRYING");
+ await expect(page.locator("#connection_status")).toContainText("polling pauses");
+ await expect(page.locator("#usb_status")).toContainText("IP 192.168.6.20");
+ await page.getByRole("button",{name:"Disconnect display",exact:true}).click();
+ await expect(page.getByRole("button",{name:"Check connection",exact:true})).toBeHidden();
+ await expect(page.locator("#connection_status")).toBeHidden();
+});
+test("connection diagnostics explain missing support on earlier firmware",async({page})=>{
+ await connect(page);await verified(page);
+ await page.getByRole("button",{name:"Check connection",exact:true}).click();
+ await expect(page.locator("#connection_status")).toContainText("Update the display firmware");
+});
 test("connection waits for the installer to finish loading before accepting clicks",async({page})=>{
  await device(page);let release,started;const held=new Promise(resolve=>release=resolve),loading=new Promise(resolve=>started=resolve);
  await page.route("**/local-provision.js",async route=>{started();await held;await route.continue();});

@@ -72,6 +72,14 @@ for DHCP. It then restores the saved radio configuration without writing flash;
 disconnect APP MODE to resume its saved connection. A successful test verifies
 Wi-Fi and DHCP, not the controller's API key or TLS certificate.
 
+The dashboard distinguishes connecting to Wi-Fi, authentication/security errors,
+missing networks, waiting for DHCP and connecting to UniFi. Association has a
+20-second deadline and DHCP a 15-second deadline; failures stay visible while
+the device retries. **Check connection** beside the USB connection controls
+reports the dashboard status without exposing credentials. Polling pauses in
+APP MODE, so data can become stale while the installer is connected. Earlier
+firmware must be updated to report these connection diagnostics.
+
 The form reads saved settings from USB automatically (including credentials).
 **Save and restart display** validates and verifies a write to the settings
 partition, then reboots into the local dashboard without reflashing. The previous
@@ -91,6 +99,15 @@ Automatic enrollment saves the gateway's numeric LAN URL plus an optional
 `tls_server_name` that selects its enrolled certificate on that same LAN socket.
 The TLS name is never resolved. Polling needs no public DNS, cloud access or
 clock synchronization once the local key and certificate pin are saved.
+
+The C3 has a shared CPU stack for Embassy polling. SDK requests are built inside
+one reusable fetch stage, behind a non-inlined request builder, without adding a
+heap allocation. This prevents large request temporaries from exhausting the
+outer polling frame during nested request/TLS calls.
+Release CI checks the actual ELF's unwind information and linker stack range:
+no described frame may exceed 24 KiB, and the largest frame must leave at least
+16 KiB for nested calls. This catches the oversized-frame regression; it does
+not replace a hardware stack high-water measurement.
 
 Prepare the installation, then use the USB dialog. The public factory image has
 no credentials. The page verifies its advertised size and SHA-256, then creates

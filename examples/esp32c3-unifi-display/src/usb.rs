@@ -344,6 +344,7 @@ pub async fn work(
     stack: Stack<'static>,
     saved: Option<&'static DeviceConfig>,
     mut store: Store,
+    dashboard: &'static crate::Shared,
 ) -> ! {
     let mut console: Option<unifi_display::provision::Session> = None;
     loop {
@@ -463,9 +464,15 @@ pub async fn work(
             }
             Command::ConsoleEnd {} => Ok(Value::Null),
             Command::GetConfig {} => Ok(json!({"config":saved})),
-            Command::Status {} => Ok(
-                json!({"configured":saved.is_some(),"ip":stack.config_v4().map(|c|c.address.address().to_string()),"app_mode":true}),
-            ),
+            Command::Status {} => {
+                let mut snapshot = dashboard.lock().await.clone();
+                let network = crate::connection_status();
+                snapshot.network = Some(network);
+                Ok(
+                    json!({"configured":saved.is_some(),"ip":stack.config_v4().map(|c|c.address.address().to_string()),"app_mode":true,
+                    "network_state":network.code(),"connection_status":unifi_display::render::status(&snapshot,now())}),
+                )
+            }
             Command::SaveConfig { config } => {
                 console = None;
                 set_label("Saving settings...");

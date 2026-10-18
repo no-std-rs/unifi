@@ -27,6 +27,8 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     $("settings").setAttribute("aria-busy", String(busy));
     $("usb_connect").hidden = connected; $("usb_connect").disabled = busy || !navigator.serial || !window.isSecureContext;
     $("usb_disconnect").hidden = !connected;
+    $("usb_status_read").hidden = !connected;
+    $("connection_status").hidden = !connected || !$("connection_status").textContent;
     $("manual_setup").disabled = busy || connected;
     $("manual_setup").hidden = manual || connected;
     $("connected_tools").hidden = !connected;
@@ -61,6 +63,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     window.dispatchEvent(new Event("display-state"));
   }
   const client = new DisplaySerial(() => {
+    $("connection_status").textContent = "";
     generation++; verified = null; saved ? note("usb_status", "Settings saved. Your display is restarting.") : note("usb_status", "Display disconnected. Connect again to continue.");
     refresh();
   });
@@ -222,7 +225,11 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   $("usb_test").addEventListener("click", () => run(testWifi));
   $("usb_status_read").addEventListener("click", () => run(async current => {
     const result = await client.command({ name: "status" });
-    if (current()) note("usb_status", `APP MODE · ${result.configured ? "settings saved" : "setup required"}${result.ip ? ` · IP ${result.ip}` : ""}`);
+    if (!current()) return;
+    note("usb_status", `APP MODE · ${result.configured ? "settings saved" : "setup required"}${result.ip ? ` · IP ${result.ip}` : ""}`);
+    note("connection_status", typeof result.connection_status === "string"
+      ? `Dashboard status: ${result.connection_status}. Dashboard polling pauses while connected to this page.`
+      : "This firmware cannot report the dashboard connection stage. Update the display firmware for Wi-Fi, DHCP and local API diagnostics.");
   }));
   $("usb_save").addEventListener("click", () => run(async current => {
     if (!matches()) throw new Error("Check the Wi-Fi connection before saving.");

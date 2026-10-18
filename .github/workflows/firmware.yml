@@ -46,6 +46,7 @@ jobs:
       - name: Build a public factory image without credentials
         run: |
           sh tools/build-dashboard-artifact.sh
+          python3 tools/check-dashboard-stack.py examples/esp32c3-unifi-display/target/riscv32imc-unknown-none-elf/release/unifi-display
           python3 -c 'import json; assert not json.load(open("dist/firmware/latest.json"))["dirty"]'
           cd dist/firmware
           sha256sum --check SHA256SUMS

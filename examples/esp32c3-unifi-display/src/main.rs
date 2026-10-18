@@ -3,12 +3,16 @@
 #![no_main]
 
 extern crate alloc;
+use core::cell::Cell;
 mod console_net;
 mod usb;
 
 use embassy_executor::Spawner;
 use embassy_net::{Runner, Stack, StackResources};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
+use embassy_sync::{
+    blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex},
+    mutex::Mutex,
+};
 use embassy_time::{with_timeout, Duration, Instant, Timer};
 use embedded_graphics::{pixelcolor::Rgb565, prelude::RgbColor};
 use esp_backtrace as _;
@@ -29,6 +33,7 @@ use static_cell::StaticCell;
 use unifi_display::{
     api::{self, Client, Error},
     config::{self, DeviceConfig},
+    connection::{AddressWait, NetworkState},
     navigation::Navigation,
     panel, render,
     stats::Dashboard,
@@ -41,6 +46,16 @@ static PIXELS: StaticCell<[Rgb565; panel::WIDTH * panel::TILE_ROWS]> = StaticCel
 static WIFI: StaticCell<usb::Wifi> = StaticCell::new();
 static USB_TX: StaticCell<usb::Tx> = StaticCell::new();
 static CONFIG: StaticCell<DeviceConfig> = StaticCell::new();
+static CONNECTION: BlockingMutex<CriticalSectionRawMutex, Cell<NetworkState>> =
+    BlockingMutex::new(Cell::new(NetworkState::Connecting));
+
+fn connection_status() -> NetworkState {
+    CONNECTION.lock(Cell::get)
+}
+
+fn set_connection_status(status: NetworkState) {
+    CONNECTION.lock(|value| value.set(status));
+}
 
 esp_bootloader_esp_idf::esp_app_desc!();
 
@@ -254,9 +269,9 @@ async fn main(spawner: Spawner) -> ! {
     };
     controller.set_config(&baseline).unwrap();
     let wifi = WIFI.init(Mutex::new(controller));
-    spawner.spawn(wifi_connection(wifi, config).unwrap());
+    spawner.spawn(wifi_connection(wifi, stack, config).unwrap());
     spawner.spawn(usb::receive(usb_rx, usb_tx).unwrap());
-    spawner.spawn(usb::work(usb_tx, wifi, stack, config, store).unwrap());
+    spawner.spawn(usb::work(usb_tx, wifi, stack, config, store, state).unwrap());
     spawner.spawn(network(runner).unwrap());
     if let Some(config) = config {
         spawner.spawn(poll_router(stack, state, config).unwrap());
@@ -279,7 +294,8 @@ async fn main(spawner: Spawner) -> ! {
         was_app = app_mode;
         let changed = !app_mode && navigation.update(now.as_millis(), touching);
         if changed || now >= frame_at {
-            let snapshot = state.lock().await.clone();
+            let mut snapshot = state.lock().await.clone();
+            snapshot.network = Some(connection_status());
             for y in (0..240).step_by(panel::TILE_ROWS) {
                 let mut tile = panel::Tile { y, pixels };
                 if app_mode {
@@ -306,15 +322,69 @@ async fn main(spawner: Spawner) -> ! {
 }
 
 #[embassy_executor::task]
-async fn wifi_connection(wifi: &'static usb::Wifi, config: Option<&'static DeviceConfig>) -> ! {
+async fn wifi_connection(
+    wifi: &'static usb::Wifi,
+    stack: Stack<'static>,
+    config: Option<&'static DeviceConfig>,
+) -> ! {
+    let mut address_wait = AddressWait::default();
     loop {
+        let mut retry = false;
         if config.is_some() && !usb::active() {
             let mut controller = wifi.lock().await;
             if !usb::active() && !controller.is_connected() {
-                let _ = with_timeout(Duration::from_secs(20), controller.connect_async()).await;
+                address_wait.observe(false, false, Instant::now().as_millis());
+                set_connection_status(NetworkState::Connecting);
+                let result =
+                    with_timeout(Duration::from_secs(20), controller.connect_async()).await;
+                if !usb::active() {
+                    match result {
+                        Ok(Ok(_)) => set_connection_status(NetworkState::WaitingForAddress),
+                        Ok(Err(error)) => {
+                            set_connection_status(wifi_failure(error));
+                            retry = true;
+                        }
+                        Err(_) => {
+                            set_connection_status(NetworkState::ConnectionTimedOut);
+                            retry = true;
+                        }
+                    }
+                }
+            }
+            let connected = controller.is_connected();
+            // USB owns the single stack state-change waiter during Wi-Fi tests.
+            // Monitor DHCP without registering another waiter or holding its radio lock.
+            drop(controller);
+            if !usb::active() {
+                if let Some(status) = address_wait.observe(
+                    connected,
+                    stack.is_config_up(),
+                    Instant::now().as_millis(),
+                ) {
+                    set_connection_status(status);
+                }
             }
         }
-        Timer::after(Duration::from_secs(1)).await;
+        // Leave failures readable before attempting the next association.
+        Timer::after(Duration::from_secs(if retry { 5 } else { 1 })).await;
+    }
+}
+
+fn wifi_failure(error: esp_radio::wifi::WifiError) -> NetworkState {
+    use esp_radio::wifi::{DisconnectReason, WifiError};
+    match error {
+        WifiError::Disconnected(info) => match info.reason {
+            DisconnectReason::AuthenticationFailed
+            | DisconnectReason::FourWayHandshakeTimeout
+            | DisconnectReason::HandshakeTimeout => NetworkState::AuthenticationFailed,
+            DisconnectReason::NoAccessPointFound => NetworkState::NetworkNotFound,
+            DisconnectReason::NoAccessPointFoundWithCompatibleSecurity
+            | DisconnectReason::NoAccessPointFoundInAuthmodeThreshold => {
+                NetworkState::SecurityMismatch
+            }
+            _ => NetworkState::ConnectionFailed,
+        },
+        _ => NetworkState::ConnectionFailed,
     }
 }
 
@@ -336,12 +406,13 @@ async fn poll_router(
             Timer::after_millis(250).await;
             continue;
         }
-        if !stack.is_config_up() && state.last_sample_ms.is_some() {
-            state.error = Some(Error::Transport);
-            state.push_rate(None);
-            *shared.lock().await = state.clone();
+        if !stack.is_config_up() {
+            if state.network_unavailable() {
+                *shared.lock().await = state.clone();
+            }
+            Timer::after_millis(250).await;
+            continue;
         }
-        stack.wait_config_up().await;
         if usb::active() {
             continue;
         }

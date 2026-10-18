@@ -7,6 +7,7 @@ pub mod certificate;
 pub mod api;
 pub mod app;
 pub mod config;
+pub mod connection;
 pub mod console_http;
 pub mod local_net;
 pub mod navigation;
