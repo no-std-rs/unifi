@@ -117,7 +117,11 @@ const device = setupDevice({
   },
 });
 
-setupProvision({ device, cloud, wifi: readForm, apply: config => {
+setupProvision({ device, cloud, wifi: readForm, invalidateKey: key => {
+  const ssid = $("wifi_ssid").value, known = networks.get(ssid);
+  if (known?.config?.api_key === key) networks.set(ssid, profile(ssid, known.password, null));
+  if (connectionDraft?.wifi_ssid === ssid && connectionDraft.api_key === key) connectionDraft.api_key = "";
+}, apply: config => {
   connectionDraft = undefined; importGeneration++; forgetSettings();
   for (const name of localFields) $(name).value = config[name];
   const values = readForm();

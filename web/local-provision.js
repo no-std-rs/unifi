@@ -1,6 +1,6 @@
 import { localConfig } from "./network-profiles.js";
 
-export function setupProvision({ device, cloud, wifi, apply }) {
+export function setupProvision({ device, cloud, wifi, apply, invalidateKey }) {
   const $ = id => document.getElementById(id);
   let generation = 0, busy = false, target, login, phase = "inspect", timer, requested = false, layout;
   const fields = ["console_username", "console_password", "console_token"];
@@ -80,6 +80,7 @@ export function setupProvision({ device, cloud, wifi, apply }) {
       catch (error) {
         if (!current()) return;
         $("api_key").value = "";
+        if (/access denied/i.test(error.message)) invalidateKey(key);
         $("api_key").dispatchEvent(new Event("input", { bubbles: true }));
         phase = "login"; note(`${error.message}. Sign in below to create a replacement local key.`, true);
       }

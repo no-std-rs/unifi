@@ -42,7 +42,7 @@ export async function device(page, options = {}) {
           if (command.name === "console_mfa") result = { state: "sent" };
           if (command.name === "console_poll") result = { state: "authenticated" };
           if (command.name === "console_provision") {
-            if (options.provisionFailure && !window.provisionRetried) { window.provisionRetried = true; error = "Local verification failed; retry"; }
+            if (options.provisionFailure && !window.provisionRetried) { window.provisionRetried = true; error = command.local_key ? "Console access denied; check the account or local API key" : "Local verification failed; retry"; }
             else result = { state: "verified", config: { controller_url: `https://${window.consoleTarget.hostname}/proxy/network/integration`, api_key: command.local_key || "created-local-key", certificate_sha256: "cd".repeat(32), site_id: command.site_id, device_id: command.device_id } };
           }
           if (command.name === "bye") { mode = false; window.appMode = mode; }

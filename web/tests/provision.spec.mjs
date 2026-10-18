@@ -80,3 +80,11 @@ test("an existing display exposes automatic repair and reuses its saved cloud ke
  await page.getByRole("button",{name:"Save and restart display"}).click();await expect(page.locator("#usb_status")).toContainText("Settings saved");
  expect(await page.evaluate(()=>window.usbRequests.find(r=>r.command.name==="save_config").command.config.api_key)).toBe("created-local-key");
 });
+test("a rejected cached key stays invalidated after rescanning the saved network",async({page})=>{
+ await setup(page,{existing:true,provisionFailure:true});
+ await expect(page.locator("#provision_status")).toContainText("create a replacement local key");
+ await page.getByRole("button",{name:"Scan again",exact:true}).click();await expect(page.locator("#settings")).toHaveAttribute("aria-busy","false");
+ await expect(page.locator("#wifi_status")).toContainText("Wi-Fi verified");
+ await expect(page.locator("#api_key")).toHaveValue("",{timeout:1000});
+ await expect(page.getByRole("button",{name:"Save and restart display"})).toBeHidden();
+});
