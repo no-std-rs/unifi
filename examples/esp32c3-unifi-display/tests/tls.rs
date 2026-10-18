@@ -310,8 +310,11 @@ async fn console_key_creation_uses_real_tls_http_cookies_and_csrf() {
                 ("Set-Cookie: TOKEN=fixture-session; Path=/; Secure; HttpOnly\r\nX-CSRF-Token: first\r\n",r#"{"id":"fixture-user"}"#)
             } else if header.starts_with("GET /api/users/self ") {
                 assert!(header.contains("Cookie: TOKEN=fixture-session"));
-                ("X-Updated-CSRF-Token: rotated\r\n", "{}")
-            } else if header.starts_with("POST /proxy/users/api/v2/user/self/keys ") {
+                (
+                    "X-Updated-CSRF-Token: rotated\r\n",
+                    r#"{"id":"fixture-local-user"}"#,
+                )
+            } else if header.starts_with("POST /proxy/users/api/v2/user/fixture-local-user/keys ") {
                 assert!(header.contains("Cookie: TOKEN=fixture-session"));
                 assert!(header.contains("X-CSRF-Token: rotated"));
                 assert!(header.contains("Origin: https://console.id.ui.direct"));

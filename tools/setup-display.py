@@ -282,11 +282,14 @@ class Wizard:
                 raise SetupError('Sign in to your console before creating the local display key.')
             if self.creation_attempted:
                 raise SetupError('Key creation was already attempted. Check Console → Integrations before restarting setup.')
-            # Refresh the CSRF token using the same console session, then create exactly once.
-            status, _ = self.local('GET', '/api/users/self')
+            # Match the console UI's user-specific route and refresh the CSRF token.
+            status, profile = self.local('GET', '/api/users/self')
             success(status, 'Console session check')
+            user_id = profile.get('id') if isinstance(profile, dict) else None
+            if not isinstance(user_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,128}', user_id):
+                raise SetupError('Console did not return a valid signed-in user ID. Retry local setup.')
             self.creation_attempted = True
-            status, data = self.local('POST', '/proxy/users/api/v2/user/self/keys', {'name': 'UniFi ESP32 Display'})
+            status, data = self.local('POST', f'/proxy/users/api/v2/user/{user_id}/keys', {'name': 'UniFi ESP32 Display'})
             success(status, 'Local key creation')
             if data.get('code', 0) != 0 or not data.get('data', {}).get('full_api_key'):
                 raise SetupError('The console did not return a new key. Check Console → Integrations before retrying.')

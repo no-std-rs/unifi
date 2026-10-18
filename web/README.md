@@ -73,6 +73,11 @@ verifies all four dashboard reads. Retry verification retains a newly created ke
 an uncertain creation attempt never silently creates another. Passwords, MFA codes
 and console session cookies are temporary and excluded from browser storage and
 device flash. The local integration key and trusted pin are remembered normally.
+Key creation follows the console UI: refresh the current session with
+`GET /api/users/self`, then use its `id` in
+`POST /proxy/users/api/v2/user/{id}/keys`. The request omits `expired_at`, matching
+the UI's **Never expires** option. A missing or invalid profile ID stops before
+key creation and can be retried within the same console session.
 Saved cloud keys resume discovery automatically once Wi-Fi is verified. A failed
 discovery stays available to retry instead of repeating on every Wi-Fi check.
 Push/email/SMS challenges send automatically; authenticator and backup codes show
