@@ -112,6 +112,25 @@ test("unsupported firmware brings the enabled install action into focus",async({
  await expect(install).toBeVisible();await expect(install).toBeEnabled();await expect(install).toBeFocused();
  await expect(page.locator("#device_tools")).not.toHaveAttribute("open");
 });
+test("firmware recovery waits for a pending verified download before focusing install",async({page})=>{
+ await device(page,{oldFirmware:true});let release;const held=new Promise(resolve=>release=resolve);
+ await page.route("**/unifi-display.bin",async route=>{await held;await route.continue();});
+ try {
+  await page.goto("/");await page.getByRole("button",{name:"Connect display",exact:true}).click();
+  await expect(page.locator("#usb_status")).toContainText("Install the latest firmware first");
+  await expect(page.locator("#blank_install_area")).toBeHidden();
+ } finally {release();}
+ await expect(page.getByRole("button",{name:"Install firmware first",exact:true})).toBeFocused();
+});
+test("an imported TLS identity prompts a firmware update before sending unsupported settings",async({page})=>{
+ await connect(page,{noTlsName:true});await verified(page);
+ await page.locator("#unifi_editor").evaluate(el=>el.open=true);
+ await page.getByLabel("TLS certificate name").fill("console.id.ui.direct");
+ await page.getByRole("button",{name:"Save and restart display"}).click();
+ await expect(page.locator("#usb_status")).toContainText("Install the latest firmware");
+ await expect(page.getByRole("button",{name:"Install firmware first",exact:true})).toBeEnabled();
+ expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="save_config"))).toBe(false);
+});
 test("slow tests retain inline progress beyond 65 seconds",async({page})=>{
  await page.clock.install();await connect(page,{delay:"test_wifi"});await expect.poll(()=>page.evaluate(()=>typeof window.completeUsbOperation)).toBe("function");
  await page.clock.runFor(68000);await expect(page.locator("#wifi_status")).toContainText("Checking saved-network");await page.evaluate(()=>window.completeUsbOperation());await verified(page);

@@ -148,8 +148,9 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(self.login()['state'], 'authenticated')
         result = self.wizard.provision(self.payload())['config']
         self.assertEqual(result['api_key'], LOCAL)
-        self.assertEqual(result['controller_url'], 'https://' + HOST + '/proxy/network/integration')
-        self.assertEqual(set(result), {'controller_url', 'api_key', 'certificate_sha256', 'site_id', 'device_id'})
+        self.assertEqual(result['controller_url'], 'https://192.168.6.1/proxy/network/integration')
+        self.assertEqual(result['tls_server_name'], HOST)
+        self.assertEqual(set(result), {'controller_url', 'tls_server_name', 'api_key', 'certificate_sha256', 'site_id', 'device_id'})
         reads = [call for call in self.calls if call[1].startswith('/proxy/network/integration/')]
         self.assertEqual(len(reads), 4)
         for _, _, headers, _ in reads:

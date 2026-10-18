@@ -8,6 +8,7 @@ pub mod api;
 pub mod app;
 pub mod config;
 pub mod console_http;
+pub mod local_net;
 pub mod navigation;
 pub mod panel;
 pub mod provision;

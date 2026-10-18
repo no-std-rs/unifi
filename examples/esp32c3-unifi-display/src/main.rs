@@ -48,6 +48,7 @@ static HTTP_HEADERS: StaticCell<[u8; 4096]> = StaticCell::new();
 struct Connector {
     stack: Stack<'static>,
     host: &'static str,
+    tls_server_name: &'static str,
     port: u16,
     pin: [u8; 32],
     rx: alloc::vec::Vec<u8>,
@@ -86,23 +87,28 @@ impl unifi::embedded_async::Connector for Connector {
     async fn connect(&mut self) -> Result<Self::Connection<'_>, Error> {
         use embassy_net::{dns::DnsQueryType, tcp::TcpSocket};
         use embedded_tls::{Aes128GcmSha256, TlsConfig, TlsConnection, TlsContext};
-        let address = self
-            .stack
-            .dns_query(self.host, DnsQueryType::A)
-            .await
-            .map_err(|_| Error::Transport)?
-            .first()
-            .copied()
-            .ok_or(Error::Transport)?;
-        // Enforce LAN-only API traffic even when a configured DNS name changes.
-        let embassy_net::IpAddress::Ipv4(ip) = address;
-        if !config::local_ipv4(ip) {
-            return Err(Error::LocalAddress);
-        }
+        let address = unifi_display::local_net::resolve(self.host, || async {
+            let addresses = self
+                .stack
+                .dns_query(self.host, DnsQueryType::A)
+                .await
+                .map_err(|_| unifi_display::local_net::ResolveError::Dns)?;
+            let address = addresses
+                .first()
+                .copied()
+                .ok_or(unifi_display::local_net::ResolveError::Dns)?;
+            let embassy_net::IpAddress::Ipv4(ip) = address;
+            Ok(ip)
+        })
+        .await
+        .map_err(|error| match error {
+            unifi_display::local_net::ResolveError::Dns => Error::Transport,
+            unifi_display::local_net::ResolveError::NonLocal => Error::LocalAddress,
+        })?;
         let mut socket = TcpSocket::new(self.stack, &mut self.rx, &mut self.tx);
         socket.set_timeout(Some(Duration::from_secs(8)));
         socket
-            .connect((address, self.port))
+            .connect((embassy_net::IpAddress::Ipv4(address), self.port))
             .await
             .map_err(|_| Error::Transport)?;
         let mut tls = TlsConnection::<_, Aes128GcmSha256>::new(
@@ -110,7 +116,8 @@ impl unifi::embedded_async::Connector for Connector {
             &mut self.tls_read,
             &mut self.tls_write,
         );
-        let tls_config = TlsConfig::new().with_server_name(self.host);
+        // SNI selects the enrolled certificate on this LAN socket; no lookup.
+        let tls_config = TlsConfig::new().with_server_name(self.tls_server_name);
         let provider = unifi_display::tls::Provider::new(BoardRng(Rng::new()), self.pin);
         tls.open(TlsContext::new(&tls_config, provider))
             .await
@@ -127,6 +134,11 @@ impl Http {
         let connector = Connector {
             stack,
             host: endpoint.host,
+            tls_server_name: if config.tls_server_name.is_empty() {
+                endpoint.host
+            } else {
+                &config.tls_server_name
+            },
             port: endpoint.port,
             pin: config.fingerprint(),
             rx: alloc::vec![0;4096],

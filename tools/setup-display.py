@@ -302,7 +302,8 @@ class Wizard:
         for suffix in [f'/devices/{device}', f'/devices/{device}/statistics/latest', '/devices?limit=1', '/clients?limit=1']:
             status, _ = self.local('GET', '/proxy/network/integration' + path + suffix, use_key=True)
             success(status, 'Local display verification')
-        result = {'controller_url': 'https://' + self.target['hostname'] + '/proxy/network/integration',
+        result = {'controller_url': 'https://' + self.target['address'] + '/proxy/network/integration',
+                  'tls_server_name': self.target['hostname'],
                   'api_key': self.local_key, 'certificate_sha256': self.target['pin'],
                   'site_id': payload['site_id'], 'device_id': device}
         # End the temporary login session; the device only needs the integration key.

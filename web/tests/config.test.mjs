@@ -38,3 +38,11 @@ test("install manifest writes settings only to the dedicated partition", () => {
   assert.throws(() => manifestWithSettings({ ...release, application: "ubus-display" }, "f", "s"));
   assert.throws(() => manifestWithSettings({ ...release, settings_schema: "UBUSCFG1" }, "f", "s"));
 });
+test("a numeric connection destination keeps its optional TLS identity without changing legacy sectors",()=>{
+ const config={...settings(),controller_url:"https://192.168.6.1/proxy/network/integration",tls_server_name:"console.id.ui.direct"};
+ const sector=encodeConfig(config),size=new DataView(sector.buffer).getUint32(8,true);
+ assert.deepEqual(JSON.parse(new TextDecoder().decode(sector.subarray(16,16+size))),config);
+ for(const tls_server_name of ["https://console.id.ui.direct","console:443","*.ui.direct","bad\r\nHeader",null,12])assert.throws(()=>validateConfig({...config,tls_server_name}));
+ const legacy=encodeConfig({...settings(),tls_server_name:""}),length=new DataView(legacy.buffer).getUint32(8,true);
+ assert.deepEqual(JSON.parse(new TextDecoder().decode(legacy.subarray(16,16+length))),settings());
+});

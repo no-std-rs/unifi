@@ -18,7 +18,9 @@ export function isLocalIPv4(value) {
     || a === 169 && b === 254 || a === 100 && b >= 64 && b <= 127;
 }
 export function validateConfig(config) {
-  if (Object.keys(config).length !== fields.length || fields.some(k => typeof config[k] !== "string" || config[k].includes("\0"))) throw new Error("Complete the Wi-Fi and UniFi settings.");
+  if (Object.keys(config).some(k => ![...fields, "tls_server_name"].includes(k)) || fields.some(k => typeof config[k] !== "string" || config[k].includes("\0"))) throw new Error("Complete the Wi-Fi and UniFi settings.");
+  if (config.tls_server_name !== undefined && (typeof config.tls_server_name !== "string" || config.tls_server_name.length > 253
+      || config.tls_server_name !== "" && config.tls_server_name.split(".").some(label => !label || label.length > 63 || !/^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(label)))) throw new Error("Enter a valid TLS certificate name, or leave it empty.");
   validateWifi(config.wifi_ssid, config.wifi_password);
   const match = /^https:\/\/([^/]+)(.*)$/.exec(config.controller_url);
   const authority = match?.[1] || "";
@@ -48,7 +50,9 @@ export function crc32(bytes) {
 
 export function encodeConfig(config) {
   validateConfig(config);
-  const payload = encoder.encode(JSON.stringify(config));
+  const saved = { ...config };
+  if (!saved.tls_server_name) delete saved.tls_server_name;
+  const payload = encoder.encode(JSON.stringify(saved));
   if (payload.length > 2048) throw new Error("The settings exceed the device's configuration limit.");
   const sector = new Uint8Array(SECTOR_SIZE).fill(0xff);
   sector.set(encoder.encode("UNIFICF1"));

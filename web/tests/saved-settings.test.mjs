@@ -28,3 +28,9 @@ test("corrupt, incompatible and oversized stored settings do not restore", () =>
   writeSavedSettings(s, true, values);
   assert.equal(readSavedSettings(s), null);
 });
+test("older browser settings restore with an empty optional TLS identity",()=>{
+ const s=storage(),values=Object.fromEntries(Object.keys(savedFields).map(key=>[key,""]));
+ values.connection_mode="local";values.api_key="local-key";delete values.tls_server_name;
+ s.setItem(SAVED_SETTINGS_KEY,JSON.stringify({version:1,remember:true,values}));
+ assert.deepEqual(readSavedSettings(s),{remember:true,values:{...values,tls_server_name:""}});
+});

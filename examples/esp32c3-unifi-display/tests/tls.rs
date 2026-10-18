@@ -11,7 +11,20 @@ use std::{
     time::Duration,
 };
 
-async fn exercise(rsa: bool, wrong_pin: bool) {
+async fn exercise(rsa: bool, wrong_pin: bool, ip_endpoint: bool) {
+    let host = if ip_endpoint {
+        "192.168.6.1"
+    } else {
+        "controller.test"
+    };
+    if ip_endpoint {
+        // A broken or unavailable resolver cannot affect this connection.
+        assert!(unifi_display::local_net::resolve(host, || async {
+            Err(unifi_display::local_net::ResolveError::Dns)
+        })
+        .await
+        .is_ok());
+    }
     let key = if rsa {
         use rsa::pkcs8::EncodePrivateKey;
         let key = rsa::RsaPrivateKey::new(&mut ChaCha20Rng::from_seed([7; 32]), 2048).unwrap();
@@ -70,6 +83,8 @@ async fn exercise(rsa: bool, wrong_pin: bool) {
     let mut write = vec![0; 4096];
     let mut tls =
         TlsConnection::<_, Aes128GcmSha256>::new(FromTokio::new(stream), &mut read, &mut write);
+    // The socket and HTTP authority use the IP. SNI selects the enrolled
+    // certificate locally and never causes a lookup of this name.
     let config = TlsConfig::new().with_server_name("controller.test");
     let result = tls
         .open(TlsContext::new(
@@ -81,12 +96,8 @@ async fn exercise(rsa: bool, wrong_pin: bool) {
         assert!(result.is_err());
     } else {
         result.unwrap();
-        let client = unifi::Client::new(
-            "controller.test",
-            "/proxy/network/integration",
-            "fixture-only-api-key",
-        )
-        .unwrap();
+        let client =
+            unifi::Client::new(host, "/proxy/network/integration", "fixture-only-api-key").unwrap();
         let mut headers = [0; 4096];
         let mut output = [0; 4096];
         let call = unifi::network::get_adopted_device_latest_statistics("site", "device").unwrap();
@@ -107,19 +118,28 @@ async fn exercise(rsa: bool, wrong_pin: bool) {
     } else {
         assert!(request.starts_with("GET /proxy/network/integration/v1/sites/site/devices/device/statistics/latest HTTP/1.1"));
         assert!(request.contains("X-API-Key: fixture-only-api-key"));
+        assert!(request
+            .to_ascii_lowercase()
+            .contains(&format!("host: {host}")));
     }
 }
 #[tokio::test]
 async fn ecdsa_peer_and_generated_sdk_request() {
-    exercise(false, false).await;
+    exercise(false, false, false).await;
 }
 #[tokio::test]
 async fn rsa_peer_and_generated_sdk_request() {
-    exercise(true, false).await;
+    exercise(true, false, false).await;
 }
 #[tokio::test]
 async fn wrong_pin_never_receives_the_api_key() {
-    exercise(false, true).await;
+    exercise(false, true, false).await;
+    exercise(false, true, true).await;
+}
+
+#[tokio::test]
+async fn pinned_ip_endpoint_uses_a_local_tls_name_without_dns() {
+    exercise(false, false, true).await;
 }
 
 async fn enroll(wrong_name: bool, expired: bool, untrusted: bool) {
@@ -395,5 +415,10 @@ async fn console_key_creation_uses_real_tls_http_cookies_and_csrf() {
         .await
         .unwrap();
     assert_eq!(config["config"]["api_key"], "fixture-new-key");
+    assert_eq!(
+        config["config"]["controller_url"],
+        "https://192.168.6.1/proxy/network/integration"
+    );
+    assert_eq!(config["config"]["tls_server_name"], "console.id.ui.direct");
     assert_eq!(worker.join().unwrap(), 4);
 }
