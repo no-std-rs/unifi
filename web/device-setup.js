@@ -29,7 +29,8 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     $("manual_setup").hidden = manual || connected;
     $("connected_tools").hidden = !connected;
     for (const id of ["usb_read", "usb_status_read"]) $(id).disabled = busy || !connected;
-    $("blank_installer").querySelector("button").disabled = busy || connected;
+    $("blank_install_area").hidden = !ready || connected || manual;
+    $("blank_installer").querySelector("button").disabled = busy || connected || !ready;
     $("wifi_step").hidden = !connected && !manual;
     $("wifi_step").disabled = busy;
     $("unifi_step").hidden = !manual && !(connected && matches());
@@ -59,12 +60,23 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   async function run(action, propagate = false) {
     if (busy) return;
     const previousWifi = verified;
+    let needsFirmware = false;
     busy = true; refresh();
     const started = generation;
     try { return await action(() => started === generation); }
-    catch (error) { if (started === generation) note("usb_status", error.message, true); if (propagate) throw error; }
+    catch (error) {
+      if (started === generation) {
+        note("usb_status", error.message, true);
+        needsFirmware = /Install the latest firmware/i.test(error.message);
+      }
+      if (propagate) throw error;
+    }
     finally {
       busy = false; refresh();
+      if (started === generation && needsFirmware && !$("blank_install_area").hidden) {
+        $("blank_install_area").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        $("blank_installer").querySelector("button").focus();
+      }
       if (started === generation && client.connected && matches() && verified !== previousWifi) window.dispatchEvent(new Event("wifi-verified"));
       if (started === generation && client.connected && editing) $("wifi_password").focus();
     }
@@ -230,7 +242,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     supportsConsole: () => capabilities.includes("console_provision"),
     updateFirmware: async () => {
       generation++; await client.disconnect();
-      $("device_tools").open = true;
+      manual = false; refresh();
       $("blank_install_area").scrollIntoView({ behavior: "smooth", block: "center" });
       $("blank_installer").querySelector("button").focus();
     },

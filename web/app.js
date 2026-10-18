@@ -244,7 +244,6 @@ async function loadRelease() {
   if (blankManifestUrl) URL.revokeObjectURL(blankManifestUrl);
   blankManifestUrl = blankUrl;
   $("blank_installer").manifest = blankUrl;
-  $("blank_install_area").hidden = false;
   if (!navigator.serial || !window.isSecureContext) {
     $("prepare").disabled = true;
     message("USB flashing needs a desktop browser with Web Serial, such as Chrome or Edge. You can still download the binary.");
