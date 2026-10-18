@@ -366,15 +366,30 @@ impl Session {
                 return Err("Key creation was already attempted; check Console Integrations before starting again");
             }
             let response = self
-                .request(http, Method::Get, "/api/users/self", None, false, false)
+                .request(http, Method::Get, "/api/users/self", None, false, true)
                 .await?;
             successful(response.status)?;
+            // Match the console UI: use the current session's local user ID,
+            // which can differ from the account name or cloud identity.
+            let user = response
+                .data
+                .get("id")
+                .and_then(Value::as_str)
+                .filter(|id| {
+                    !id.is_empty()
+                        && id.len() <= 128
+                        && id
+                            .bytes()
+                            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+                })
+                .ok_or("Console did not return a valid signed-in user ID; retry local setup")?;
+            let path = format!("/proxy/users/api/v2/user/{user}/keys");
             self.creation_attempted = true;
             let response = self
                 .request(
                     http,
                     Method::Post,
-                    "/proxy/users/api/v2/user/self/keys",
+                    &path,
                     Some(json!({"name":"UniFi ESP32 Display"})),
                     false,
                     true,
@@ -468,6 +483,7 @@ mod tests {
     use super::*;
     struct Console {
         created: usize,
+        user_profile: Value,
         fail_verify: bool,
         invalid_payload: Option<(&'static str, Value)>,
         legacy: bool,
@@ -516,8 +532,18 @@ mod tests {
                         request.headers.contains(&("Cookie", "TOKEN=session-only")) || self.legacy
                     );
                     response.csrf = Some("updated-csrf".into());
+                    response.data = self.user_profile.clone();
                 }
-                "/proxy/users/api/v2/user/self/keys" => {
+                path if path.starts_with("/proxy/users/api/v2/user/")
+                    && path.ends_with("/keys") =>
+                {
+                    assert_eq!(
+                        path,
+                        format!(
+                            "/proxy/users/api/v2/user/{}/keys",
+                            self.user_profile["id"].as_str().unwrap()
+                        )
+                    );
                     assert!(request.headers.contains(&("X-CSRF-Token", "updated-csrf")));
                     assert_eq!(body, json!({"name":"UniFi ESP32 Display"}));
                     self.created += 1;
@@ -565,10 +591,65 @@ mod tests {
     fn console() -> Console {
         Console {
             created: 0,
+            user_profile: json!({"id":"fixture-local-user"}),
             fail_verify: false,
             invalid_payload: None,
             legacy: false,
             log: Vec::new(),
+        }
+    }
+    #[tokio::test]
+    async fn uses_the_signed_in_profile_id_for_key_creation() {
+        for id in [
+            "local-user-one",
+            "22222222-2222-4222-8222-222222222222",
+            "local_user_two",
+        ] {
+            let mut session = session();
+            let mut console = console();
+            console.user_profile = json!({"id":id});
+            session
+                .login(&mut console, "login-name", "password", "")
+                .await
+                .unwrap();
+            session
+                .provision(&mut console, SITE, DEVICE, "")
+                .await
+                .unwrap();
+            assert_eq!(console.created, 1);
+        }
+    }
+    #[tokio::test]
+    async fn invalid_profile_ids_never_attempt_creation_and_can_be_retried() {
+        for profile in [
+            Value::Null,
+            json!({}),
+            json!({"id":12}),
+            json!({"id":""}),
+            json!({"id":"../another-user"}),
+            json!({"id":"user?query=value"}),
+            json!({"id":"user\r\nHeader: value"}),
+            json!({"id":"u".repeat(129)}),
+        ] {
+            let mut session = session();
+            let mut console = console();
+            console.user_profile = profile;
+            session
+                .login(&mut console, "login-name", "password", "")
+                .await
+                .unwrap();
+            assert!(session
+                .provision(&mut console, SITE, DEVICE, "")
+                .await
+                .is_err());
+            assert_eq!(console.created, 0);
+            assert!(!session.creation_attempted);
+            console.user_profile = json!({"id":"valid-local-user"});
+            session
+                .provision(&mut console, SITE, DEVICE, "")
+                .await
+                .unwrap();
+            assert_eq!(console.created, 1);
         }
     }
     #[tokio::test]

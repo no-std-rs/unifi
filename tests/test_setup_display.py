@@ -85,11 +85,14 @@ class SetupTests(unittest.TestCase):
                     self.end_headers()
                     self.wfile.write(b'{}')
                     return
-                elif self.path == '/proxy/users/api/v2/user/self/keys':
+                elif self.path == '/api/users/self':
+                    response = {'id': 'fixture-local-user'}
+                elif self.path == '/proxy/users/api/v2/user/fixture-local-user/keys':
                     if 'TOKEN=fixture-session' not in self.headers.get('Cookie', '').split('; ') or self.headers.get('X-CSRF-Token') != 'fixture-csrf':
                         status = 403
                     else:
                         owner.creations += 1
+                        owner.assertEqual(body, {'name': 'UniFi ESP32 Display'})
                         response = {'code': 0, 'data': {'full_api_key': LOCAL}}
                 elif self.path.startswith('/proxy/network/integration/'):
                     if self.headers.get('X-API-Key') not in owner.accepted_keys:
