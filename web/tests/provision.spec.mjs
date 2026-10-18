@@ -74,6 +74,7 @@ test("forget cancels pending push approval and clears transient console credenti
 test("an existing display exposes automatic repair and reuses its saved cloud key",async({page})=>{
  await setup(page,{existing:true,provisionFailure:true});
  await expect(page.locator("#console_auth")).toBeVisible();await expect(page.locator("#provision_status")).toContainText("create a replacement local key");
+ await expect(page.getByRole("button",{name:"Save and restart display"})).toBeHidden({timeout:1000});
  await expect(page.locator("#certificate_sha256")).toHaveValue("cd".repeat(32));
  await signIn(page);await expect(page.locator("#provision_status")).toContainText("Local access ready");
  await page.getByRole("button",{name:"Save and restart display"}).click();await expect(page.locator("#usb_status")).toContainText("Settings saved");

@@ -77,7 +77,12 @@ export function setupProvision({ device, cloud, wifi, apply }) {
     phase = "login";
     if (key) {
       try { await finish(current, key); return; }
-      catch (error) { if (!current()) return; phase = "login"; note(`${error.message}. Sign in below to create a replacement local key.`, true); }
+      catch (error) {
+        if (!current()) return;
+        $("api_key").value = "";
+        $("api_key").dispatchEvent(new Event("input", { bubbles: true }));
+        phase = "login"; note(`${error.message}. Sign in below to create a replacement local key.`, true);
+      }
     } else note("Certificate verified automatically. Sign in once to create the display's local key.");
     $("console_username").focus();
   }
