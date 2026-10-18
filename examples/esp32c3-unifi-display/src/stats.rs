@@ -101,6 +101,16 @@ impl Default for Dashboard {
     }
 }
 impl Dashboard {
+    /// Record one disconnect transition, independent of readiness-poll frequency.
+    pub fn network_unavailable(&mut self) -> bool {
+        if self.last_sample_ms.is_none() || self.error == Some(Error::Transport) {
+            return false;
+        }
+        self.error = Some(Error::Transport);
+        self.push_rate(None);
+        true
+    }
+
     pub fn push_rate(&mut self, rate: Option<Rates>) {
         self.rates = rate;
         self.history.rotate_left(1);
@@ -173,6 +183,26 @@ impl Dashboard {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn repeated_readiness_checks_preserve_traffic_history_during_an_outage() {
+        let mut s = Dashboard::default();
+        assert!(!s.network_unavailable());
+        s.last_sample_ms = Some(0);
+        let rate = Some(Rates { rx: 1, tx: 2 });
+        s.history.fill(rate);
+        assert!(s.network_unavailable());
+        for _ in 0..60 {
+            assert!(!s.network_unavailable());
+        }
+        assert_eq!(s.history.iter().filter(|v| v.is_some()).count(), 59);
+        assert_eq!(s.history[59], None);
+        assert_eq!(s.error, Some(Error::Transport));
+        // A successful sample allows a later disconnection to add its own gap.
+        s.error = None;
+        s.push_rate(rate);
+        assert!(s.network_unavailable());
+        assert_eq!(s.history[59], None);
+    }
     #[test]
     fn decodes_official_statistics_without_reinterpreting_uplink_as_wan() {
         let mut s = Dashboard::default();

@@ -406,12 +406,10 @@ async fn poll_router(
             Timer::after_millis(250).await;
             continue;
         }
-        if !stack.is_config_up() && state.last_sample_ms.is_some() {
-            state.error = Some(Error::Transport);
-            state.push_rate(None);
-            *shared.lock().await = state.clone();
-        }
         if !stack.is_config_up() {
+            if state.network_unavailable() {
+                *shared.lock().await = state.clone();
+            }
             Timer::after_millis(250).await;
             continue;
         }
