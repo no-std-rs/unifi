@@ -1,6 +1,6 @@
 //! 240×240 round-screen layout. Can draw into a small tile or a host preview.
 
-use crate::stats::Dashboard;
+use crate::{connection::NetworkState, stats::Dashboard};
 use alloc::{format, string::String};
 use embedded_graphics::{
     mono_font::{
@@ -292,22 +292,7 @@ pub fn draw_with_lock<D: DrawTarget<Color = Rgb565>>(
             center(d, &uptime(s.system.uptime), 183, MUTED)?;
         }
     }
-    let status = if let Some(error) = s.error {
-        error.label()
-    } else if s.last_sample_ms.is_none() {
-        "CONNECTING..."
-    } else if s.stale(now_ms) {
-        "STALE CONTROLLER DATA"
-    } else if s
-        .device
-        .state
-        .as_deref()
-        .is_some_and(|state| state != "ONLINE")
-    {
-        "DEVICE NOT ONLINE"
-    } else {
-        "LIVE"
-    };
+    let status = status(s, now_ms);
     let color = if status == "LIVE" { DOWN } else { UP };
     center(d, &short(status, 28), 202, color)?;
     for i in 0..PAGE_COUNT {
@@ -341,10 +326,58 @@ pub fn draw_with_lock<D: DrawTarget<Color = Rgb565>>(
         .draw(d)?;
     Ok(())
 }
+
+pub fn status(s: &Dashboard, now_ms: u64) -> &'static str {
+    if let Some(network) = s.network.filter(|n| *n != NetworkState::Ready) {
+        network.label()
+    } else if let Some(error) = s.error {
+        error.label()
+    } else if s.last_sample_ms.is_none() {
+        "CONNECTING TO UNIFI"
+    } else if s.stale(now_ms) {
+        "STALE CONTROLLER DATA"
+    } else if s
+        .device
+        .state
+        .as_deref()
+        .is_some_and(|state| state != "ONLINE")
+    {
+        "DEVICE NOT ONLINE"
+    } else {
+        "LIVE"
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
     use embedded_graphics::mock_display::MockDisplay;
+    #[test]
+    fn startup_and_reconnection_show_network_failures_before_api_status() {
+        let mut s = Dashboard::default();
+        for network in [
+            NetworkState::Connecting,
+            NetworkState::AuthenticationFailed,
+            NetworkState::NetworkNotFound,
+            NetworkState::SecurityMismatch,
+            NetworkState::ConnectionTimedOut,
+            NetworkState::WaitingForAddress,
+            NetworkState::AddressTimedOut,
+        ] {
+            s.network = Some(network);
+            assert_eq!(status(&s, 0), network.label());
+            s.last_sample_ms = Some(0);
+            s.error = Some(crate::api::Error::Http(401));
+            assert_eq!(status(&s, 30000), network.label());
+        }
+        s.network = Some(NetworkState::Ready);
+        assert_eq!(status(&s, 30000), "API KEY / ACCESS DENIED");
+        s.error = None;
+        s.last_sample_ms = None;
+        assert_eq!(status(&s, 30000), "CONNECTING TO UNIFI");
+        s.last_sample_ms = Some(30000);
+        assert_eq!(status(&s, 30000), "LIVE");
+        assert_eq!(status(&s, 60000), "STALE CONTROLLER DATA");
+    }
     #[test]
     fn preserves_api_bit_rate_units_and_handles_all_pages_without_data() {
         assert_eq!(megabits(1000000), "1.00 Mb/s");

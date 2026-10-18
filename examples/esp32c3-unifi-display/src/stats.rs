@@ -69,6 +69,7 @@ pub struct Rates {
 }
 #[derive(Clone)]
 pub struct Dashboard {
+    pub network: Option<crate::connection::NetworkState>,
     pub device: Device,
     pub system: System,
     pub radios: Vec<Radio>,
@@ -84,6 +85,7 @@ pub struct Dashboard {
 impl Default for Dashboard {
     fn default() -> Self {
         Self {
+            network: None,
             device: Device::default(),
             system: System::default(),
             radios: Vec::new(),

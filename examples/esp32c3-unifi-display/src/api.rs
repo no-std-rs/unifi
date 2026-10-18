@@ -39,6 +39,48 @@ pub trait Http {
     async fn get(&mut self, call: &Call, response: &mut [u8]) -> Result<usize, Error>;
 }
 
+#[derive(Clone, Copy)]
+enum Request {
+    Sites,
+    DeviceSelection,
+    Devices,
+    Details,
+    Clients,
+    Statistics,
+}
+impl Request {
+    // Build the 4 KiB SDK Call in one reusable frame, outside the outer async
+    // sample. Separate call temporaries at every await otherwise inflate both
+    // the task's static storage and its CPU polling frame on the ESP32-C3.
+    #[inline(never)]
+    fn build(self, site: &str, device: &str) -> Result<Call, Error> {
+        let call = match self {
+            Self::Sites => network::get_site_overview_page(),
+            Self::DeviceSelection | Self::Devices => {
+                network::get_adopted_device_overview_page(site)
+            }
+            Self::Details => network::get_adopted_device_details(site, device),
+            Self::Clients => network::get_connected_client_overview_page(site),
+            Self::Statistics => network::get_adopted_device_latest_statistics(site, device),
+        }
+        .map_err(|_| Error::InvalidResponse)?;
+        let limit = match self {
+            Self::Sites | Self::DeviceSelection => Some("2"),
+            Self::Devices | Self::Clients => Some("1"),
+            Self::Details | Self::Statistics => None,
+        };
+        // Fresh generated calls have no query to replace. Appending directly
+        // avoids page()/set_query() copying another 4 KiB path onto the stack.
+        if let Some(limit) = limit {
+            call.query("offset", "0")
+                .and_then(|call| call.query("limit", limit))
+                .map_err(|_| Error::InvalidResponse)
+        } else {
+            Ok(call)
+        }
+    }
+}
+
 pub struct Client<H> {
     pub http: H,
     site: String,
@@ -56,7 +98,8 @@ impl<H: Http> Client<H> {
             polls: 0,
         }
     }
-    async fn fetch(&mut self, call: Call) -> Result<Json<'_>, Error> {
+    async fn fetch(&mut self, request: Request) -> Result<Json<'_>, Error> {
+        let call = request.build(&self.site, &self.device)?;
         let len = self.http.get(&call, &mut self.buffer).await?;
         let bytes = self.buffer.get(..len).ok_or(Error::InvalidResponse)?;
         Json::parse(bytes).map_err(|_| Error::InvalidResponse)
@@ -67,61 +110,21 @@ impl<H: Http> Client<H> {
         now_ms: impl Fn() -> u64,
     ) -> Result<(), Error> {
         if self.site.is_empty() {
-            let json = self
-                .fetch(
-                    network::get_site_overview_page()
-                        .map_err(|_| Error::InvalidResponse)?
-                        .page(0, 2)
-                        .map_err(|_| Error::InvalidResponse)?,
-                )
-                .await?;
+            let json = self.fetch(Request::Sites).await?;
             self.site = single_id(json, Error::SelectSite)?;
         }
         if self.device.is_empty() {
-            let json = self
-                .fetch(
-                    network::get_adopted_device_overview_page(&self.site)
-                        .map_err(|_| Error::InvalidResponse)?
-                        .page(0, 2)
-                        .map_err(|_| Error::InvalidResponse)?,
-                )
-                .await?;
+            let json = self.fetch(Request::DeviceSelection).await?;
             self.device = single_id(json, Error::SelectDevice)?;
         }
         if self.polls.is_multiple_of(12) {
-            let json = self
-                .fetch(
-                    network::get_adopted_device_details(&self.site, &self.device)
-                        .map_err(|_| Error::InvalidResponse)?,
-                )
-                .await?;
+            let json = self.fetch(Request::Details).await?;
             state.device = Device::parse(json)?;
             // Optional site counts do not prevent selected-device statistics.
-            state.devices = optional_count(
-                self.fetch(
-                    network::get_adopted_device_overview_page(&self.site)
-                        .map_err(|_| Error::InvalidResponse)?
-                        .page(0, 1)
-                        .map_err(|_| Error::InvalidResponse)?,
-                )
-                .await,
-            )?;
-            state.clients = optional_count(
-                self.fetch(
-                    network::get_connected_client_overview_page(&self.site)
-                        .map_err(|_| Error::InvalidResponse)?
-                        .page(0, 1)
-                        .map_err(|_| Error::InvalidResponse)?,
-                )
-                .await,
-            )?;
+            state.devices = optional_count(self.fetch(Request::Devices).await)?;
+            state.clients = optional_count(self.fetch(Request::Clients).await)?;
         }
-        let json = self
-            .fetch(
-                network::get_adopted_device_latest_statistics(&self.site, &self.device)
-                    .map_err(|_| Error::InvalidResponse)?,
-            )
-            .await?;
+        let json = self.fetch(Request::Statistics).await?;
         state.apply_statistics(json, now_ms())?;
         self.polls = self.polls.wrapping_add(1);
         Ok(())
@@ -184,6 +187,21 @@ mod tests {
             Ok(body.len())
         }
     }
+    #[test]
+    fn sample_state_reuses_request_storage() {
+        let mut client = Client::new(
+            Fixture {
+                paths: Vec::new(),
+                ambiguous: false,
+            },
+            "",
+            "",
+        );
+        let mut state = Dashboard::default();
+        let sample = client.sample(&mut state, || 0);
+        let bytes = core::mem::size_of_val(&sample);
+        assert!(bytes < 12 * 1024, "sample future grew to {bytes} bytes");
+    }
     #[tokio::test]
     async fn uses_only_generated_gets_and_reuses_explicit_or_single_selection() {
         let mut c = Client::new(
@@ -196,6 +214,17 @@ mod tests {
         );
         let mut s = Dashboard::default();
         c.sample(&mut s, || 1000).await.unwrap();
+        assert_eq!(
+            c.http.paths,
+            [
+                "/v1/sites?offset=0&limit=2",
+                "/v1/sites/site/devices?offset=0&limit=2",
+                "/v1/sites/site/devices/device",
+                "/v1/sites/site/devices?offset=0&limit=1",
+                "/v1/sites/site/clients?offset=0&limit=1",
+                "/v1/sites/site/devices/device/statistics/latest",
+            ]
+        );
         assert_eq!(s.device.name.as_deref(), Some("Living room AP"));
         assert_eq!(s.devices, Some(1));
         assert_eq!(s.clients, Some(7));
