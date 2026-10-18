@@ -28,6 +28,12 @@
 #unifi_step { border-top: 1px solid var(--line); padding-top: 25px; }
 .saved-settings { margin-top: 20px; font-size: 11px; color: var(--muted); }
 .saved-settings > summary { margin-bottom: 14px; }
+.automatic-local { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.automatic-local h3 { font-size: 14px; font-weight: 600; margin: 0 0 10px; }
+.automatic-local button { margin-top: 12px; }
+.automatic-local #console_signin { width: 100%; }
+#cloud_discovery { margin-top: 18px; }
+#cloud_discovery > summary { font-size: 12px; color: var(--text); overflow-wrap: anywhere; }
 .build { display: block; font-size: 12px; color: var(--muted); }
 .build > a { display: block; margin-top: 14px; }
 .build > details { margin-top: 14px; }

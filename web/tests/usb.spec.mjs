@@ -88,8 +88,11 @@ test("hidden network entry accepts Enter to test instead of submitting incomplet
 
 test("USB save still requires fresh verification after changing a cloud device",async({page})=>{
  const site="11111111-1111-4111-8111-111111111111",first="22222222-2222-4222-8222-222222222222",second="33333333-3333-4333-8333-333333333333";
+ let releaseSecond,secondStarted;
+ const held=new Promise(resolve=>releaseSecond=resolve),started=new Promise(resolve=>secondStarted=resolve);
  await page.route("https://api.ui.com/**",async route=>{
   const path=new URL(route.request().url()).pathname;let body={};
+  if(path.endsWith(`/devices/${second}`)){secondStarted();await held;}
   if(path==="/v1/hosts")body={data:[{id:"console:1",type:"console",reportedState:{state:"connected",name:"Gateway",mac:"aa:bb:cc:dd:ee:ff",ipAddrs:["192.168.6.1"]}}]};
   else if(path.endsWith("/sites"))body={data:[{id:site,name:"Home"}],totalCount:1};
   else if(path.endsWith("/devices"))body={data:[{id:first,name:"First",macAddress:"aa:bb:cc:dd:ee:ff"},{id:second,name:"Second"}],totalCount:2};
@@ -101,10 +104,11 @@ test("USB save still requires fresh verification after changing a cloud device",
  await page.getByRole("button",{name:"Discover consoles"}).click();await expect(page.getByLabel("Device to display")).toHaveValue(first);
  await local(page);await page.getByLabel("Setup method",{exact:true}).selectOption("cloud");
  await page.getByRole("button",{name:"Discover consoles"}).click();await expect(page.getByLabel("Device to display")).toHaveValue(first);
- await page.getByRole("button",{name:"Verify cloud access"}).click();await expect(page.locator("#cloud_status")).toContainText("Cloud reads verified");
- await page.getByLabel("Device to display").selectOption(second);await page.getByRole("button",{name:"Save and restart display"}).click();
+ await expect(page.locator("#cloud_status")).toContainText("Cloud reads verified");
+ await page.locator("#cloud_discovery > summary").click();
+ await page.getByLabel("Device to display").selectOption(second);await started;await page.getByRole("button",{name:"Save and restart display"}).click();
  await expect(page.locator("#unifi_status")).toContainText("Verify cloud access");expect(await page.evaluate(()=>window.usbRequests.some(r=>r.command.name==="save_config"))).toBe(false);
- await page.getByRole("button",{name:"Verify cloud access"}).click();await expect(page.locator("#cloud_status")).toContainText("Cloud reads verified");
+ releaseSecond();await expect(page.locator("#cloud_status")).toContainText("Cloud reads verified");
  await page.getByRole("button",{name:"Save and restart display"}).click();await expect(page.locator("#usb_status")).toContainText("Settings saved");
  expect(await page.evaluate(()=>window.usbRequests.find(r=>r.command.name==="save_config").command.config.device_id)).toBe(second);
 });

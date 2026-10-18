@@ -20,7 +20,7 @@ export async function device(page, options = {}) {
           const request = JSON.parse(line.slice(10)); window.usbRequests.push(request);
           const command = request.command;
           let result = null, error = null;
-          if (command.name === "hello") { mode = true; window.appMode = mode; result = { nonce: command.nonce, protocol: 1, board: "ESP32-2424S012", capabilities: ["scan_wifi", "test_wifi", "save_config"] }; }
+          if (command.name === "hello") { mode = true; window.appMode = mode; result = { nonce: command.nonce, protocol: 1, board: "ESP32-2424S012", capabilities: ["scan_wifi", "test_wifi", "save_config", ...(options.noProvision ? [] : ["console_provision"])] }; }
           if (command.name === "hello" && options.oldFirmware) result.capabilities = [];
           if (command.name === "status") result = { configured: !options.blank, ip: "192.168.6.20", app_mode: mode };
           if (command.name === "get_config") result = { config: options.blank ? null : { ...config, wifi_password: options.devicePassword || config.wifi_password } };
@@ -30,6 +30,21 @@ export async function device(page, options = {}) {
             else result = { ssid: command.ssid, ip: "192.168.6.42" };
           }
           if (command.name === "save_config") result = { restart: true };
+          if (command.name === "console_begin") {
+            window.consoleTarget = command;
+            if (options.badCertificate) error = "Console certificate could not be verified";
+            else result = { hostname: command.hostname, certificate_sha256: "cd".repeat(32) };
+          }
+          if (command.name === "console_login") {
+            if (command.password === "wrong-login") error = "Console access denied";
+            else result = options.mfa && !command.token ? { state: "mfa", methods: [{ id: "method-1", type: options.mfa }] } : { state: "authenticated" };
+          }
+          if (command.name === "console_mfa") result = { state: "sent" };
+          if (command.name === "console_poll") result = { state: "authenticated" };
+          if (command.name === "console_provision") {
+            if (options.provisionFailure && !window.provisionRetried) { window.provisionRetried = true; error = "Local verification failed; retry"; }
+            else result = { state: "verified", config: { controller_url: `https://${window.consoleTarget.hostname}/proxy/network/integration`, api_key: command.local_key || "created-local-key", certificate_sha256: "cd".repeat(32), site_id: command.site_id, device_id: command.device_id } };
+          }
           if (command.name === "bye") { mode = false; window.appMode = mode; }
           const data = { v: 1, id: request.id, session: 321, ok: !error, result, error };
           if (command.name === options.delay) window.completeUsbOperation = () => respond(data);

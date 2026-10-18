@@ -1,6 +1,6 @@
-import { cloudBase, cloudClient, consoleLanUrl, rootGateway } from "./cloud.js";
+import { cloudBase, cloudClient, consoleLanUrl, rootGateway, consoleTarget } from "./cloud.js";
 
-export function setupCloud(invalidate, initialSelection = {}, selectionChanged = () => {}) {
+export function setupCloud(invalidate, initialSelection = {}, selectionChanged = () => {}, autoVerify = () => false) {
   const $ = id => document.getElementById(id);
   const mode = $("connection_mode"), key = $("cloud_api_key");
   const consoleSelect = $("cloud_console"), siteSelect = $("cloud_site"), deviceSelect = $("cloud_device");
@@ -17,6 +17,7 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
     controller.abort(); controller = new AbortController(); verified = false;
     $("verify_cloud").disabled = !deviceSelect.value;
     invalidate();
+    window.dispatchEvent(new Event("cloud-selection"));
     return controller.signal;
   }
   function clear(select) { select.replaceChildren(); select.disabled = true; }
@@ -43,6 +44,7 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
     choices(deviceSelect, rows, "Choose a device…", row => `${row.name || row.model || row.id}${row.id === gateway ? " · root gateway" : ""}${row.state ? ` · ${row.state}` : ""}`, gateway);
     $("verify_cloud").disabled = !deviceSelect.value;
     note(rows.length ? "Choose the device to display, then verify access." : "No adopted devices found in this site.");
+    if (deviceSelect.value && autoVerify()) $("verify_cloud").click();
   }
   async function loadSites(signal) {
     if (!consoleSelect.value) return;
@@ -71,6 +73,8 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
   }
   function updateMode() {
     resetSelections();
+    $("cloud_discovery").open = true;
+    $("cloud_discovery_summary").textContent = "Discover your gateway";
     $("cloud_setup").hidden = !isCloud();
     key.disabled = !isCloud();
     note("Discover consoles with your cloud key. The device will use a separate local Network key.");
@@ -101,7 +105,7 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
     clear(deviceSelect);
     const signal = cancel(); run(signal, () => loadDevices(signal));
   });
-  deviceSelect.addEventListener("change", () => { remembered.cloud_device = deviceSelect.value; cancel(); note("Verify access for this device before preparing installation."); });
+  deviceSelect.addEventListener("change", () => { remembered.cloud_device = deviceSelect.value; cancel(); note("Verify access for this device before preparing installation."); if (deviceSelect.value && autoVerify()) $("verify_cloud").click(); });
   $("verify_cloud").addEventListener("click", () => {
     const signal = cancel();
     $("verify_cloud").disabled = true;
@@ -114,13 +118,20 @@ export function setupCloud(invalidate, initialSelection = {}, selectionChanged =
         $("site_id").value = siteSelect.value;
         $("device_id").value = deviceSelect.value;
         selectionChanged();
-        note("Cloud reads verified. Supply the local Network key and trusted controller fingerprint below; local access is checked by the display.");
+        note("Cloud reads verified. Local setup uses your connected display.");
+        $("cloud_discovery_summary").textContent = `${consoleSelect.selectedOptions[0]?.textContent} · ${deviceSelect.selectedOptions[0]?.textContent}`;
+        if (autoVerify()) $("cloud_discovery").open = false;
+        window.dispatchEvent(new Event("cloud-verified"));
       } finally { if (!signal.aborted) $("verify_cloud").disabled = !deviceSelect.value; }
     });
   });
   updateMode();
   $("discover_cloud").disabled = false;
   return {
+    target() {
+      if (!isCloud() || !verified) return null;
+      return { ...consoleTarget(consoles.find(row => row.id === consoleSelect.value)), site_id: siteSelect.value, device_id: deviceSelect.value };
+    },
     config() {
       if (!isCloud()) return {};
       if (!verified) throw new Error("Verify cloud access before preparing installation.");

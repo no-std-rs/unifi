@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CLOUD_ORIGIN, cloudBase, cloudClient, consoleLanUrl, rootGateway } from "../cloud.js";
+import { CLOUD_ORIGIN, cloudBase, cloudClient, consoleLanUrl, rootGateway, consoleTarget } from "../cloud.js";
 
 const site = "11111111-1111-4111-8111-111111111111";
 const device = "22222222-2222-4222-8222-222222222222";
@@ -52,4 +52,12 @@ test("LAN discovery ignores the WAN address and identifies the root gateway by c
   assert.equal(rootGateway(host, [{ id: "ap", macAddress: "11:22:33:44:55:66" }, { id: "root", macAddress: "aa-bb-cc-dd-ee-ff" }]), "root");
   assert.equal(rootGateway({}, [{ id: "first" }, { id: "second" }]), "");
   assert.equal(consoleLanUrl({ reportedState: { ipAddrs: ["10.0.0.1", "192.168.6.1"] } }), "");
+});
+test("automatic enrollment binds a private address to the cloud-reported direct-connect name", () => {
+  const host = {reportedState:{directConnectDomain:"console.id.ui.direct",ipAddrs:["203.0.113.9","192.168.6.1"]}};
+  assert.deepEqual(consoleTarget(host),{address:"192.168.6.1",hostname:"console.id.ui.direct"});
+  for (const name of ["console.ui.direct.evil.test","-bad.ui.direct","console.ui.direct\r\nX: value", "ui.direct"]) {
+    assert.throws(()=>consoleTarget({reportedState:{...host.reportedState,directConnectDomain:name}}));
+  }
+  assert.throws(()=>consoleTarget({reportedState:{...host.reportedState,ipAddrs:["203.0.113.9"]}}));
 });
