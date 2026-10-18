@@ -44,6 +44,7 @@ class SetupTests(unittest.TestCase):
     def setUp(self):
         self.calls, self.creations, self.fail_stats, self.require_mfa = [], 0, False, False
         self.legacy_mfa = False
+        self.creation_response = {'code': 1, 'codeS': 'SUCCESS', 'data': {'full_api_key': LOCAL}}
         self.accepted_keys = {LOCAL}
         owner = self
         class Gateway(BaseHTTPRequestHandler):
@@ -93,7 +94,7 @@ class SetupTests(unittest.TestCase):
                     else:
                         owner.creations += 1
                         owner.assertEqual(body, {'name': 'UniFi ESP32 Display'})
-                        response = {'code': 0, 'data': {'full_api_key': LOCAL}}
+                        response = owner.creation_response
                 elif self.path.startswith('/proxy/network/integration/'):
                     if self.headers.get('X-API-Key') not in owner.accepted_keys:
                         status = 401
@@ -165,6 +166,22 @@ class SetupTests(unittest.TestCase):
             self.wizard.provision(self.payload())
         self.fail_stats = False
         self.assertEqual(self.wizard.provision(self.payload())['state'], 'verified')
+        self.assertEqual(self.creations, 1)
+
+    def test_legacy_zero_creation_response_still_verifies(self):
+        self.creation_response = {'code': 0, 'data': {'full_api_key': LOCAL}}
+        self.login()
+        self.assertEqual(self.wizard.provision(self.payload())['state'], 'verified')
+
+    def test_error_envelope_never_uses_a_key_or_repeats_creation(self):
+        self.creation_response = {'code': 0, 'codeS': 'PERMISSION_DENIED', 'data': {'full_api_key': LOCAL}}
+        self.login()
+        with self.assertRaises(setup.SetupError):
+            self.wizard.provision(self.payload())
+        self.assertIsNone(self.wizard.local_key)
+        self.assertFalse(any(path.startswith('/proxy/network/integration/') for _, path, _, _ in self.calls))
+        with self.assertRaises(setup.SetupError):
+            self.wizard.provision(self.payload())
         self.assertEqual(self.creations, 1)
 
     def test_generated_key_can_be_explicitly_replaced_after_verification_failure(self):

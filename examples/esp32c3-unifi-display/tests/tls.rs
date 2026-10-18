@@ -324,7 +324,7 @@ async fn console_key_creation_uses_real_tls_http_cookies_and_csrf() {
                 );
                 (
                     "",
-                    r#"{"code":0,"data":{"full_api_key":"fixture-new-key"}}"#,
+                    r#"{"code":1,"codeS":"SUCCESS","msg":"success","data":{"full_api_key":"fixture-new-key"}}"#,
                 )
             } else {
                 if header.starts_with("GET /proxy/network/integration/") {
