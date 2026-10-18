@@ -22,6 +22,18 @@ export function rootGateway(host, devices) {
   return matches.length === 1 ? matches[0].id : "";
 }
 
+export function consoleTarget(host) {
+  const hostname = host?.reportedState?.directConnectDomain;
+  if (typeof hostname !== "string" || hostname.length > 200
+      || !/^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.ui\.direct$/i.test(hostname)
+      || !hostname.split(".").every(label => label.length <= 63 && !label.startsWith("-") && !label.endsWith("-"))) {
+    throw new Error("The console did not report a trusted direct-connect identity. Check direct access in its Control Plane settings.");
+  }
+  const url = consoleLanUrl(host);
+  if (!url) throw new Error("This console did not report a unique LAN address. Select a console reachable from the display's Wi-Fi.");
+  return { address: new URL(url).hostname, hostname };
+}
+
 export function cloudClient(key, signal, request = fetch) {
   if (!/^[\x21-\x7e]{1,512}$/.test(key)) throw new Error("Enter your Site Manager API key, without spaces.");
   async function get(path) {

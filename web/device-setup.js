@@ -6,6 +6,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   const $ = id => document.getElementById(id);
   let busy = false, manual = false, ready = false, generation = 0, verified = null, editing = false, saved = false;
   let accessPoints = new Map(), offlineSSID = "", offlineDirty = false;
+  let capabilities = [];
   function note(id, text, error = false) {
     $(id).textContent = text; $(id).classList.toggle("error", error);
     $(id).setAttribute("role", error ? "alert" : "status");
@@ -13,6 +14,8 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   const matches = () => verified && verified.ssid === $("wifi_ssid").value && verified.password === $("wifi_password").value;
   function refresh() {
     const connected = client.connected;
+    let localReady = false;
+    try { localConfig(Object.fromEntries(localFields.map(name => [name, readForm()[name]]))); localReady = true; } catch { /* Local enrollment/manual entry is incomplete. */ }
     $("display_title").textContent = connected ? "Display connected" : "Connect your display";
     $("display_title").closest("fieldset").classList.toggle("connected", connected);
     $("settings").setAttribute("aria-busy", String(busy));
@@ -30,7 +33,7 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     $("usb_test").hidden = !connected || (!!matches() && !editing);
     $("usb_test").disabled = busy || !$("wifi_ssid").value;
     $("wifi_change").hidden = !connected || !$("wifi_ssid").value || editing;
-    $("usb_save").hidden = !connected || !matches();
+    $("usb_save").hidden = !connected || !matches() || !localReady;
     $("usb_save").disabled = busy;
     $("prepare").hidden = !manual;
     $("prepare").disabled = busy || !ready;
@@ -43,17 +46,18 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
       if (step === name) $("step_" + name).setAttribute("aria-current", "step");
       else $("step_" + name).removeAttribute("aria-current");
     }
+    window.dispatchEvent(new Event("display-state"));
   }
   const client = new DisplaySerial(() => {
     generation++; verified = null; saved ? note("usb_status", "Settings saved. Your display is restarting.") : note("usb_status", "Display disconnected. Connect again to continue.");
     refresh();
   });
-  async function run(action) {
+  async function run(action, propagate = false) {
     if (busy) return;
     busy = true; refresh();
     const started = generation;
-    try { await action(() => started === generation); }
-    catch (error) { if (started === generation) note("usb_status", error.message, true); }
+    try { return await action(() => started === generation); }
+    catch (error) { if (started === generation) note("usb_status", error.message, true); if (propagate) throw error; }
     finally { busy = false; refresh(); if (started === generation && client.connected && editing) $("wifi_password").focus(); }
   }
   function localChanged() {
@@ -61,7 +65,10 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
     try {
       const config = localConfig(Object.fromEntries(localFields.map(name => [name, readForm()[name]])));
       $("unifi_summary").textContent = `Local controller: ${new URL(config.controller_url).host}. You can change its connection settings below.`;
-    } catch { $("unifi_summary").textContent = "Add your local Network API key and trusted certificate, or discover your gateway with a cloud key."; }
+    } catch { $("unifi_summary").textContent = $("connection_mode").value === "cloud"
+      ? "Set up local access below. Your display handles the key and certificate."
+      : "Enter the local Network API key and trusted controller certificate below."; }
+    refresh();
   }
   async function testWifi(current) {
     const { wifi_ssid: ssid, wifi_password: password } = readForm();
@@ -129,7 +136,8 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   }
   $("usb_connect").addEventListener("click", () => run(async current => {
     saved = false; beforeConnect(); note("usb_status", "Choose your display’s USB port.");
-    await client.connect(); if (!current()) return;
+    const hello = await client.connect(); if (!current()) return;
+    capabilities = hello.capabilities;
     manual = false; verified = null; editing = false;
     note("usb_status", "Display connected · APP MODE");
     await read(current); if (!current()) return;
@@ -209,6 +217,24 @@ export function setupDevice({ readForm, readSaveConfig, applyConfig, applyLocal,
   refresh();
   return {
     connected: () => client.connected,
+    supportsConsole: () => capabilities.includes("console_provision"),
+    updateFirmware: async () => {
+      generation++; await client.disconnect();
+      $("device_tools").open = true;
+      $("blank_install_area").scrollIntoView({ behavior: "smooth", block: "center" });
+      $("blank_installer").querySelector("button").focus();
+    },
+    consoleReady: () => client.connected && !!matches() && capabilities.includes("console_provision"),
+    consoleCommand: async (command, timeout = 45000) => {
+      if (busy) throw new Error("The display is busy. Try again when its current check finishes.");
+      if (!client.connected || !matches()) throw new Error("Connect the display and verify Wi-Fi first.");
+      if (!capabilities.includes("console_provision")) throw new Error("Install the latest firmware first to create local access over USB.");
+      return run(async current => {
+        const result = await client.command(command, timeout);
+        if (!current()) throw new Error("Setup changed. Discover the console again.");
+        return result;
+      }, true);
+    },
     firmwareReady: value => { ready = value; refresh(); },
     localChanged,
     reset: () => { generation++; verified = null; accessPoints.clear(); manual = false; saved = false; void client.disconnect(false); refresh(); },

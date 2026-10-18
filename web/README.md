@@ -59,14 +59,30 @@ Personal cloud keys require console ownership; organization keys need access to
 the console, and the Connector requires UniFi OS 5.0.3 or newer.
 
 The display always uses a **direct local connection**, even with cloud discovery.
-Enter a separate **Local Network API key** created in **Network → Integrations**,
-a local integration URL (usually `https://GATEWAY/proxy/network/integration`), and
-the trusted local controller leaf-certificate SHA-256 fingerprint. The cloud key
-is excluded from the USB settings sector. Cloud discovery cannot retrieve or mint
-a local key or establish trust in a self-signed local certificate. Obtain the
-fingerprint through a trusted administrative connection. The page reuses local
-credentials saved for the selected network, reads them directly from an existing
-display, or accepts them inline. It never launches a local provisioning service.
+With a connected display running current firmware, discovery verifies the chosen
+gateway automatically. The display joins the selected Wi-Fi, connects to its
+cloud-reported LAN address with the console-specific `ui.direct` TLS name, verifies
+the public CA chain/name/validity, and returns the leaf-certificate SHA-256. No
+fingerprint copying is needed. The browser supplies its current time for this
+initial verification; dashboard polling subsequently uses the enrolled pin.
+
+Saved local keys are checked through the display. Otherwise **Sign in & create
+local access** signs in to the console over pinned LAN TLS, handles authenticator
+codes or push/email/SMS approval, creates one **UniFi ESP32 Display** key, and
+verifies all four dashboard reads. Retry verification retains a newly created key;
+an uncertain creation attempt never silently creates another. Passwords, MFA codes
+and console session cookies are temporary and excluded from browser storage and
+device flash. The local integration key and trusted pin are remembered normally.
+The console login is separate authorization: the cloud key alone cannot create a
+local key. It stays in the browser and is excluded from USB commands/settings.
+The device remains connected to the tested Wi-Fi during provisioning and restores
+its saved radio settings when the USB session ends. Firmware without the
+`console_provision` capability offers an update before sending login commands.
+
+**Advanced local settings** remains available for self-hosted controllers,
+self-signed certificates, consoles without a direct-connect identity or a unique
+LAN address, and manual keys. Enter/import a trusted local connection in that
+mode. All setup runs on GitHub Pages plus USB; no local provisioning service runs.
 The browser's normal TLS validation handles the cloud API; no cloud certificate
 pin is shipped to the display and no periodic cloud-pin publication is needed.
 

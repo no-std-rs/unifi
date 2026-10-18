@@ -37,7 +37,7 @@ fn now() -> u64 {
 pub fn active() -> bool {
     SESSION.lock(|s| s.borrow().active(now()))
 }
-fn accepts(id: u32) -> bool {
+pub(crate) fn accepts(id: u32) -> bool {
     SESSION.lock(|s| s.borrow().accepts(id, now()))
 }
 pub fn label() -> &'static str {
@@ -167,7 +167,7 @@ pub async fn receive(mut rx: UsbSerialJtagRx<'static, Async>, tx: &'static Tx) -
                     let id = u32::from_le_bytes(random).max(1);
                     SESSION.lock(|s| s.borrow_mut().open(id, now()));
                     set_label("Connected to website");
-                    reply(tx,request.id,id,Ok(json!({"nonce":nonce,"board":"ESP32-2424S012","protocol":1,"capabilities":["scan_wifi","test_wifi","save_config"]}))).await;
+                    reply(tx,request.id,id,Ok(json!({"nonce":nonce,"board":"ESP32-2424S012","protocol":1,"capabilities":["scan_wifi","test_wifi","save_config","console_provision"]}))).await;
                 }
                 Command::Ping {} => {
                     let valid = SESSION.lock(|s| s.borrow_mut().touch(request.session, now()));
@@ -229,6 +229,45 @@ async fn disconnect(
 enum RadioError {
     Operation(&'static str),
     Restore,
+}
+
+async fn restore_radio(
+    wifi: &'static Wifi,
+    stack: Stack<'static>,
+    saved: Option<&DeviceConfig>,
+) -> Result<(), ()> {
+    let mut controller = with_timeout(Duration::from_secs(20), wifi.lock())
+        .await
+        .map_err(|_| ())?;
+    disconnect(&mut controller, stack).await.map_err(|_| ())?;
+    let config = saved
+        .map(|c| wifi_config(&c.wifi_ssid, &c.wifi_password))
+        .unwrap_or_else(|| wifi_config("", ""));
+    controller.set_config(&config).map_err(|_| ())
+}
+
+async fn join_console_wifi(
+    wifi: &'static Wifi,
+    stack: Stack<'static>,
+    ssid: &str,
+    password: &str,
+) -> Result<(), &'static str> {
+    config::validate_wifi(ssid, password).map_err(|_| "Invalid Wi-Fi name or password format")?;
+    let mut controller = with_timeout(Duration::from_secs(20), wifi.lock())
+        .await
+        .map_err(|_| "Wi-Fi is busy; try again")?;
+    disconnect(&mut controller, stack).await?;
+    controller
+        .set_config(&wifi_config(ssid, password))
+        .map_err(|_| "Cannot configure Wi-Fi")?;
+    with_timeout(Duration::from_secs(20), controller.connect_async())
+        .await
+        .map_err(|_| "Wi-Fi association timed out")?
+        .map_err(|_| "Wi-Fi association failed; check the password")?;
+    with_timeout(Duration::from_secs(15), stack.wait_config_up())
+        .await
+        .map_err(|_| "Wi-Fi connected but no DHCP address")?;
+    Ok(())
 }
 impl From<&'static str> for RadioError {
     fn from(message: &'static str) -> Self {
@@ -306,18 +345,129 @@ pub async fn work(
     saved: Option<&'static DeviceConfig>,
     mut store: Store,
 ) -> ! {
+    let mut console: Option<unifi_display::provision::Session> = None;
     loop {
-        let request = COMMANDS.receive().await;
+        // A browser close, heartbeat expiry or replacement session drops all
+        // temporary sign-in state and restores the saved network without a write.
+        if console.as_ref().is_some_and(|c| !accepts(c.owner)) {
+            console = None;
+            if restore_radio(wifi, stack, saved).await.is_err() {
+                esp_hal::system::software_reset();
+            }
+        }
+        let Ok(request) = with_timeout(Duration::from_millis(250), COMMANDS.receive()).await else {
+            continue;
+        };
         if !accepts(request.session) {
             continue;
         }
+        if console.is_some()
+            && matches!(
+                &request.command,
+                Command::ConsoleBegin { .. }
+                    | Command::ScanWifi {}
+                    | Command::TestWifi { .. }
+                    | Command::ConsoleEnd {}
+            )
+        {
+            console = None;
+            if restore_radio(wifi, stack, saved).await.is_err() {
+                esp_hal::system::software_reset();
+            }
+        }
         let mut restart = false;
         let value = match request.command {
+            Command::ConsoleBegin {
+                ssid,
+                password,
+                address,
+                hostname,
+                now,
+            } => {
+                set_label("Verifying local console...");
+                let result = async {
+                    let target = unifi_display::provision::Target::new(&address,&hostname)?;
+                    if !(1_700_000_000..=4_102_444_800).contains(&now) { return Err("Check your browser's date and time"); }
+                    join_console_wifi(wifi,stack,&ssid,&password).await?;
+                    let mut lan = crate::console_net::Lan::new(stack,request.session);
+                    let pin = lan.inspect(&target,now).await?;
+                    if !accepts(request.session) { return Err("USB session ended while verifying console"); }
+                    let session = unifi_display::provision::Session::new(request.session,target,pin);
+                    let result = json!({"certificate_sha256":session.fingerprint(),"hostname":session.target.hostname});
+                    console = Some(session);
+                    Ok(result)
+                }.await;
+                if result.is_err() && restore_radio(wifi, stack, saved).await.is_err() {
+                    restart = true;
+                }
+                result
+            }
+            Command::ConsoleLogin {
+                username,
+                password,
+                token,
+            } => {
+                set_label("Signing in to console...");
+                match console.as_mut().filter(|c| c.owner == request.session) {
+                    Some(c) => {
+                        c.login(
+                            &mut crate::console_net::Lan::new(stack, request.session),
+                            &username,
+                            &password,
+                            &token,
+                        )
+                        .await
+                    }
+                    None => Err("Verify the console certificate before signing in"),
+                }
+            }
+            Command::ConsoleMfa { id } => {
+                match console.as_mut().filter(|c| c.owner == request.session) {
+                    Some(c) => {
+                        c.mfa(
+                            &mut crate::console_net::Lan::new(stack, request.session),
+                            &id,
+                        )
+                        .await
+                    }
+                    None => Err("Sign in to the console first"),
+                }
+            }
+            Command::ConsolePoll {} => {
+                match console.as_mut().filter(|c| c.owner == request.session) {
+                    Some(c) => {
+                        c.poll(&mut crate::console_net::Lan::new(stack, request.session))
+                            .await
+                    }
+                    None => Err("Sign in to the console first"),
+                }
+            }
+            Command::ConsoleProvision {
+                site_id,
+                device_id,
+                local_key,
+            } => {
+                set_label("Creating local display access...");
+                match console.as_mut().filter(|c| c.owner == request.session) {
+                    Some(c) => {
+                        c.provision(
+                            &mut crate::console_net::Lan::new(stack, request.session),
+                            &site_id,
+                            &device_id,
+                            &local_key,
+                        )
+                        .await
+                    }
+                    None => Err("Verify the console certificate first"),
+                }
+            }
+            Command::ConsoleEnd {} => Ok(Value::Null),
             Command::GetConfig {} => Ok(json!({"config":saved})),
             Command::Status {} => Ok(
                 json!({"configured":saved.is_some(),"ip":stack.config_v4().map(|c|c.address.address().to_string()),"app_mode":true}),
             ),
             Command::SaveConfig { config } => {
+                console = None;
                 set_label("Saving settings...");
                 let result = settings::save(&mut store, &config).map(|()| json!({"restart":true}));
                 restart = result.is_ok();

@@ -19,14 +19,43 @@ pub struct Request {
 #[derive(Deserialize)]
 #[serde(tag = "name", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Command {
-    Hello { nonce: String },
+    Hello {
+        nonce: String,
+    },
     Ping {},
     Bye {},
     GetConfig {},
     Status {},
     ScanWifi {},
-    TestWifi { ssid: String, password: String },
-    SaveConfig { config: DeviceConfig },
+    TestWifi {
+        ssid: String,
+        password: String,
+    },
+    ConsoleBegin {
+        ssid: String,
+        password: String,
+        address: String,
+        hostname: String,
+        now: u64,
+    },
+    ConsoleLogin {
+        username: String,
+        password: String,
+        token: String,
+    },
+    ConsoleMfa {
+        id: String,
+    },
+    ConsolePoll {},
+    ConsoleProvision {
+        site_id: String,
+        device_id: String,
+        local_key: String,
+    },
+    ConsoleEnd {},
+    SaveConfig {
+        config: DeviceConfig,
+    },
 }
 #[derive(Serialize)]
 pub struct Reply<T: Serialize> {

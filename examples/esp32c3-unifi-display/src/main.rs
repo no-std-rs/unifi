@@ -3,6 +3,7 @@
 #![no_main]
 
 extern crate alloc;
+mod console_net;
 mod usb;
 
 use embassy_executor::Spawner;
@@ -182,7 +183,7 @@ impl api::Http for Http {
 async fn main(spawner: Spawner) -> ! {
     // USB carries framed setup commands; keep ordinary logging off this transport.
     let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
-    esp_alloc::heap_allocator!(size: 128 * 1024);
+    esp_alloc::heap_allocator!(size: 160 * 1024);
     let timers = TimerGroup::new(p.TIMG0);
     esp_rtos::start(
         timers.timer0,

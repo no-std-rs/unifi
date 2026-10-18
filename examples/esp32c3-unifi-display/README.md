@@ -5,14 +5,24 @@ ESP32-2424S012-V1.0**: ESP32-C3, 4 MB flash, round 240 × 240 GC9A01 LCD,
 and CST816 capacitive touch. This is the same board and tiled renderer as the
 [ubus-zero gadget](https://github.com/no-std-rs/ubus-zero/tree/main/examples/esp32c3-router-display),
 using this repository's generated Network API and generic embedded async client.
-The SDK itself remains allocator-free; the standalone board example has a 128 KiB
+The SDK itself remains allocator-free; the standalone board example has a 160 KiB
 heap for Wi-Fi, TLS, bounded JSON responses, and dashboard state.
 
 ## Install
 
 Open the [USB installer](https://no-std-rs.github.io/unifi/) in a desktop
 Chromium browser with Web Serial, connect the board using a data-capable USB
-cable, and fill in:
+cable. Connect, choose Wi-Fi, then discover with your Site Manager cloud key.
+The root gateway is selected when its MAC matches the console. The display verifies
+the console's public CA chain, cloud-reported `ui.direct` identity and certificate
+validity (using the browser's current time), and fills the SHA-256 automatically.
+Sign in once in the installer to create a named **UniFi ESP32 Display** local key;
+authenticator/backup codes and UniFi Verify push approval are supported. The display
+checks all four dashboard reads locally before returning the key and certificate
+to the installer. Save and restart to finish. Console passwords/cookies stay in
+temporary memory and are never saved in browser storage or flash.
+
+For manual setup or a self-hosted controller, use **Advanced local settings**:
 
 - Wi-Fi name and password (2.4 GHz; an empty password selects an open network).
 - The controller's **HTTPS integration base**, usually
@@ -20,7 +30,8 @@ cable, and fill in:
   `https://CONTROLLER:8443/integration` on a self-hosted Network server.
   Use a reachable IPv4 address or DNS name; IPv6 is not enabled on this board.
 - A Network integration API key with access to the intended site and device.
-  Every firmware request is a GET; no device configuration is changed.
+  Dashboard polling uses GET requests. Automatic setup creates the local key
+  explicitly through your console session; it does not change network configuration.
 - The SHA-256 fingerprint of the controller's **leaf TLS certificate**, as 64
   hexadecimal characters without colons. Obtain the certificate through a
   trusted administrative connection or exported certificate; do not blindly
@@ -37,11 +48,12 @@ Alternatively, choose **Discover with cloud · device stays local** in the insta
 A Site Manager API key discovers the console's LAN address and site/device UUIDs,
 and prefers the root gateway when its MAC matches the console. Cloud verification
 checks the data paths using that cloud key, which stays in the browser.
-**The display always uses LAN access**: supply a separate local Network integration
-key and trusted local controller certificate fingerprint. Cloud discovery cannot
-provide these local credentials by itself. The static installer reuses local
-credentials from the device or selected network's browser profile, or accepts
-them inline. It has no localhost-service dependency. See [installer setup](../../web/README.md).
+**The display always uses LAN access**. A cloud key cannot authorize local key
+creation by itself: console sign-in supplies that authorization through USB, while
+the cloud key stays in the browser. Existing local keys are verified and reused;
+missing/rejected keys offer console sign-in. Certificate enrollment and console
+requests run on the display over the chosen Wi-Fi. No local helper, installed
+application or hosted backend is involved. See [installer setup](../../web/README.md).
 Cloud discovery requires UniFi OS 5.0.3 or newer and appropriate console access.
 The display itself does not need internet access and has no cloud fallback.
 
@@ -68,7 +80,11 @@ heartbeat loss leaves APP MODE within 10 seconds. Radio operations have bounded
 timeouts and finish restoring the saved configuration before normal reconnects.
 If radio cleanup fails, the display restarts using its saved settings.
 Disconnect returns to the previous page and lock; reboot resets the page lock.
-No cloud key is part of the device protocol or saved configuration.
+No cloud key is part of the device protocol or saved configuration. Automatic
+local setup temporarily keeps the tested Wi-Fi connected; sign-in state is bound
+to the current USB session and discarded when it ends. The saved radio settings
+are restored on disconnect or heartbeat expiry. Older APP firmware must be updated
+to advertise the `console_provision` capability.
 
 Prepare the installation, then use the USB dialog. The public factory image has
 no credentials. The page verifies its advertised size and SHA-256, then creates
@@ -83,10 +99,11 @@ remain **unencrypted in device flash**. Reinstalling replaces firmware/settings;
 back up anything else on the board first. Hardware flashing is not part of CI.
 
 TLS uses `embedded-tls` TLS 1.3 with an exact SHA-256 leaf-certificate pin and
-CertificateVerify signature verification (P-256 ECDSA/SHA-256 or RSA-PSS
+CertificateVerify signature verification (P-256/P-384 ECDSA or RSA-PSS
 SHA-256/384/512). A matching certificate alone cannot bypass proof of its private
-key. This trust model does not validate a CA chain, hostname, or certificate
-expiration and needs no wall clock. Replace the pin through USB when the trusted
+key. Automatic enrollment validates CA chain, hostname and expiration first using
+Web PKI and RustCrypto, with no C crypto dependency. Subsequent pinned dashboard
+connections need no wall clock. Re-run local setup through USB when the trusted
 controller certificate rotates. Servers must offer a compatible TLS 1.3 cipher
 suite and signature algorithm. There is no plaintext or skip-verification mode. Cloud Connector URLs and public
 IPv4 destinations are rejected, including after DNS resolution.
@@ -170,7 +187,9 @@ cargo +1.95.0 run --locked --manifest-path examples/esp32c3-unifi-display/Cargo.
 Host tests cover configuration, generated request selection, ambiguity, rate
 limits, missing statistics, history, rendering, and real loopback TLS using both
 RSA and ECDSA certificates. A wrong-pin test verifies no HTTP/API key reaches the
-peer. The firmware cross-build checks the actual Embassy/ESP connector. Physical
+peer. Enrollment tests reject unknown CAs, wrong names and expired certificates;
+console tests cover CSRF rotation, legacy MFA, key creation and verification retries
+without duplicate keys. The firmware cross-build checks the actual Embassy/ESP connector. Physical
 LCD, touch, Wi-Fi and live-controller operation still require the specified board;
 host/CI results do not establish hardware operation.
 

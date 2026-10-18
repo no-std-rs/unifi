@@ -3,6 +3,7 @@ import { setupCloud } from "./cloud-setup.js";
 import { SAVED_SETTINGS_KEY, savedFields, readSavedSettings, writeSavedSettings } from "./saved-settings.js";
 import { setupDevice } from "./device-setup.js";
 import { NETWORKS_KEY, localFields, localConfig, profile, readNetworks, writeNetworks } from "./network-profiles.js";
+import { setupProvision } from "./local-provision.js";
 
 const $ = id => document.getElementById(id);
 const form = $("settings");
@@ -72,7 +73,7 @@ function saveSettings() {
 
 const restored = restoreSettings();
 let connectionDraft;
-const cloud = setupCloud(forgetSettings, restored, saveSettings);
+const cloud = setupCloud(forgetSettings, restored, saveSettings, () => device.connected());
 const readForm = () => Object.fromEntries(["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"].map(name => [name, $(name).value]));
 const readSaveConfig = () => ({ ...readForm(), ...cloud.config() });
 const device = setupDevice({
@@ -115,6 +116,16 @@ const device = setupDevice({
     connectionDraft = { ...readForm(), connection_mode: $("connection_mode").value, ...cloud.selection() };
   },
 });
+
+setupProvision({ device, cloud, wifi: readForm, apply: config => {
+  connectionDraft = undefined; importGeneration++; forgetSettings();
+  for (const name of localFields) $(name).value = config[name];
+  const values = readForm();
+  networks.delete(values.wifi_ssid);
+  networks.set(values.wifi_ssid, profile(values.wifi_ssid, values.wifi_password, config));
+  if (networks.size > 16) networks.delete(networks.keys().next().value);
+  saveSettings(); device.localChanged();
+} });
 
 $("forget_saved").addEventListener("click", () => {
   importGeneration++;

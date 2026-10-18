@@ -10,6 +10,92 @@ use rand_core::{CryptoRng, RngCore};
 use sha2::{Digest, Sha256, Sha384, Sha512};
 use x509_cert::der::Decode;
 
+/// Certificate enrollment uses the same handshake verifier as pinned operation,
+/// after Web PKI authenticates the cloud-reported name and browser-supplied time.
+pub struct BootstrapProvider<'a, R> {
+    rng: R,
+    verifier: BootstrapVerifier<'a>,
+}
+impl<'a, R> BootstrapProvider<'a, R> {
+    pub fn new(
+        rng: R,
+        hostname: &'a str,
+        now: u64,
+        roots: &'a [rustls_pki_types::TrustAnchor<'a>],
+        observed: &'a core::cell::Cell<Option<[u8; 32]>>,
+    ) -> Self {
+        observed.set(None);
+        Self {
+            rng,
+            verifier: BootstrapVerifier {
+                hostname,
+                now,
+                roots,
+                observed,
+                inner: PinnedVerifier {
+                    pin: [0; 32],
+                    certificate: Vec::new(),
+                    transcript: None,
+                },
+            },
+        }
+    }
+}
+impl<R: CryptoRng + RngCore> CryptoProvider for BootstrapProvider<'_, R> {
+    type CipherSuite = Aes128GcmSha256;
+    type Signature = Vec<u8>;
+    fn rng(&mut self) -> impl embedded_tls::CryptoRngCore {
+        &mut self.rng
+    }
+    fn verifier(&mut self) -> Result<&mut impl TlsVerifier<Aes128GcmSha256>, TlsError> {
+        Ok(&mut self.verifier)
+    }
+}
+struct BootstrapVerifier<'a> {
+    hostname: &'a str,
+    now: u64,
+    roots: &'a [rustls_pki_types::TrustAnchor<'a>],
+    observed: &'a core::cell::Cell<Option<[u8; 32]>>,
+    inner: PinnedVerifier,
+}
+impl TlsVerifier<Aes128GcmSha256> for BootstrapVerifier<'_> {
+    fn set_hostname_verification(&mut self, hostname: &str) -> Result<(), TlsError> {
+        if hostname == self.hostname {
+            Ok(())
+        } else {
+            Err(TlsError::InvalidCertificate)
+        }
+    }
+    fn verify_certificate(
+        &mut self,
+        transcript: &Sha256,
+        certificate: CertificateRef<'_>,
+    ) -> Result<(), TlsError> {
+        self.observed.set(None);
+        let mut chain = Vec::new();
+        let mut total = 0;
+        for entry in &certificate.entries {
+            let CertificateEntryRef::X509(der) = entry else {
+                return Err(TlsError::InvalidCertificate);
+            };
+            total += der.len();
+            if chain.len() >= 6 || der.len() > 4096 || total > 16384 {
+                return Err(TlsError::InvalidCertificate);
+            }
+            chain.push(rustls_pki_types::CertificateDer::from(*der));
+        }
+        crate::certificate::verify(&chain, self.hostname, self.now, self.roots)
+            .map_err(|_| TlsError::InvalidCertificate)?;
+        self.inner.pin = Sha256::digest(chain[0].as_ref()).into();
+        self.inner.verify_certificate(transcript, certificate)
+    }
+    fn verify_signature(&mut self, verify: CertificateVerifyRef<'_>) -> Result<(), TlsError> {
+        self.inner.verify_signature(verify)?;
+        self.observed.set(Some(self.inner.pin));
+        Ok(())
+    }
+}
+
 pub struct Provider<R> {
     rng: R,
     verifier: PinnedVerifier,
@@ -84,6 +170,13 @@ impl TlsVerifier<Aes128GcmSha256> for PinnedVerifier {
                 let key = p256::ecdsa::VerifyingKey::from_sec1_bytes(key)
                     .map_err(|_| TlsError::InvalidCertificate)?;
                 let signature = p256::ecdsa::Signature::from_der(verify.signature)
+                    .map_err(|_| TlsError::InvalidSignature)?;
+                key.verify(&message, &signature).is_ok()
+            }
+            SignatureScheme::EcdsaSecp384r1Sha384 => {
+                let key = p384::ecdsa::VerifyingKey::from_sec1_bytes(key)
+                    .map_err(|_| TlsError::InvalidCertificate)?;
+                let signature = p384::ecdsa::Signature::from_der(verify.signature)
                     .map_err(|_| TlsError::InvalidSignature)?;
                 key.verify(&message, &signature).is_ok()
             }

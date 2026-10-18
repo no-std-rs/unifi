@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 firmware = Path(sys.argv[1])
 site = Path(sys.argv[2])
 site.mkdir(parents=True, exist_ok=True)
-for name in ['index.html', 'style.css', 'app.js', 'config.js', 'cloud.js', 'cloud-setup.js', 'saved-settings.js', 'network-profiles.js', 'serial-client.js', 'device-setup.js', 'LICENSE']:
+for name in ['index.html', 'style.css', 'app.js', 'config.js', 'cloud.js', 'cloud-setup.js', 'saved-settings.js', 'network-profiles.js', 'serial-client.js', 'device-setup.js', 'local-provision.js', 'LICENSE']:
     shutil.copyfile(ROOT / 'web' / name, site / name)
 shutil.copyfile(ROOT / 'web/dist/installer.js', site / 'installer.js')
 # Remove files from older site assemblies; the public installer has no localhost helper.
