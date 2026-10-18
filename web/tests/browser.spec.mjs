@@ -38,6 +38,8 @@ async function mockCloud(page, requests, consoleId = "console:123") {
     if (path === "/v1/hosts") body = { data: [{ id: consoleId, type: "console", reportedState: { state: "connected", name: "Home console", mac: "aa:bb:cc:dd:ee:ff", ipAddrs: ["203.0.113.9", "192.168.6.1"] } }] };
     else if (path.endsWith("/sites")) body = { data: [{ id: site, name: "Home" }], totalCount: 1 };
     else if (path.endsWith("/devices")) body = { data: [{ id: device, name: "Gateway", macAddress: "aa:bb:cc:dd:ee:ff", ipAddress: "203.0.113.9", state: "ONLINE" }, { id: otherDevice, name: "Access point", state: "ONLINE" }], totalCount: 2 };
+    else if (path.endsWith("/statistics/latest")) body = { interfaces: {} };
+    else if (/\/devices\/[0-9a-f-]+$/i.test(path)) body = { id: path.split("/").at(-1) };
     else if (path.endsWith("/clients")) body = { data: [], totalCount: 50 };
     await route.fulfill({ json: body, headers: { "Access-Control-Allow-Origin": "*" } });
   });

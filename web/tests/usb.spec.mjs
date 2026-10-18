@@ -110,6 +110,8 @@ test("USB save still requires fresh verification after changing a cloud device",
   if(path==="/v1/hosts")body={data:[{id:"console:1",type:"console",reportedState:{state:"connected",name:"Gateway",mac:"aa:bb:cc:dd:ee:ff",ipAddrs:["192.168.6.1"]}}]};
   else if(path.endsWith("/sites"))body={data:[{id:site,name:"Home"}],totalCount:1};
   else if(path.endsWith("/devices"))body={data:[{id:first,name:"First",macAddress:"aa:bb:cc:dd:ee:ff"},{id:second,name:"Second"}],totalCount:2};
+  else if(path.endsWith("/statistics/latest"))body={interfaces:{}};
+  else if(/\/devices\/[0-9a-f-]+$/i.test(path))body={id:path.split("/").at(-1)};
   else if(path.endsWith("/clients"))body={data:[],totalCount:0};
   await route.fulfill({json:body});
  });

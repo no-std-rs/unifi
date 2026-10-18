@@ -51,7 +51,12 @@ export function cloudClient(key, signal, request = fetch) {
       };
       throw new Error(errors[response.status] || `UniFi cloud request failed (HTTP ${response.status}). Check the console is online and runs UniFi OS 5.0.3 or newer.`);
     }
-    return response.json();
+    try {
+      return await response.json();
+    } catch (error) {
+      if (signal.aborted || error.name === "AbortError") throw error;
+      throw new Error("UniFi returned invalid JSON. Check its Network application and retry.");
+    }
   }
   async function pages(path) {
     const result = [];
@@ -88,8 +93,22 @@ export function cloudClient(key, signal, request = fetch) {
       if (!uuid.test(device)) throw new Error("Invalid device UUID returned by UniFi.");
       const path = sitePath(base, site);
       // These are the same four reads used by the firmware's first sample.
-      for (const suffix of [`/devices/${device}`, `/devices/${device}/statistics/latest`, "/devices?limit=1", "/clients?limit=1"]) {
-        await get(path + suffix);
+      const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
+      const page = value => object(value) && Array.isArray(value.data) && Number.isSafeInteger(value.totalCount) && value.totalCount >= 0;
+      const reads = [
+        [`/devices/${device}`, "Device details", value => object(value) && typeof value.id === "string" && value.id.toLowerCase() === device.toLowerCase()],
+        [`/devices/${device}/statistics/latest`, "Device statistics", value => object(value) && object(value.interfaces) && (value.interfaces.radios == null || Array.isArray(value.interfaces.radios))],
+        ["/devices?limit=1", "Device count", page],
+        ["/clients?limit=1", "Client count", page],
+      ];
+      for (const [suffix, label, usable] of reads) {
+        let value;
+        try { value = await get(path + suffix); }
+        catch (error) {
+          if (signal.aborted || error.name === "AbortError") throw error;
+          throw new Error(`${label}: ${error.message}`);
+        }
+        if (!usable(value)) throw new Error(`${label}: UniFi returned incompatible data. Check its Network application and retry.`);
       }
     },
   };

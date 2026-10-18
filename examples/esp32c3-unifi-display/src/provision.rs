@@ -169,6 +169,7 @@ impl Session {
             .map_err(|_| "Cannot encode console request")?;
         let mut headers = alloc::vec![
             ("Accept", "application/json"),
+            ("Accept-Encoding", "identity"),
             ("Content-Type", "application/json"),
             ("Connection", "close")
         ];
@@ -398,18 +399,47 @@ impl Session {
             self.key = Some(key.to_string());
             self.created = true;
         }
-        for suffix in [
+        for (index, suffix) in [
             format!("/devices/{device}"),
             format!("/devices/{device}/statistics/latest"),
             "/devices?limit=1".into(),
             "/clients?limit=1".into(),
-        ] {
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let path = format!("/proxy/network/integration/v1/sites/{site}{suffix}");
-            successful(
-                self.request(http, Method::Get, &path, None, true, false)
-                    .await?
-                    .status,
-            )?;
+            let response = self
+                .request(http, Method::Get, &path, None, true, true)
+                .await?;
+            successful(response.status)?;
+            let data = &response.data;
+            let usable = match index {
+                0 => data
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .is_some_and(|id| id.eq_ignore_ascii_case(device)),
+                1 => data
+                    .get("interfaces")
+                    .and_then(Value::as_object)
+                    .is_some_and(|interfaces| {
+                        interfaces
+                            .get("radios")
+                            .is_none_or(|radios| radios.is_null() || radios.is_array())
+                    }),
+                _ => {
+                    data.get("data").is_some_and(Value::is_array)
+                        && data.get("totalCount").and_then(Value::as_u64).is_some()
+                }
+            };
+            if !usable {
+                return Err(match index {
+                    0 => "Local device details do not match the selected device; check Network and retry",
+                    1 => "Local device statistics are incompatible; check Network and retry",
+                    2 => "Local device count is incompatible; check Network and retry",
+                    _ => "Local client count is incompatible; check Network and retry",
+                });
+            }
         }
         let result = json!({"state":"verified","config":{"controller_url":format!("https://{}/proxy/network/integration",self.target.hostname),
             "api_key":self.key,"certificate_sha256":self.fingerprint(),"site_id":site,"device_id":device}});
@@ -439,6 +469,7 @@ mod tests {
     struct Console {
         created: usize,
         fail_verify: bool,
+        invalid_payload: Option<(&'static str, Value)>,
         legacy: bool,
         log: Vec<(String, Value)>,
     }
@@ -501,6 +532,20 @@ mod tests {
                         response.status = 403;
                         self.fail_verify = false;
                     }
+                    response.data = if path.ends_with("statistics/latest") {
+                        json!({"interfaces":{}})
+                    } else if path.contains('?') {
+                        json!({"data":[],"totalCount":0})
+                    } else {
+                        json!({"id":DEVICE})
+                    };
+                    if self
+                        .invalid_payload
+                        .as_ref()
+                        .is_some_and(|(suffix, _)| path.ends_with(suffix))
+                    {
+                        response.data = self.invalid_payload.take().unwrap().1;
+                    }
                 }
                 "/api/auth/logout" => {}
                 _ => panic!("Unexpected endpoint"),
@@ -521,6 +566,7 @@ mod tests {
         Console {
             created: 0,
             fail_verify: false,
+            invalid_payload: None,
             legacy: false,
             log: Vec::new(),
         }
@@ -573,6 +619,36 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(console.created, 1);
+    }
+    #[tokio::test]
+    async fn unusable_dashboard_data_is_not_verified_and_retry_keeps_the_new_key() {
+        for (suffix, payload) in [
+            (DEVICE, json!({"id":SITE})),
+            ("statistics/latest", json!({"interfaces":null})),
+            ("statistics/latest", json!({"interfaces":{"radios":{}}})),
+            ("/devices?limit=1", json!({"data":{},"totalCount":1})),
+            ("/clients?limit=1", json!({"data":[],"totalCount":-1})),
+        ] {
+            let mut session = session();
+            let mut console = console();
+            console.invalid_payload = Some((suffix, payload));
+            session
+                .login(&mut console, "user", "password", "")
+                .await
+                .unwrap();
+            assert!(
+                session
+                    .provision(&mut console, SITE, DEVICE, "")
+                    .await
+                    .is_err(),
+                "accepted an unusable response for {suffix}"
+            );
+            session
+                .provision(&mut console, SITE, DEVICE, "")
+                .await
+                .unwrap();
+            assert_eq!(console.created, 1);
+        }
     }
     #[tokio::test]
     async fn legacy_two_factor_preserves_the_challenge_cookie() {
