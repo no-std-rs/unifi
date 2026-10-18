@@ -2,7 +2,7 @@ import { encodeConfig, manifestWithSettings } from "./config.js";
 import { setupCloud } from "./cloud-setup.js";
 import { SAVED_SETTINGS_KEY, savedFields, readSavedSettings, writeSavedSettings } from "./saved-settings.js";
 import { setupDevice } from "./device-setup.js";
-import { setupWizard } from "./setup-wizard.js";
+import { NETWORKS_KEY, localFields, localConfig, profile, readNetworks, writeNetworks } from "./network-profiles.js";
 
 const $ = id => document.getElementById(id);
 const form = $("settings");
@@ -12,6 +12,8 @@ const objectUrls = [];
 let release;
 let firmwareUrl;
 let blankManifestUrl;
+let networks = new Map();
+let importGeneration = 0;
 
 function message(text, error = false) {
   status.textContent = text;
@@ -43,6 +45,17 @@ function restoreSettings() {
       for (const [name, value] of Object.entries(saved.values)) {
         if (!["cloud_console", "cloud_site", "cloud_device"].includes(name)) $(name).value = value;
       }
+      storageAction(storage => { networks = readNetworks(storage); });
+      const values = saved.values;
+      const known = networks.get(values.wifi_ssid);
+      if (known) $("wifi_password").value = known.password;
+      if (values.wifi_ssid && (!known || !known.config && values.connection_mode === "local")) {
+        let config = null;
+        if (values.connection_mode === "local") {
+          try { config = localConfig(Object.fromEntries(localFields.map(name => [name, values[name]]))); } catch { /* Incomplete draft. */ }
+        }
+        try { networks.set(values.wifi_ssid, profile(values.wifi_ssid, known?.password ?? values.wifi_password, config)); } catch { /* Invalid old Wi-Fi draft. */ }
+      }
       $("saved_status").textContent = "Saved settings restored from this browser." + (saved.values.connection_mode === "cloud" ? " Discover consoles and verify cloud access again before installing." : "");
     }
   }
@@ -52,57 +65,100 @@ function restoreSettings() {
 function saveSettings() {
   const remember = $("remember_settings").checked;
   const values = { ...Object.fromEntries(Object.keys(savedFields).filter(name => !["cloud_console", "cloud_site", "cloud_device"].includes(name)).map(name => [name, $(name).value])), ...cloud.selection() };
-  if (storageAction(storage => writeSavedSettings(storage, remember, values))) {
+  if (storageAction(storage => { writeSavedSettings(storage, remember, values); writeNetworks(storage, remember, networks); })) {
     $("saved_status").textContent = remember ? "Settings saved in this browser, including your API key and Wi-Fi password." : "Remembering is off. Your credentials have been removed from browser storage.";
   }
 }
 
 const restored = restoreSettings();
+let connectionDraft;
 const cloud = setupCloud(forgetSettings, restored, saveSettings);
-const wizard = setupWizard(config => {
-  forgetSettings();
-  $("connection_mode").value = "local";
-  cloud.reset();
-  for (const [name, value] of Object.entries(config)) $(name).value = value;
-  saveSettings();
-  message("Local connection filled in. Add your Wi-Fi details, then prepare installation.");
-});
-
 const readForm = () => Object.fromEntries(["wifi_ssid", "wifi_password", "controller_url", "api_key", "certificate_sha256", "site_id", "device_id"].map(name => [name, $(name).value]));
 const readSaveConfig = () => ({ ...readForm(), ...cloud.config() });
 const device = setupDevice({
   readForm,
   readSaveConfig,
   applyConfig: config => {
-    wizard.cancel(); forgetSettings(); $("connection_mode").value = "local"; cloud.reset();
+    connectionDraft = undefined;
+    importGeneration++; forgetSettings(); $("connection_mode").value = "local"; cloud.reset();
     for (const [name, value] of Object.entries(config)) $(name).value = value;
     saveSettings();
   },
-  beforeConnect: () => { wizard.cancel(); forgetSettings(); },
+  lookupNetwork: ssid => {
+    if (connectionDraft?.wifi_ssid === ssid) return { password: connectionDraft.wifi_password, config: null };
+    return networks.get(ssid);
+  },
+  rememberNetwork: (ssid, password, config) => {
+    const previous = networks.get(ssid);
+    if (connectionDraft?.wifi_ssid === ssid) connectionDraft.wifi_password = password;
+    networks.delete(ssid); networks.set(ssid, profile(ssid, password, config || previous?.config));
+    if (networks.size > 16) networks.delete(networks.keys().next().value);
+    saveSettings();
+  },
+  applyLocal: (config, { offline = false } = {}) => {
+    importGeneration++; forgetSettings();
+    const draft = connectionDraft?.wifi_ssid === $("wifi_ssid").value ? connectionDraft : null;
+    const sameCloud = draft?.connection_mode === "cloud" && $("connection_mode").value === "cloud"
+      && ["cloud_console", "cloud_site", "cloud_device"].every(name => cloud.selection()[name] === draft[name]);
+    $("connection_mode").value = draft?.connection_mode || (config ? "local" : offline ? $("connection_mode").value : "cloud");
+    if (!sameCloud) cloud.reset(draft || {});
+    for (const name of localFields) $(name).value = (draft ? draft[name] : config?.[name]) ?? (name === "controller_url" ? "https://unifi.local/proxy/network/integration" : "");
+    saveSettings();
+  },
+  beforeManual: () => {
+    importGeneration++; connectionDraft = undefined; forgetSettings();
+    const known = networks.get($("wifi_ssid").value);
+    if (known) $("wifi_password").value = known.password;
+  },
+  beforeConnect: () => {
+    importGeneration++; forgetSettings();
+    connectionDraft = { ...readForm(), connection_mode: $("connection_mode").value, ...cloud.selection() };
+  },
 });
 
 $("forget_saved").addEventListener("click", () => {
-  wizard.cancel();
+  importGeneration++;
+  networks.clear();
+  connectionDraft = undefined;
+  device.reset();
   form.reset();
   $("remember_settings").checked = false;
   cloud.reset();
   // Keep only the preference to avoid saving credentials again on reopening.
   if (storageAction(storage => {
     storage.removeItem(SAVED_SETTINGS_KEY);
+    storage.removeItem(NETWORKS_KEY);
     writeSavedSettings(storage, false);
   })) $("saved_status").textContent = "Saved settings forgotten. Remembering is off.";
   if (release) message("Settings cleared. Enter your Wi-Fi and UniFi settings to prepare another installation.");
 });
 
+$("import_setup").addEventListener("change", async event => {
+  const file = event.target.files?.[0]; if (!file) return;
+  const generation = ++importGeneration;
+  try {
+    if (file.size > 16384) throw new Error("The settings file is too large.");
+    const config = localConfig(JSON.parse(await file.text()));
+    if (generation !== importGeneration) return;
+    connectionDraft = undefined;
+    forgetSettings(); $("connection_mode").value = "local"; cloud.reset();
+    for (const [name, value] of Object.entries(config)) $(name).value = value;
+    saveSettings(); device.localChanged();
+    $("import_status").textContent = "Local connection imported.";
+  } catch (error) { if (generation === importGeneration) $("import_status").textContent = error.message; }
+  event.target.value = "";
+});
+
 form.addEventListener("input", () => {
   forgetSettings();
   saveSettings();
-  if (release) message("Your settings stay here. Prepare when you're ready.");
+  device.localChanged();
+  if (release) message(device.connected() ? "" : "Your settings stay here. Prepare when you're ready.");
 });
 form.addEventListener("change", saveSettings);
 form.addEventListener("submit", event => {
   event.preventDefault();
-  if (device.connected()) { message("Disconnect APP MODE before opening the firmware flasher, or use Save settings and restart.", true); return; }
+  if (device.connected()) { message("Use Save and restart display to apply these settings.", true); return; }
   forgetSettings();
   saveSettings();
   try {
@@ -130,15 +186,16 @@ window.addEventListener("pagehide", () => {
   release = undefined;
   $("download").hidden = true;
   $("download").removeAttribute("href");
-  $("prepare").disabled = true;
+  device.firmwareReady(false);
   $("blank_installer").removeAttribute("manifest");
   $("blank_install_area").hidden = true;
-  form.reset();
+  importGeneration++; networks.clear(); connectionDraft = undefined; form.reset();
   cloud.reset();
 });
 window.addEventListener("pageshow", event => {
   if (event.persisted) {
-    cloud.reset(restoreSettings());
+    device.reset(); const values = restoreSettings();
+    connectionDraft = undefined; cloud.reset(values);
     loadRelease().catch(error => message(error.message, true));
   }
 });
@@ -161,7 +218,7 @@ async function loadRelease() {
   $("digest").textContent = release.sha256;
   $("download").href = firmwareUrl;
   $("download").hidden = false;
-  $("prepare").disabled = false;
+  device.firmwareReady(!!navigator.serial && window.isSecureContext);
   const blank = manifestWithSettings(release, firmwareUrl, "unused");
   blank.builds[0].parts.pop();
   const blankUrl = URL.createObjectURL(new Blob([JSON.stringify(blank)], { type: "application/json" }));
@@ -173,7 +230,7 @@ async function loadRelease() {
   if (!navigator.serial || !window.isSecureContext) {
     $("prepare").disabled = true;
     message("USB flashing needs a desktop browser with Web Serial, such as Chrome or Edge. You can still download the binary.");
-  } else { message("Latest firmware verified. Add your Wi-Fi and UniFi settings below."); }
+  } else { message(""); }
 }
 
 loadRelease().catch(error => message(error.message, true));

@@ -4,7 +4,6 @@
 """Check the deployed Pages artifact anonymously from an unrelated origin."""
 import hashlib
 import json
-from pathlib import Path
 import sys
 import time
 from urllib.request import Request, urlopen
@@ -31,9 +30,10 @@ def verify(base_url, revision):
     binary = download(base_url + 'unifi-display.bin', 4 * 1024 * 1024)
     if len(binary) != metadata['size'] or hashlib.sha256(binary).hexdigest() != metadata['sha256']:
         raise ValueError('the deployed firmware does not match its size and SHA-256')
-    helper = download(base_url + 'setup-display.py', 128 * 1024)
-    if helper != Path(__file__).with_name('setup-display.py').read_bytes():
-        raise ValueError('the deployed setup helper does not match the checked-out main source')
+    page = download(base_url + 'index.html', 128 * 1024).decode()
+    app = download(base_url + 'app.js', 128 * 1024).decode()
+    if any(value in page + app for value in ['127.0.0.1', 'localhost', 'setup-display.py', 'setup-wizard.js']):
+        raise ValueError('the public installer still depends on a localhost helper')
     print(f'Anonymous GET and CORS * verified: {base_url}unifi-display.bin')
     print(f'{revision}: {len(binary)} bytes; SHA-256 {metadata["sha256"]}')
 

@@ -4,11 +4,35 @@
 
 .saved-settings{border-top:1px solid var(--line);padding-top:18px;margin:0 0 24px}.remember{display:flex;align-items:center;gap:10px;line-height:1.6;margin:0 0 8px}.remember input{width:16px;height:16px;margin:0;accent-color:var(--accent);flex-shrink:0}.secondary{background:transparent;color:var(--text);border:1px solid var(--line);margin:0 0 12px;font-size:11px}
 
-.wizard-card{border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:24px}.wizard-card h3{margin:0 0 10px;font-size:17px}.wizard-card details{font-size:12px;color:var(--muted);margin:12px 0}.wizard-card details>p{margin-top:10px}.wizard-card a{display:inline-block;margin:8px 0}.helper-command{display:block;overflow-wrap:anywhere;padding:12px;background:var(--bg);margin:6px 0 12px;font-size:12px;color:var(--text)}#open_wizard{width:100%;margin-top:12px}.wizard-card input[type=file]{font-size:11px}
 
-.install-section { row-gap: 24px; }
-.section-intro { grid-row: span 2; }
-.install-section > form, .device-setup { grid-column: 2; }
-.usb-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
-.usb-actions button { flex: 1 1 150px; }
-@media (max-width: 600px) { .section-intro { grid-row: auto; } .install-section > form, .device-setup { grid-column: 1; } }
+.install-section { align-items: start; }
+.setup-panel { min-width: 0; }
+.setup-progress { display: flex; justify-content: space-between; list-style: none; margin: 0 0 30px; padding: 0 0 22px; border-bottom: 1px solid var(--line); gap: 12px; }
+.setup-progress li { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
+.setup-progress li span { display: grid; place-items: center; width: 23px; height: 23px; border: 1px solid var(--line); border-radius: 50%; font-size: 10px; }
+.setup-progress [aria-current] { color: var(--text); }
+.setup-progress [aria-current] span, .setup-progress .complete span { border-color: var(--accent); color: var(--accent); }
+.display-step { padding-bottom: 25px; border-bottom: 1px solid var(--line); }
+.text-button { background: transparent; color: var(--muted); padding: 4px 0; min-height: 32px; font-size: 11px; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.text-button:hover { color: var(--accent); }
+#connected_tools { display: flex; flex-direction: column; align-items: start; margin-top: 10px; }
+#device_tools { font-size: 11px; }
+#device_tools > button { display: block; }
+.label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wifi-result { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.wifi-result .status { flex: 1; }
+.wifi-result button { flex-shrink: 0; }
+#usb_test, #usb_save { width: 100%; margin-top: 15px; }
+#unifi_editor { margin-top: 12px; font-size: 12px; color: var(--muted); }
+#unifi_editor > summary { color: var(--text); }
+#unifi_step { border-top: 1px solid var(--line); padding-top: 25px; }
+.saved-settings { margin-top: 20px; font-size: 11px; color: var(--muted); }
+.saved-settings > summary { margin-bottom: 14px; }
+.build { display: block; font-size: 12px; color: var(--muted); }
+.build > a { display: block; margin-top: 14px; }
+.build > details { margin-top: 14px; }
+.status:empty { display: none; }
+#status { min-height: 0; }
+
+.display-step.connected > .field-note { display: none; }
+.display-step.connected > .status { margin-top: 0; min-height: 0; }
